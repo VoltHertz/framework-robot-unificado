@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv/
+venv/
+.env.local
+
+# Robot Framework outputs
+output.xml
+report.html
+log.html
+outputs/
+
+# IDE
+.vscode/
+.idea/
+
+# Node / front artifacts
+node_modules/
+
+# Generated gRPC
+grpc/generated/
+
+# Secrets (real)
+secrets.yaml
