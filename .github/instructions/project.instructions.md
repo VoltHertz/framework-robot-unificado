@@ -33,16 +33,7 @@ A estrutura do projeto está descrita em .github/instructions/arquitetura.instru
 ## Backlog de atividades
 A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor humano revise.
 
-- Implementação da automatização dos casos de teste docs/use_cases em robot framework para DummyJSON (padrão de arquitetura + Strategy/Factory para massa). Implemente os casos de testes das apis do dummujson em robot, seguindo todos os direcionamentos do projeto. A massa está disponivel em data/full_api_data/DummyJson/, porém essa é a massa total da aplicação. Crie a massa que será utilizada nos testes em data/json.
-    - (x) auth
-    - ( ) products
-    - ( ) carts
-    - ( ) users
-    - ( ) posts
-    - ( ) comments
-    - ( ) quotes
-    - ( ) recipes
-    - ( ) todos
+
 
 - Planejamento formal: elaborar o PRD (Product Requirements Document) do projeto Levando em consideração todos os aspectos do projetos anteriormente levantandos e mantendo a complexidade e robostez para o resto.
     - Implementarmos todas as APIs do https://dummyjson.com/ documentadas nos casos de uso de forma robusta pelo robot (seguindo todas as boas praticas sugeridas nas documentações desse projeto), iremos testa-las e garantir que elas de fato estão funcionando como esperado nos casos de uso. As implementaçòes deverão seguir o modelo BDD ajustado para o portugues. 
@@ -51,13 +42,24 @@ A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor 
 
 
 ## Foco atual.
-- Melhorar os requirements.txt
+
+- Implementação da automatização dos casos de teste docs/use_cases em robot framework para DummyJSON (padrão de arquitetura + Strategy/Factory para massa). Implemente os casos de testes das apis do dummujson em robot, seguindo todos os direcionamentos do projeto. A massa está disponivel em data/full_api_data/DummyJson/, porém essa é a massa total da aplicação. Crie a massa que será utilizada nos testes em data/json.
+    - (x) auth
+    - (x) products
+    - ( ) carts
+    - ( ) users
+    - ( ) posts
+    - ( ) comments
+    - ( ) quotes
+    - ( ) recipes
+    - ( ) todos
 
 ## Atividades concluidas.
 - Pastas pronizadas
 - Documento docs/aplicacoes_testadas.md ampliado com seções detalhadas (DummyJSON, DemoQA, grpcbin, Mobile) e links oficiais adicionais.
 - Casos de uso DummyJSON completos e enriquecidos com validação cruzada de toda a documentação oficial (products, carts, users, auth, posts, comments, quotes, recipes, todos).
 - Analise o codebase do projeto, focando na pasta src e no arquivo requirements.txt, e identifique todas as bibliotecas de tericeiros usadas. Use o Context7 MCP para buscar a documentação relevante de cada uma. Depois, crie arquivos .md na pasta /docs/libs com essas informações (por exemplo browser.md, requests.md ...). Garanta que utilizará o Context7 MCP, pesquise na web caso não encontre documentação ou use outros tools/MCPs. Toda biblioteca de robot framework possui um repositório github rico em informações atualizadas de como as coisas devem ser executadas e quais as melhores praticas.
+- Melhorar os requirements.txt
 
 ### Lições aprendidas (fase Auth DummyJSON)
 Estas lições devem orientar os próximos domínios (products, carts, etc.) para manter consistência e robustez.
@@ -92,6 +94,11 @@ Estas lições devem orientar os próximos domínios (products, carts, etc.) par
 
 9. Próxima melhoria técnica (planejada):
     - Centralizar conversão JSON e extração de campos em keywords reutilizáveis (reduzir repetição em ~5 pontos atuais) antes de escalar para novos domínios.
+
+10. Lições adicionais (fase Products DummyJSON)
+    - Uso seguro de tamanho de listas: substituir construções inválidas `${len(${json}['items'])}` por `Get Length` para evitar erros de variável.
+    - Flexibilização de códigos em endpoints não determinísticos (ex: criação retornando 200 ou 201) usando assert inclusivo e comentário explicativo.
+    - Padronização de logs incluindo nome de arquivo e linha continuada (já aplicado nos novos resources) reforça rastreabilidade em grandes suítes.
 
 ## Objetivo final
 - Criar um repositório de testes automatizados com diversos casos de testes funcionais, aplicando os princípios de Padrões de Projeto (Design Patterns) e boas práticas de codificação.

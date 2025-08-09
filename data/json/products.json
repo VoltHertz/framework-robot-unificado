@@ -1,0 +1,52 @@
+{
+  "lista_completa": {
+    "limit_padrao": 30,
+    "skip_padrao": 0
+  },
+  "paginacao_customizada": {
+    "limit": 10,
+    "skip": 20
+  },
+  "produto_existente": {
+    "id": 1
+  },
+  "produto_inexistente": {
+    "id": 99999
+  },
+  "busca_com_resultados": {
+    "q": "phone"
+  },
+  "busca_sem_resultados": {
+    "q": "zzzinexistentezzz"
+  },
+  "categoria_existente": {
+    "categoria": "smartphones"
+  },
+  "categoria_inexistente": {
+    "categoria": "categoria_que_nao_existe_xyz"
+  },
+  "novo_produto_valido": {
+    "title": "Produto Robot Test",
+    "description": "Criado via automacao",
+    "price": 123,
+    "stock": 5,
+    "category": "smartphones"
+  },
+  "novo_produto_dados_invalidos": {
+    "title": 12345
+  },
+  "atualizacao_valida": {
+    "id": 1,
+    "payload": {"title": "Titulo Atualizado Test"}
+  },
+  "atualizacao_inexistente": {
+    "id": 99999,
+    "payload": {"title": "Irrelevante"}
+  },
+  "delecao_valida": {
+    "id": 1
+  },
+  "delecao_inexistente": {
+    "id": 99999
+  }
+}
