@@ -77,12 +77,23 @@ repo-qa/
 │        ├─ android.pixel7.yaml (exemplo - não criar)
 │        └─ ios.iphone14.yaml (exemplo - não criar)
 │
-├─ data/                         # Dados de teste (origem atual)
-│  ├─ json/
-│  │  ├─ contas.json (exemplo - não criar)
-│  │  └─ pagamentos.json (exemplo - não criar)
+├─ data/                         # Dados de teste (origem atual + massa total)
+│  ├─ json/                      # Massa curada para execução dos testes (cenários específicos)
+│  │  ├─ auth.json
+│  │  ├─ products.json           # Massa focada (subset) derivada do full_api_data
+│  │  └─ ...                     # Próximos domínios (carts, users, etc.)
+│  ├─ full_api_data/             # Dump completo da fonte (não usar direto nas suítes)
+│  │  └─ DummyJson/
+│  │     ├─ products.json
+│  │     ├─ carts.json
+│  │     ├─ users.json
+│  │     ├─ posts.json
+│  │     ├─ comments.json
+│  │     ├─ quotes.json
+│  │     ├─ recipes.json
+│  │     └─ todos.json
 │  ├─ csv/
-│  └─ factories/                 # Geradores de massa (se precisar)
+│  └─ factories/                 # Futuro: Factory Pattern p/ geração dinâmica de massa
 │
 ├─ environments/                 # Variáveis por ambiente
 │  ├─ dev.py                     # pode ser .py, .robot, .yaml (exemplo - não criar)
@@ -113,7 +124,29 @@ repo-qa/
 │    ├─ web.yml (exemplo - não criar)
 │    └─ mobile.yml  (exemplo - não criar)
 │
-├─ docs/
+├─ docs/                         # Documentação funcional e técnica
+│  ├─ aplicacoes_testadas.md     # Visão geral dos alvos (DummyJSON, DemoQA, grpcbin, Mobile)
+│  ├─ use_cases/                 # Casos de uso por domínio (fonte de verdade das suítes)
+│  │  ├─ Auth_Use_Cases.md
+│  │  ├─ Products_Use_Cases.md
+│  │  ├─ Carts_Use_Cases.md
+│  │  └─ ...
+│  └─ libs/                      # Referência de bibliotecas externas e boas práticas
+│     ├─ README.md               # Índice das libs documentadas
+│     ├─ robotframework.md
+│     ├─ browser.md
+│     ├─ requests.md / requestslibrary.md
+│     ├─ appiumlibrary.md
+│     ├─ grpc.md / protobuf.md
+│     ├─ pyodbc.md
+│     └─ python-dotenv.md
+├─ results/                      # Artefatos de execução Robot organizados por plataforma/domínio
+│  ├─ api/
+│  │  ├─ auth/                   # Execuções domínio auth (log.html, report.html, output.xml)
+│  │  └─ products/               # Execuções domínio products
+│  │     └─ products_rerun/      # Reexecuções (ex: após correções)
+│  ├─ web/
+│  └─ mobile/
 ├─ tools/                        # Scripts utilitários
 │  ├─ run_api.ps1 (exemplo - não criar)
 │  ├─ run_web.ps1 (exemplo - não criar)
@@ -134,6 +167,10 @@ repo-qa/
 * **Contracts/Schemas** perto dos serviços: facilita manter **teste de contrato** separado de regressão funcional.
 * **Data provider** central: troca de JSON → SQL Server vira detalhe de implementação, não um refactor global.
 
+* **Documentação versionada**: `docs/use_cases` conduz implementação (top-down). `docs/libs` padroniza uso das bibliotecas reduzindo divergência e acelera onboarding.
+* **Separação massa total vs curada**: `data/full_api_data` guarda referência completa; somente subconjuntos relevantes vão para `data/json` para manter testes determinísticos, rápidos e legíveis.
+* **Results versionados e hierárquicos**: cada execução gera artefatos em `results/<plataforma>/<dominio>/<timestamp|rerun>` permitindo histórico, paralelização e coleta CI. (Renomeado de `outputs/` para `results/`).
+
 ---
 
 # Padrões e convenções
@@ -144,6 +181,8 @@ repo-qa/
 * Fluxos de negócio: `dominio.keywords.resource`
 * Suítes: `dominio_cenario.robot` (minúsculo, `_` separa partes)
 * Locators opcionais em JSON por página/tela.
+* Testes API BDD: prefixos `UC-<DOM>-<SEQ>` no nome do caso (ex: `UC-PROD-001`), seguidos de descrição em pt-BR.
+* Keywords de negócio iniciam com `Dado`, `Quando`, `Entao` para leitura fluente do fluxo.
 
 ### Imports típicos nas suítes
 
@@ -186,6 +225,7 @@ Obter Massa De Teste
 * Implementação Python decide a fonte por variável `DATA_BACKEND` (ex: `json`/`sqlserver`).
 * JSON: lê de `data/json/<dominio>.json`.
 * SQL Server: usa `libs/db/sqlserver_client.py` (pyodbc), com `environments/<env>.py` expondo `DB_DSN/DB_USER/DB_PASS`.
+* Massa completa (referência) permanece em `data/full_api_data` e não é consumida diretamente para evitar acoplamento a dados voláteis.
 
 ---
 
@@ -194,6 +234,7 @@ Obter Massa De Teste
 * `api/adapters/http_client.resource`: sessão, base URL por ambiente, headers, retry, logging.
 * `api/services/*.service.resource`: uma keyword por endpoint, **sem** regra de negócio.
 * `api/keywords/*.keywords.resource`: fluxos compostos, validação de contrato (carrega schema da pasta `contracts/`).
+* Domínios já implementados: `auth`, `products` (seguindo padrão service + keywords + suíte). Próximos: `carts`, `users`, etc.
 * gRPC:
 
   * `grpc/proto`: contratos; gerar stubs em `grpc/generated/`.
@@ -238,13 +279,13 @@ Obter Massa De Teste
 
 ```bash
 # API smoke no QA
-robot -d outputs/api_smoke_qa -i apiANDsmoke -v ENV:qa tests/api
+robot -d results/api/auth -i apiANDsmoke -v ENV:qa tests/api/domains/auth
 
 # Web regressão de carrinho
-robot -d outputs/web_reg -i webANDregression tests/web/domains/carrinho
+robot -d results/web/carrinho -i webANDregression tests/web/domains/carrinho
 
 # Mobile smoke Android Pixel7
-robot -d outputs/mobile_smoke -i mobileANDsmoke -v ENV:qa -v CAPS:mobile/capabilities/android.pixel7.yaml tests/mobile
+robot -d results/mobile/onboarding -i mobileANDsmoke -v ENV:qa -v CAPS:mobile/capabilities/android.pixel7.yaml tests/mobile/domains/onboarding
 ```
 
 ---
@@ -256,6 +297,8 @@ robot -d outputs/mobile_smoke -i mobileANDsmoke -v ENV:qa -v CAPS:mobile/capabil
 * **Pre/pos**: centralizar em `common/hooks.resource` (iniciar/fechar browser/app/sessão API).
 * **Relatórios**: export script em `tools/export_reports.py` (organiza `output.xml`, `log.html`, `report.html` por pipeline).
 * **CI**: workflows separados por plataforma (gatilhos por path).
+* **Status codes não determinísticos**: utilizar `expected_status=any` no service e assert inclusivo na camada de negócio quando a API externa variar (ex: criação 200/201 DummyJSON).
+* **Conversão JSON**: atualmente via `Evaluate __import__('json').loads(...)`; planejar keyword utilitária única para reduzir repetição.
 
 ---
 
