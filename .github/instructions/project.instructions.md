@@ -46,7 +46,7 @@ A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor 
     - (x) auth
     - (x) products
     - (x) carts
-    - ( ) users
+    - (x) users
     - ( ) posts
     - ( ) comments
     - ( ) quotes
