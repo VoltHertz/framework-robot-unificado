@@ -1,0 +1,68 @@
+{
+  "listar_todos": {
+    "limit": 5,
+    "skip": 0,
+    "expected_total": 50
+  },
+  "listar_paginado": {
+    "limit": 3,
+    "skip": 2,
+    "expected_total": 50
+  },
+  "carrinho_existente": {
+    "id": 1,
+    "expected_userId": 33,
+    "expected_products_count": 4,
+    "expected_total_quantity": 15
+  },
+  "carrinho_inexistente": {
+    "id": 999
+  },
+  "usuario_com_carrinhos": {
+    "userId": 33,
+    "expected_cart_ids": [1]
+  },
+  "usuario_sem_carrinhos": {
+    "userId": 999
+  },
+  "novo_carrinho": {
+    "userId": 1,
+    "products": [
+      {
+        "id": 1,
+        "quantity": 2
+      },
+      {
+        "id": 2,
+        "quantity": 1
+      }
+    ]
+  },
+  "carrinho_atualizacao": {
+    "id": 1,
+    "merge": true,
+    "products": [
+      {
+        "id": 5,
+        "quantity": 3
+      }
+    ]
+  },
+  "carrinho_substituicao": {
+    "id": 1,
+    "merge": false,
+    "products": [
+      {
+        "id": 10,
+        "quantity": 1
+      }
+    ]
+  },
+  "corpo_invalido_criacao": {
+    "userId": "invalid",
+    "products": "not_an_array"
+  },
+  "corpo_invalido_atualizacao": {
+    "products": "invalid_format"
+  }
+}

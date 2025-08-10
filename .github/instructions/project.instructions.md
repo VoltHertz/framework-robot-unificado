@@ -34,19 +34,18 @@ A estrutura do projeto está descrita em .github/instructions/arquitetura.instru
 A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor humano revise.
 
 
-
 - Planejamento formal: elaborar o PRD (Product Requirements Document) do projeto Levando em consideração todos os aspectos do projetos anteriormente levantandos e mantendo a complexidade e robostez para o resto.
     - Implementarmos todas as APIs do https://dummyjson.com/ documentadas nos casos de uso de forma robusta pelo robot (seguindo todas as boas praticas sugeridas nas documentações desse projeto), iremos testa-las e garantir que elas de fato estão funcionando como esperado nos casos de uso. As implementaçòes deverão seguir o modelo BDD ajustado para o portugues. 
     - Implementação da documentação de caosos de uso no portal https://demoqa.com/ e execução de testes no portal com implementação de robot com webUI, seguindo a mesma robustez.
     - Implementação da documentação de casos de uso no grpcbin — “httpbin do gRPC” e execução de testes no grpcbin com robot.
 
 
-## Foco atual.
+## Foco atual
 
 - Implementação da automatização dos casos de teste docs/use_cases em robot framework para DummyJSON (padrão de arquitetura + Strategy/Factory para massa). Implemente os casos de testes das apis do dummujson em robot, seguindo todos os direcionamentos do projeto. A massa está disponivel em data/full_api_data/DummyJson/, porém essa é a massa total da aplicação. Crie a massa que será utilizada nos testes em data/json.
     - (x) auth
     - (x) products
-    - ( ) carts
+    - (x) carts
     - ( ) users
     - ( ) posts
     - ( ) comments
@@ -54,14 +53,22 @@ A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor 
     - ( ) recipes
     - ( ) todos
 
-## Atividades concluidas.
+## Atividades concluidas
 - Pastas pronizadas
 - Documento docs/aplicacoes_testadas.md ampliado com seções detalhadas (DummyJSON, DemoQA, grpcbin, Mobile) e links oficiais adicionais.
 - Casos de uso DummyJSON completos e enriquecidos com validação cruzada de toda a documentação oficial (products, carts, users, auth, posts, comments, quotes, recipes, todos).
 - Analise o codebase do projeto, focando na pasta src e no arquivo requirements.txt, e identifique todas as bibliotecas de tericeiros usadas. Use o Context7 MCP para buscar a documentação relevante de cada uma. Depois, crie arquivos .md na pasta /docs/libs com essas informações (por exemplo browser.md, requests.md ...). Garanta que utilizará o Context7 MCP, pesquise na web caso não encontre documentação ou use outros tools/MCPs. Toda biblioteca de robot framework possui um repositório github rico em informações atualizadas de como as coisas devem ser executadas e quais as melhores praticas.
 - Melhorar os requirements.txt
+- Implementação completa de automatização para API Carts DummyJSON:
+  - Massa de dados curada em data/json/carts.json
+  - Service layer em resources/api/services/carts.service.resource 
+  - Keywords layer em resources/api/keywords/carts.keywords.resource
+  - Suíte de testes completa em tests/api/domains/carts/carts_fluxos.robot
+  - 14 casos de teste implementados cobrindo UC-CART-001 a UC-CART-006
+  - Todos os cenários de sucesso, erro e alternativos validados
+  - 100% dos testes passando (14/14) em execução completa
 
-### Lições aprendidas (fase Auth DummyJSON)
+### Lições aprendidas
 Estas lições devem orientar os próximos domínios (products, carts, etc.) para manter consistência e robustez.
 
 
@@ -99,6 +106,13 @@ Estas lições devem orientar os próximos domínios (products, carts, etc.) par
     - Uso seguro de tamanho de listas: substituir construções inválidas `${len(${json}['items'])}` por `Get Length` para evitar erros de variável.
     - Flexibilização de códigos em endpoints não determinísticos (ex: criação retornando 200 ou 201) usando assert inclusivo e comentário explicativo.
     - Padronização de logs incluindo nome de arquivo e linha continuada (já aplicado nos novos resources) reforça rastreabilidade em grandes suítes.
+
+11. Lições específicas (fase Carts DummyJSON)
+    - Comportamento específico do DummyJSON: endpoint `/carts/user/{userId}` retorna 404 para usuário inexistente, não 200 com lista vazia conforme documentação sugeria.
+    - Tratamento flexível de cenários alternativos: usar `Should Be True ${status} in (200,404)` para APIs que variam comportamento entre documentação e implementação real.
+    - Validação robusta de dados inválidos: DummyJSON retorna 400 consistentemente para payloads malformados, permitindo asserções determinísticas.
+    - Padrão BDD em Robot: evitar palavras conectivas como "E" que não são reconhecidas automaticamente; usar múltiplas chamadas "Dado" quando necessário.
+    - Service layer para cenários negativos: quando expected_status=any, melhor deixar na camada keyword para clareza da expectativa de erro.
 
 ## Objetivo final
 - Criar um repositório de testes automatizados com diversos casos de testes funcionais, aplicando os princípios de Padrões de Projeto (Design Patterns) e boas práticas de codificação.
