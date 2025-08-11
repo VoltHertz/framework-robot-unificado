@@ -15,8 +15,21 @@ Listar Usuarios
     Run Keyword If    '${sortBy}'!='None'   Set To Dictionary    ${params}    sortBy=${sortBy}
     Run Keyword If    '${order}'!='None'    Set To Dictionary    ${params}    order=${order}
     Log    [users.service.resource:L14] GET /users params=${params}
-    ${resp}=    GET On Session    DUMMYJSON    /users    params=${params}    expected_status=200
-    Log    [users.service.resource:L16] status=${resp.status_code}
+    # Simplificação: sempre permitir qualquer status (any) e mover lógica de validação para camada de negócio.
+    # Motivo: API DummyJSON retorna 400 para parâmetros de ordenação inválidos; evitar falha imediata aqui.
+    ${resp}=    GET On Session    DUMMYJSON    /users    params=${params}    expected_status=any
+    Log    [users.service.resource:L16] status=${resp.status_code} expected_final=any
+    RETURN    ${resp}
+
+Filtrar Usuarios
+    [Arguments]    ${key}    ${value}    ${limit}=None    ${skip}=None
+    # Endpoint /users/filter?key=<>&value=<> suporta também limit/skip/select. Tratamos somente key/value + paginação simples.
+    ${params}=    Create Dictionary    key=${key}    value=${value}
+    Run Keyword If    '${limit}'!='None'    Set To Dictionary    ${params}    limit=${limit}
+    Run Keyword If    '${skip}'!='None'     Set To Dictionary    ${params}    skip=${skip}
+    Log    [users.service.resource:L60] GET /users/filter params=${params}
+    ${resp}=    GET On Session    DUMMYJSON    /users/filter    params=${params}    expected_status=any
+    Log    [users.service.resource:L62] status=${resp.status_code}
     RETURN    ${resp}
 
 Obter Usuario Por Id

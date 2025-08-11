@@ -7,6 +7,14 @@
     "limit": 10,
     "skip": 20
   },
+  "boundary_paginacao": {
+    "limit_zero": 0,
+    "limit_um": 1,
+    "limit_alto": 500,
+    "skip_zero": 0,
+    "skip_um": 1,
+    "skip_alto": 300
+  },
   "listar_ordenado_asc": {
     "sortBy": "firstName",
     "order": "asc"
@@ -14,6 +22,10 @@
   "listar_ordenado_desc": {
     "sortBy": "firstName",
     "order": "desc"
+  },
+  "ordenacao_invalida": {
+    "sortBy": "campoInexistente",
+    "order": "zzz"
   },
   "usuario_existente": {
     "id": 1,
@@ -28,6 +40,21 @@
   "busca_sem_resultados": {
     "q": "zzzinexistentezzz"
   },
+  "busca_caracteres_especiais": {
+    "q": "???%%%@@@"
+  },
+  "filtro_valido": {
+    "key": "hair.color",
+    "value": "Brown"
+  },
+  "filtro_sem_resultados": {
+    "key": "hair.color",
+    "value": "CorQueNaoExisteXYZ"
+  },
+  "filtro_key_invalida": {
+    "key": "invalido.campo",
+    "value": "Algo"
+  },
   "novo_usuario_valido": {
     "firstName": "Usuario",
     "lastName": "Teste",
@@ -36,6 +63,11 @@
   "novo_usuario_invalido": {
     "firstName": 12345
   },
+  "novo_usuario_sem_firstname": {
+    "lastName": "SemPrimeiroNome",
+    "age": 22
+  },
+  "novo_usuario_corpo_vazio": {},
   "atualizacao_valida": {
     "id": 1,
     "payload": {"lastName": "Atualizado"}
@@ -43,6 +75,14 @@
   "atualizacao_inexistente": {
     "id": 99999,
     "payload": {"lastName": "Irrelevante"}
+  },
+  "atualizacao_payload_vazio": {
+    "id": 1,
+    "payload": {}
+  },
+  "atualizacao_payload_invalido": {
+    "id": 1,
+    "payload": {"age": "idadeTexto"}
   },
   "delecao_valida": {
     "id": 1
