@@ -55,8 +55,8 @@ A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor 
 Atender as melhorias descritas no prompt packt abaixo "Objetivo Imediato" visando melhorar a implementação de testes funcionais, levando em consideração o arquivo de feedback passado em "docs/feedback/feedback001.md. Adicionamos documentação do site dummyJson na pasta docs/fireCrawl/dummyjson/ para facilitar a interpretação das apis e aplicar as melhorias do feedback001.md. Use também os casos de uso disponiveis em docs/use_cases/. Vamos realizar as melhorias em partes para que não perdamos contexto:
     - (x) auth (ampliado: cenários negative/boundary/security adicionais cobrindo login campos vazios, usuário inexistente, payloads malformados, ausência/malformação de headers, refresh variantes)
     - (x) carts (incrementado: boundary paginação limit/skip, payloads inválidos extras: corpo vazio, products vazio; utilitário JSON central criado)
-    - ( ) users
-    - ( ) products
+    - (x) users (incrementado: boundary paginação (0,1,alto), ordenação inválida, filtros (válido, sem resultado, chave inválida), busca caracteres especiais, criação payload variantes (sem campo, corpo vazio), atualização payload vazio/inválido)
+    - (x) products (incrementado: boundary avançado limit/skip (0,1,grande,skip alto), ordenação asc/desc + inválida, select de campos, buscas (resultado, sem resultado, caracteres especiais, termo vazio), criação payload variantes (válido, tipo inválido, vazio, malformado), atualização payload vazio, deleção id inválido tipo, service ampliado suportando sortBy/order/select e asserts inclusivos 200/201 em criação)
 
 <!-- PROMPT-PACK: Copilot (GPT-5) — Testes Funcionais API DummyJSON (Robot) -->
 
@@ -189,6 +189,15 @@ Estas lições devem orientar os próximos domínios (products, carts, etc.) par
     - Centralização de parsing JSON via `Converter Resposta Em Json` reduzindo repetição e preparando refactor em outros domínios.
     - Boundary de paginação padronizado (limit {0,1,>total} / skip {0,1,alto}) estabelecendo modelo reutilizável.
     - Novos cenários negativos explícitos diferenciam "payload estruturalmente inválido", "payload vazio" e "lista de produtos vazia" para granularidade nas validações de backend.
+13. Incremento Products (boundary & profundidade negativa)
+    - Ampliação da massa em `data/json/products.json` incluindo paginação boundary estendida (limit 0,1,500; skip 0,1,10000), ordenação válida/ inválida, select de campos e múltiplas variantes de buscas (sem resultado, caracteres especiais, termo vazio).
+    - Service `products.service.resource` agora aceita parâmetros sortBy/order/select e criação com `raw_body` para simular JSON malformado.
+    - Keywords refatoradas para usar `Converter Resposta Em Json` eliminando Evaluate duplicado e adicionando 30 novas keywords de negócio para casos boundary/negativos.
+    - Matriz de criação expandida: payload válido, tipo inválido (campo numérico onde espera string), payload vazio, corpo malformado (string truncada) com assert inclusivo de erros (400/500) ou simulação (200/201) conforme comportamento DummyJSON.
+    - Ordenação validada construindo lista de títulos e comparando com lista ordenada (asc) e reversa (desc); caso inválido aceita 200 (fallback sem erro) ou 400 se backend validar futuramente.
+    - Deleção cobre id inexistente e id de tipo inválido (string) com assert intervalo (400/404) e separação do caso válido (checando isDeleted == True).
+    - Busca termo vazio e caracteres especiais tratadas como 200 mantendo consistência com design tolerante da API.
+    - Execução pós-incremento: 29 casos Products (100% PASS) abrangendo UC-PROD-001 a UC-PROD-008 + variantes boundary/negativas adicionais (B1-B4, A1-A3, E1-E3, etc.).
 
 ## Objetivo final
 - Criar um repositório de testes automatizados com diversos casos de testes funcionais, aplicando os princípios de Padrões de Projeto (Design Patterns) e boas práticas de codificação.

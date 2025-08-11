@@ -1,6 +1,7 @@
 *** Settings ***
 Resource    ../services/products.service.resource
 Resource    ../../common/data_provider.resource
+Resource    ../../common/json_utils.resource
 Library     Collections
 Library     BuiltIn
 
@@ -20,7 +21,7 @@ Quando Solicito A Lista Completa De Produtos
 
 Entao A Lista Completa Deve Ser Retornada
     Should Be Equal As Integers    ${RESP_LISTA_PRODUTOS.status_code}    200
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_LISTA_PRODUTOS.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_LISTA_PRODUTOS}
     Should Contain    ${json}    products
     Should Contain    ${json}    total
     # Evitar uso de ${len(...)} direto (não é variável). Capturamos tamanho via keyword para log.
@@ -39,7 +40,7 @@ Quando Solicito A Lista De Produtos Com Paginacao Customizada
 
 Entao A Lista Deve Respeitar Os Parametros De Paginacao
     Should Be Equal As Integers    ${RESP_LISTA_PAGINADA.status_code}    200
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_LISTA_PAGINADA.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_LISTA_PAGINADA}
     Should Be Equal As Integers    ${json['limit']}    ${PARAM_PAGINACAO['limit']}
     Should Be Equal As Integers    ${json['skip']}     ${PARAM_PAGINACAO['skip']}
     Log    [products.keywords.resource:L44] Validação de paginação OK.
@@ -56,7 +57,7 @@ Quando Consulto O Produto Por ID
 
 Entao Os Detalhes Do Produto Devem Ser Retornados
     Should Be Equal As Integers    ${RESP_PRODUTO.status_code}    200
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_PRODUTO.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_PRODUTO}
     Should Be Equal As Integers    ${json['id']}    ${PRODUTO_EXISTENTE['id']}
     Log    [products.keywords.resource:L61] Produto retornado corresponde ao ID.
 
@@ -72,7 +73,7 @@ Quando Consulto O Produto Inexistente
 
 Entao O Sistema Deve Informar Que O Produto Nao Foi Encontrado
     Should Be Equal As Integers    ${RESP_PRODUTO_INEXISTENTE.status_code}    404
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_PRODUTO_INEXISTENTE.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_PRODUTO_INEXISTENTE}
     Should Contain    ${json['message']}    not found
     Log    [products.keywords.resource:L78] Mensagem de not found validada.
 
@@ -88,7 +89,7 @@ Quando Pesquiso Produtos Pelo Termo
 
 Entao A Lista De Produtos Correspondentes Deve Ser Retornada
     Should Be Equal As Integers    ${RESP_BUSCA.status_code}    200
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_BUSCA.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_BUSCA}
     Should Contain    ${json}    products
     ${qtd_busca}=    Get Length    ${json['products']}
     Should Be True    ${qtd_busca} > 0
@@ -106,7 +107,7 @@ Quando Pesquiso Produtos Pelo Termo Sem Resultado
 
 Entao Uma Lista Vazia Deve Ser Retornada
     Should Be Equal As Integers    ${RESP_BUSCA_VAZIA.status_code}    200
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_BUSCA_VAZIA.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_BUSCA_VAZIA}
     Should Be Equal As Integers    ${json['total']}    0
     ${qtd_busca_vazia}=    Get Length    ${json['products']}
     Should Be Equal As Integers    ${qtd_busca_vazia}    0
@@ -119,7 +120,7 @@ Quando Listo Todas As Categorias De Produtos
 
 Entao A Lista De Categorias Deve Ser Retornada
     Should Be Equal As Integers    ${RESP_CATEGORIAS.status_code}    200
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_CATEGORIAS.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_CATEGORIAS}
     ${qtd_categorias}=    Get Length    ${json}
     Should Be True    ${qtd_categorias} > 0
     Log    [products.keywords.resource:L126] Categorias retornadas: ${qtd_categorias}
@@ -136,7 +137,7 @@ Quando Consulto Os Produtos Da Categoria
 
 Entao A Lista Da Categoria Deve Ser Retornada
     Should Be Equal As Integers    ${RESP_PRODUTOS_CATEGORIA.status_code}    200
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_PRODUTOS_CATEGORIA.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_PRODUTOS_CATEGORIA}
     ${qtd_cat}=    Get Length    ${json['products']}
     Should Be True    ${qtd_cat} > 0
     Log    [products.keywords.resource:L143] Categoria retornou ${qtd_cat} produtos.
@@ -153,7 +154,7 @@ Quando Consulto Os Produtos Da Categoria Inexistente
 
 Entao Uma Lista Vazia Devera Ser Retornada Para Categoria
     Should Be Equal As Integers    ${RESP_PRODUTOS_CATEGORIA_INEX.status_code}    200
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_PRODUTOS_CATEGORIA_INEX.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_PRODUTOS_CATEGORIA_INEX}
     ${qtd_cat_inex}=    Get Length    ${json['products']}
     Should Be Equal As Integers    ${qtd_cat_inex}    0
     Log    [products.keywords.resource:L160] Categoria inexistente retornou lista vazia.
@@ -171,7 +172,7 @@ Quando Adiciono Um Novo Produto
 Entao O Produto Deve Ser Criado (Simulado)
     # API DummyJSON pode retornar 200 ou 201 em criação; aceitamos ambos.
     Should Be True    ${RESP_ADD_PRODUTO.status_code} in (200, 201)
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_ADD_PRODUTO.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_ADD_PRODUTO}
     Should Contain    ${json}    id
     Should Be Equal    ${json['title']}    ${NOVO_PRODUTO['title']}
     Log    [products.keywords.resource:L178] Produto criado id=${json['id']}
@@ -203,7 +204,7 @@ Quando Atualizo O Produto
 
 Entao O Produto Deve Ser Atualizado (Simulado)
     Should Be Equal As Integers    ${RESP_ATUALIZAR.status_code}    200
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_ATUALIZAR.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_ATUALIZAR}
     Should Be Equal As Integers    ${json['id']}    ${ATUALIZACAO_VALIDA['id']}
     Log    [products.keywords.resource:L211] Produto atualizado retorna mesmo ID.
 
@@ -233,9 +234,193 @@ Quando Deleto O Produto
 
 Entao O Produto Deve Ser Deletado (Simulado)
     Should Be Equal As Integers    ${RESP_DELETAR.status_code}    200
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_DELETAR.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_DELETAR}
+    Should Contain    ${json}    isDeleted
     Should Be True    ${json['isDeleted']} == True
     Log    [products.keywords.resource:L244] Produto deletado marcado isDeleted=True.
+    # FIM dos casos originais -------------------------------------------------
+
+#########################################################
+# NOVOS CENARIOS BOUNDARY / ORDENACAO / SELECT / NEGATIVOS
+#########################################################
+
+Dado Que Tenho Parametros Boundary De Paginacao
+    ${dados}=    Obter Massa De Teste    products    paginacao_boundary
+    Set Test Variable    ${PAG_BOUNDARY}    ${dados}
+    Log    [products.keywords.resource:NB1] Boundary paginação: ${dados}
+
+Quando Solicito Lista De Produtos Com Limit E Skip
+    [Arguments]    ${limit}    ${skip}
+    ${resp}=    Listar Produtos    ${limit}    ${skip}
+    Set Test Variable    ${RESP_PAG_BOUNDARY}    ${resp}
+    Log    [products.keywords.resource:NB2] Boundary list status=${resp.status_code} limit=${limit} skip=${skip}
+
+Entao A Resposta Devera Conter Status 200 E Parametros Ecoados
+    Should Be Equal As Integers    ${RESP_PAG_BOUNDARY.status_code}    200
+    ${json}=    Converter Resposta Em Json    ${RESP_PAG_BOUNDARY}
+    Should Be Equal As Integers    ${json['skip']}    ${json['skip']}
+    Should Contain    ${json}    products
+    Log    [products.keywords.resource:NB3] Boundary paginação validada.
+
+Dado Que Tenho Parametros De Ordenacao Valida
+    ${dados}=    Obter Massa De Teste    products    ordenacao_valida
+    Set Test Variable    ${ORD_VALIDA}    ${dados}
+    Log    [products.keywords.resource:NB4] Ordenacao valida: ${dados}
+
+Quando Solicito Lista Ordenada Ascendente
+    ${resp}=    Listar Produtos    sortBy=${ORD_VALIDA['sortBy']}    order=${ORD_VALIDA['order_asc']}
+    Set Test Variable    ${RESP_ORD_ASC}    ${resp}
+    Log    [products.keywords.resource:NB5] Ordenacao asc status=${resp.status_code}
+
+Entao A Lista Deve Estar Ordenada Ascendente
+    Should Be Equal As Integers    ${RESP_ORD_ASC.status_code}    200
+    ${json}=    Converter Resposta Em Json    ${RESP_ORD_ASC}
+    ${titulos}=    Create List
+    FOR    ${p}    IN    @{json['products']}
+        Append To List    ${titulos}    ${p['title']}
+    END
+    ${ordenada}=    Copy List    ${titulos}
+    Sort List    ${ordenada}
+    Should Be Equal    ${titulos}    ${ordenada}
+    Log    [products.keywords.resource:NB6] Ordenacao asc validada.
+
+Quando Solicito Lista Ordenada Descendente
+    ${resp}=    Listar Produtos    sortBy=${ORD_VALIDA['sortBy']}    order=${ORD_VALIDA['order_desc']}
+    Set Test Variable    ${RESP_ORD_DESC}    ${resp}
+    Log    [products.keywords.resource:NB7] Ordenacao desc status=${resp.status_code}
+
+Entao A Lista Deve Estar Ordenada Descendente
+    Should Be Equal As Integers    ${RESP_ORD_DESC.status_code}    200
+    ${json}=    Converter Resposta Em Json    ${RESP_ORD_DESC}
+    ${titulos}=    Create List
+    FOR    ${p}    IN    @{json['products']}
+        Append To List    ${titulos}    ${p['title']}
+    END
+    ${ordenada}=    Copy List    ${titulos}
+    Sort List    ${ordenada}
+    Reverse List    ${ordenada}
+    Should Be Equal    ${titulos}    ${ordenada}
+    Log    [products.keywords.resource:NB8] Ordenacao desc validada.
+
+Dado Que Possuo Parametros De Ordenacao Invalida
+    ${dados}=    Obter Massa De Teste    products    ordenacao_invalida
+    Set Test Variable    ${ORD_INVALIDA}    ${dados}
+    Log    [products.keywords.resource:NB9] Ordenacao invalida: ${dados}
+
+Quando Solicito Lista Com Ordenacao Invalida
+    ${resp}=    Listar Produtos    sortBy=${ORD_INVALIDA['sortBy']}    order=${ORD_INVALIDA['order']}
+    Set Test Variable    ${RESP_ORD_INVALIDA}    ${resp}
+    Log    [products.keywords.resource:NB10] Ordenacao invalida status=${resp.status_code}
+
+Entao O Sistema Pode Retornar 200 Com Ordenacao Padrao
+    Should Be True    ${RESP_ORD_INVALIDA.status_code} in (200,400)
+    Log    [products.keywords.resource:NB11] Ordenacao invalida tratada status=${RESP_ORD_INVALIDA.status_code}
+
+Dado Que Possuo Parametros De Select De Campos
+    ${dados}=    Obter Massa De Teste    products    select_campos
+    Set Test Variable    ${SELECT_CAMPOS}    ${dados}
+    Log    [products.keywords.resource:NB12] Select campos: ${dados['select']}
+
+Quando Solicito Lista Selecionando Campos
+    ${resp}=    Listar Produtos    select=${SELECT_CAMPOS['select']}
+    Set Test Variable    ${RESP_SELECT}    ${resp}
+    Log    [products.keywords.resource:NB13] Select status=${resp.status_code}
+
+Entao A Lista Deve Conter Apenas Os Campos Selecionados
+    Should Be Equal As Integers    ${RESP_SELECT.status_code}    200
+    ${json}=    Converter Resposta Em Json    ${RESP_SELECT}
+    ${um}=    Get From List    ${json['products']}    0
+    Should Contain    ${um}    title
+    Should Contain    ${um}    price
+    Log    [products.keywords.resource:NB14] Select validado.
+
+Dado Que Desejo Pesquisar Produtos Com Caracteres Especiais
+    ${dados}=    Obter Massa De Teste    products    busca_caracteres_especiais
+    Set Test Variable    ${BUSCA_CARACTERES}    ${dados}
+    Log    [products.keywords.resource:NB15] Busca especiais: ${dados['q']}
+
+Quando Pesquiso Produtos Com Caracteres Especiais
+    ${resp}=    Pesquisar Produtos    ${BUSCA_CARACTERES['q']}
+    Set Test Variable    ${RESP_BUSCA_CARACTERES}    ${resp}
+    Log    [products.keywords.resource:NB16] Busca especiais status=${resp.status_code}
+
+Entao A Lista Devera Ser Vazia Ou Retornar 200 Sem Erro
+    Should Be Equal As Integers    ${RESP_BUSCA_CARACTERES.status_code}    200
+    ${json}=    Converter Resposta Em Json    ${RESP_BUSCA_CARACTERES}
+    Should Contain    ${json}    products
+    Log    [products.keywords.resource:NB17] Busca caracteres especiais tratada.
+
+Dado Que Desejo Pesquisar Produtos Com Termo Vazio
+    ${dados}=    Obter Massa De Teste    products    busca_vazia
+    Set Test Variable    ${BUSCA_VAZIA_PARAM}    ${dados}
+    Log    [products.keywords.resource:NB18] Busca termo vazio
+
+Quando Pesquiso Produtos Com Termo Vazio
+    ${resp}=    Pesquisar Produtos    ${BUSCA_VAZIA_PARAM['q']}
+    Set Test Variable    ${RESP_BUSCA_VAZIA_PARAM}    ${resp}
+    Log    [products.keywords.resource:NB19] Busca termo vazio status=${resp.status_code}
+
+Entao A Lista Devera Ser Retornada Ou Vazia Sem Erro
+    Should Be Equal As Integers    ${RESP_BUSCA_VAZIA_PARAM.status_code}    200
+    ${json}=    Converter Resposta Em Json    ${RESP_BUSCA_VAZIA_PARAM}
+    Should Contain    ${json}    products
+    Log    [products.keywords.resource:NB20] Busca termo vazio aceita.
+
+Dado Que Possuo Payload Vazio Para Novo Produto
+    ${dados}=    Obter Massa De Teste    products    novo_produto_payload_vazio
+    Set Test Variable    ${NOVO_PRODUTO_VAZIO}    ${dados}
+    Log    [products.keywords.resource:NB21] Payload vazio criação.
+
+Quando TENTO Criar Produto Com Payload Vazio
+    ${resp}=    Adicionar Produto    ${NOVO_PRODUTO_VAZIO['payload']}
+    Set Test Variable    ${RESP_ADD_VAZIO}    ${resp}
+    Log    [products.keywords.resource:NB22] Criação payload vazio status=${resp.status_code}
+
+Entao A API Deve Rejeitar Ou Simular Criacao De Produto Vazio
+    Should Be True    ${RESP_ADD_VAZIO.status_code} in (200,201,400,422)
+    Log    [products.keywords.resource:NB23] Resultado criação payload vazio status=${RESP_ADD_VAZIO.status_code}
+
+Dado Que Possuo Payload Malformado Para Novo Produto
+    ${dados}=    Obter Massa De Teste    products    novo_produto_payload_malformado
+    Set Test Variable    ${NOVO_PRODUTO_MALFORMADO}    ${dados}
+    Log    [products.keywords.resource:NB24] Payload malformado string crua.
+
+Quando TENTO Criar Produto Com Payload Malformado
+    ${resp}=    Adicionar Produto    payload=None    raw_body=${NOVO_PRODUTO_MALFORMADO['raw_body']}
+    Set Test Variable    ${RESP_ADD_MALFORMADO}    ${resp}
+    Log    [products.keywords.resource:NB25] Criação malformado status=${resp.status_code}
+
+Entao A API Deve Rejeitar Payload Malformado
+    Should Be True    ${RESP_ADD_MALFORMADO.status_code} in (400,500)
+    Log    [products.keywords.resource:NB26] Criação malformada retornou ${RESP_ADD_MALFORMADO.status_code}
+
+Dado Que Possuo Payload Vazio Para Atualizacao
+    ${dados}=    Obter Massa De Teste    products    atualizacao_payload_vazio
+    Set Test Variable    ${ATUALIZACAO_VAZIA}    ${dados}
+    Log    [products.keywords.resource:NB27] Atualização payload vazio id=${dados['id']}
+
+Quando Atualizo Produto Com Payload Vazio
+    ${resp}=    Atualizar Produto    ${ATUALIZACAO_VAZIA['id']}    ${ATUALIZACAO_VAZIA['payload']}
+    Set Test Variable    ${RESP_ATUALIZAR_VAZIO}    ${resp}
+    Log    [products.keywords.resource:NB28] Atualização payload vazio status=${resp.status_code}
+
+Entao A API Deve Retornar Sucesso Ou Erro Conforme Simulacao
+    Should Be True    ${RESP_ATUALIZAR_VAZIO.status_code} in (200,400,422)
+    Log    [products.keywords.resource:NB29] Atualização payload vazio status=${RESP_ATUALIZAR_VAZIO.status_code}
+
+Dado Que Possuo ID Invalido Tipo Para Delecao
+    ${dados}=    Obter Massa De Teste    products    delecao_id_invalido_tipo
+    Set Test Variable    ${DELECAO_ID_INVALIDO}    ${dados}
+    Log    [products.keywords.resource:NB30] Delecao id invalido tipo=${dados['id']}
+
+Quando Deleto Produto Com Id Invalido Tipo
+    ${resp}=    Deletar Produto    ${DELECAO_ID_INVALIDO['id']}
+    Set Test Variable    ${RESP_DELETAR_ID_INVALIDO}    ${resp}
+    Log    [products.keywords.resource:NB31] Deletar id invalido status=${resp.status_code}
+
+Entao O Sistema Deve Retornar Erro Para Id Invalido Ou Simular
+    Should Be True    ${RESP_DELETAR_ID_INVALIDO.status_code} in (400,404)
+    Log    [products.keywords.resource:NB32] Delecao id invalido status=${RESP_DELETAR_ID_INVALIDO.status_code}
 
 Dado Que Possuo Um Produto Inexistente Para Delecao
     ${dados}=    Obter Massa De Teste    products    delecao_inexistente

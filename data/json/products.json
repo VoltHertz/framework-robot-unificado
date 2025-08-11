@@ -7,6 +7,14 @@
     "limit": 10,
     "skip": 20
   },
+  "paginacao_boundary": {
+    "limit_zero": 0,
+    "limit_um": 1,
+    "limit_grande": 500,
+    "skip_zero": 0,
+    "skip_um": 1,
+    "skip_alto": 10000
+  },
   "produto_existente": {
     "id": 1
   },
@@ -19,11 +27,29 @@
   "busca_sem_resultados": {
     "q": "zzzinexistentezzz"
   },
+  "busca_caracteres_especiais": {
+    "q": "@@@###"
+  },
+  "busca_vazia": {
+    "q": ""
+  },
   "categoria_existente": {
     "categoria": "smartphones"
   },
   "categoria_inexistente": {
     "categoria": "categoria_que_nao_existe_xyz"
+  },
+  "ordenacao_valida": {
+    "sortBy": "title",
+    "order_asc": "asc",
+    "order_desc": "desc"
+  },
+  "ordenacao_invalida": {
+    "sortBy": "campoInvalido",
+    "order": "asc"
+  },
+  "select_campos": {
+    "select": "title,price"
   },
   "novo_produto_valido": {
     "title": "Produto Robot Test",
@@ -35,6 +61,12 @@
   "novo_produto_dados_invalidos": {
     "title": 12345
   },
+  "novo_produto_payload_vazio": {
+    "payload": {}
+  },
+  "novo_produto_payload_malformado": {
+    "raw_body": "{\"title\": \"Incompleto\""  
+  },
   "atualizacao_valida": {
     "id": 1,
     "payload": {"title": "Titulo Atualizado Test"}
@@ -43,10 +75,17 @@
     "id": 99999,
     "payload": {"title": "Irrelevante"}
   },
+  "atualizacao_payload_vazio": {
+    "id": 1,
+    "payload": {}
+  },
   "delecao_valida": {
     "id": 1
   },
   "delecao_inexistente": {
     "id": 99999
+  },
+  "delecao_id_invalido_tipo": {
+    "id": "abc"
   }
 }
