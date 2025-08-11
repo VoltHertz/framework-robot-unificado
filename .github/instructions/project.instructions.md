@@ -85,7 +85,7 @@ A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor 
     - (x) carts
     - (x) users
     - (x) posts
-    - ( ) comments
+    - (x) comments
     - ( ) quotes
     - ( ) recipes
     - ( ) todos
@@ -181,6 +181,21 @@ Estas lições devem orientar os próximos domínios (products, carts, etc.) par
         - 36 casos de teste cobrindo UC-POST-001 a UC-POST-012 com variações boundary e negativas (paginação 0/1/grande/skip alto, ordenação asc/desc e inválida, select de campos, busca com resultado/sem resultado/paginação/termo vazio/caracteres especiais, por ID 200/404, por tag existente/inexistente, por usuário com/sem posts com assertiva inclusiva 200/404, comentários 200/404, criação válida/ inválida/payload vazio/malformado, atualização PUT/PATCH válida/inexistente/payload vazio, deleção válida/inexistente/id tipo inválido)
         - Ajustes conforme comportamento real do DummyJSON: endpoints que podem retornar 200/201 em criação e 200 ou 404 para coleções inexistentes receberam assertivas inclusivas
         - 100% dos testes passando (36/36) em execução completa com dependências mínimas (Robot + Requests)
+
+- Implementação completa de automatização para API Comments DummyJSON:
+    - Massa de dados curada em data/json/comments.json
+    - Service layer em resources/api/services/comments.service.resource
+    - Keywords layer em resources/api/keywords/comments.keywords.resource
+    - Suíte de testes completa em tests/api/domains/comments/comments_fluxos.robot
+        - 21 casos de teste cobrindo UC-COM-001 a UC-COM-007 com variações boundary e negativas:
+            - Listar: completo; paginação customizada; boundary limit=0, limit=1, skip alto; select de campos; limit inválido tratado (200/400/422)
+            - Por ID: existente (200) e inexistente (404)
+            - Por Post: existente (200), sem comentários (200 lista vazia) e post inexistente (200 lista vazia ou 404) com assertivas inclusivas
+            - Criar: válido (200/201), inválido por tipo e campo obrigatório faltante (200/201/400/422 conforme simulação do fornecedor)
+            - Atualizar: PUT/PATCH válidos; inexistente tratado (200/404 inclusivo)
+            - Deletar: sucesso (200) e inexistente (200/404 inclusivo)
+        - 100% dos testes passando (21/21) em execução local
+    - Ajustes conforme comportamento real do DummyJSON: em /comments/post com skip alto o limit pode retornar 0; asserts atualizados para aceitar esse retorno e manter robustez.
 
 ## Objetivo final
 - Criar um repositório de testes automatizados com diversos casos de testes funcionais, aplicando os princípios de Padrões de Projeto (Design Patterns) e boas práticas de codificação.
