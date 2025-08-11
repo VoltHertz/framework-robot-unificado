@@ -6,6 +6,26 @@ Library     BuiltIn
 
 *** Variables ***
 ${_CTX_LOGIN}=    NONE
+${LOGIN_PAYLOAD}=    NONE
+${RESP_LOGIN_VARIANTE}=    NONE
+${RESP_ME_SEM_TOKEN}=    NONE
+${RESP_ME_HEADER_MALFORMADO}=    NONE
+${RESP_REFRESH_SEM_TOKEN}=    NONE
+${RESP_REFRESH_COM_ACCESS}=    NONE
+${RESP_LOGIN_MALFORMADO}=    NONE
+${RESP_REFRESH_MALFORMADO}=    NONE
+${CREDENCIAIS_VALIDAS}=    NONE
+${RESP_LOGIN}=    NONE
+${ACCESS_TOKEN}=    NONE
+${REFRESH_TOKEN}=    NONE
+${CREDENCIAIS_INVALIDAS}=    NONE
+${RESP_LOGIN_INVALIDO}=    NONE
+${RESP_ME}=    NONE
+${RESP_REFRESH}=    NONE
+${REFRESH_TOKEN_INVALIDO}=    NONE
+${RESP_REFRESH_INVALIDO}=    NONE
+${ACCESS_TOKEN_INVALIDO}=    NONE
+${RESP_ME_INVALIDO}=    NONE
 
 *** Keywords ***
 # Arquivo: resources/api/keywords/auth.keywords.resource
@@ -98,3 +118,93 @@ Quando Consulto O Usuario Com Token Invalido
 Entao O Sistema Deve Rejeitar A Consulta Do Usuario
     Should Be True    ${RESP_ME_INVALIDO.status_code} in (401,403,500)
     Log    [auth.keywords.resource:L108] Consulta rejeitada conforme esperado.
+
+# ==========================================================
+# Novas keywords NEGATIVE / BOUNDARY / SECURITY (feedback001)
+# ==========================================================
+
+Preparar Payload De Login
+    [Arguments]    ${cenario_key}
+    ${dados}=    Obter Massa De Teste    auth    ${cenario_key}
+    Set Suite Variable    ${LOGIN_PAYLOAD}    ${dados}
+    Log    [auth.keywords.resource:L119] Payload preparado para cenário: ${cenario_key} -> ${dados}
+
+Quando TENTO Realizar O Login Com Payload Preparado
+    ${payload}=    Create Dictionary
+    ${tem_username}=    Run Keyword And Return Status    Dictionary Should Contain Key    ${LOGIN_PAYLOAD}    username
+    ${tem_password}=    Run Keyword And Return Status    Dictionary Should Contain Key    ${LOGIN_PAYLOAD}    password
+    IF    ${tem_username}
+        Set To Dictionary    ${payload}    username=${LOGIN_PAYLOAD['username']}
+    END
+    IF    ${tem_password}
+        Set To Dictionary    ${payload}    password=${LOGIN_PAYLOAD['password']}
+    END
+    ${resp}=    POST On Session    DUMMYJSON    /auth/login    json=${payload}    expected_status=any
+    Set Suite Variable    ${RESP_LOGIN_VARIANTE}    ${resp}
+    Log    [auth.keywords.resource:L132] Login variante status=${resp.status_code} payload=${payload}
+
+Entao O Sistema Deve Rejeitar O Login Variacao
+    Should Be True    ${RESP_LOGIN_VARIANTE.status_code} in (400,401,403)
+    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_LOGIN_VARIANTE.text}''')
+    Log    [auth.keywords.resource:L137] Rejeição login variação body=${json}
+
+Quando TENTO Consultar Usuario Sem Token
+    ${resp}=    GET On Session    DUMMYJSON    /auth/me    expected_status=any
+    Set Suite Variable    ${RESP_ME_SEM_TOKEN}    ${resp}
+    Log    [auth.keywords.resource:L142] /auth/me sem token status=${resp.status_code}
+
+Entao O Sistema Deve Rejeitar A Consulta Sem Token
+    Should Be True    ${RESP_ME_SEM_TOKEN.status_code} in (401,403)
+    Log    [auth.keywords.resource:L146] Consulta sem token rejeitada.
+
+Quando TENTO Consultar Usuario Com Header Authorization Malformado
+    ${headers}=    Create Dictionary    Authorization=Token XXXXXXXX
+    ${resp}=    GET On Session    DUMMYJSON    /auth/me    headers=${headers}    expected_status=any
+    Set Suite Variable    ${RESP_ME_HEADER_MALFORMADO}    ${resp}
+    Log    [auth.keywords.resource:L152] /auth/me header malformado status=${resp.status_code}
+
+Entao O Sistema Deve Rejeitar A Consulta Com Header Malformado
+    Should Be True    ${RESP_ME_HEADER_MALFORMADO.status_code} in (401,403)
+    Log    [auth.keywords.resource:L156] Consulta header malformado rejeitada.
+
+Quando TENTO Atualizar Token Sem Refresh Token
+    ${payload}=    Create Dictionary
+    ${resp}=    POST On Session    DUMMYJSON    /auth/refresh    json=${payload}    expected_status=any
+    Set Suite Variable    ${RESP_REFRESH_SEM_TOKEN}    ${resp}
+    Log    [auth.keywords.resource:L162] /auth/refresh sem token status=${resp.status_code}
+
+Entao O Sistema Deve Rejeitar O Refresh Sem Token
+    Should Be True    ${RESP_REFRESH_SEM_TOKEN.status_code} in (400,401,403)
+    Log    [auth.keywords.resource:L166] Refresh sem token rejeitado.
+
+Quando TENTO Atualizar Token Usando Access Token
+    ${payload}=    Create Dictionary    refreshToken=${ACCESS_TOKEN}
+    ${resp}=    POST On Session    DUMMYJSON    /auth/refresh    json=${payload}    expected_status=any
+    Set Suite Variable    ${RESP_REFRESH_COM_ACCESS}    ${resp}
+    Log    [auth.keywords.resource:L173] /auth/refresh com access token status=${resp.status_code}
+
+Entao O Sistema Deve Rejeitar O Refresh Com Access Token
+    Should Be True    ${RESP_REFRESH_COM_ACCESS.status_code} in (400,401,403)
+    Log    [auth.keywords.resource:L177] Refresh com access token rejeitado.
+
+Quando TENTO Realizar Login Com Payload Malformado
+    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${corpo}=    Set Variable    { "username": "emilys",
+    ${resp}=    POST On Session    DUMMYJSON    /auth/login    data=${corpo}    headers=${headers}    expected_status=any
+    Set Suite Variable    ${RESP_LOGIN_MALFORMADO}    ${resp}
+    Log    [auth.keywords.resource:L185] Login payload malformado status=${resp.status_code}
+
+Entao O Sistema Deve Rejeitar O Login Malformado
+    Should Be True    ${RESP_LOGIN_MALFORMADO.status_code} in (400,401,403)
+    Log    [auth.keywords.resource:L189] Login malformado rejeitado.
+
+Quando TENTO Atualizar Token Com Payload Malformado
+    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${corpo}=    Set Variable    { "refreshToken":
+    ${resp}=    POST On Session    DUMMYJSON    /auth/refresh    data=${corpo}    headers=${headers}    expected_status=any
+    Set Suite Variable    ${RESP_REFRESH_MALFORMADO}    ${resp}
+    Log    [auth.keywords.resource:L196] Refresh payload malformado status=${resp.status_code}
+
+Entao O Sistema Deve Rejeitar O Refresh Malformado
+    Should Be True    ${RESP_REFRESH_MALFORMADO.status_code} in (400,401,403)
+    Log    [auth.keywords.resource:L200] Refresh malformado rejeitado.

@@ -33,15 +33,6 @@ A estrutura do projeto está descrita em .github/instructions/arquitetura.instru
 ## Backlog de atividades
 A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor humano revise.
 
-
-- Planejamento formal: elaborar o PRD (Product Requirements Document) do projeto Levando em consideração todos os aspectos do projetos anteriormente levantandos e mantendo a complexidade e robostez para o resto.
-    - Implementarmos todas as APIs do https://dummyjson.com/ documentadas nos casos de uso de forma robusta pelo robot (seguindo todas as boas praticas sugeridas nas documentações desse projeto), iremos testa-las e garantir que elas de fato estão funcionando como esperado nos casos de uso. As implementaçòes deverão seguir o modelo BDD ajustado para o portugues. 
-    - Implementação da documentação de caosos de uso no portal https://demoqa.com/ e execução de testes no portal com implementação de robot com webUI, seguindo a mesma robustez.
-    - Implementação da documentação de casos de uso no grpcbin — “httpbin do gRPC” e execução de testes no grpcbin com robot.
-
-
-## Foco atual
-
 - Implementação da automatização dos casos de teste docs/use_cases em robot framework para DummyJSON (padrão de arquitetura + Strategy/Factory para massa). Implemente os casos de testes das apis do dummujson em robot, seguindo todos os direcionamentos do projeto. A massa está disponivel em data/full_api_data/DummyJson/, porém essa é a massa total da aplicação. Crie a massa que será utilizada nos testes em data/json.
     - (x) auth
     - (x) products
@@ -52,6 +43,86 @@ A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor 
     - ( ) quotes
     - ( ) recipes
     - ( ) todos
+
+- Planejamento formal: elaborar o PRD (Product Requirements Document) do projeto Levando em consideração todos os aspectos do projetos anteriormente levantandos e mantendo a complexidade e robostez para o resto.
+    - Implementarmos todas as APIs do https://dummyjson.com/ documentadas nos casos de uso de forma robusta pelo robot (seguindo todas as boas praticas sugeridas nas documentações desse projeto), iremos testa-las e garantir que elas de fato estão funcionando como esperado nos casos de uso. As implementaçòes deverão seguir o modelo BDD ajustado para o portugues. 
+    - Implementação da documentação de caosos de uso no portal https://demoqa.com/ e execução de testes no portal com implementação de robot com webUI, seguindo a mesma robustez.
+    - Implementação da documentação de casos de uso no grpcbin — “httpbin do gRPC” e execução de testes no grpcbin com robot.
+
+
+## Foco atual
+
+Atender as melhorias descritas no prompt packt abaixo "Objetivo Imediato" visando melhorar a implementação de testes funcionais, levando em consideração o arquivo de feedback passado em "docs/feedback/feedback001.md. Adicionamos documentação do site dummyJson na pasta docs/fireCrawl/dummyjson/ para facilitar a interpretação das apis e aplicar as melhorias do feedback001.md. Use também os casos de uso disponiveis em docs/use_cases/. Vamos realizar as melhorias em partes para que não perdamos contexto:
+    - (x) auth (ampliado: cenários negative/boundary/security adicionais cobrindo login campos vazios, usuário inexistente, payloads malformados, ausência/malformação de headers, refresh variantes)
+    - (x) carts (incrementado: boundary paginação limit/skip, payloads inválidos extras: corpo vazio, products vazio; utilitário JSON central criado)
+    - ( ) users
+    - ( ) products
+
+<!-- PROMPT-PACK: Copilot (GPT-5) — Testes Funcionais API DummyJSON (Robot) -->
+
+## Objetivo imediato
+Gerar e evoluir **suítes Robot Framework** para as APIs DummyJSON seguindo BDD em português, com **camadas separadas**, **massa centralizada** e cobertura **positiva, negativa, boundary e security**. Entregas devem respeitar a estrutura e convenções deste repositório.
+
+### Regras de Arquitetura (obrigatórias)
+- **Suites** em `tests/api/domains/<dominio>/<nome>_fluxos.robot` (somente “negócio”: Dado/Quando/Entao).
+- **Keywords (negócio)** em `resources/api/keywords/<dominio>.keywords.resource`.
+- **Services (endpoints puros)** em `resources/api/services/<dominio>.service.resource` (sem lógica/asserções complexas).
+- **HTTP adapter** em `resources/api/adapters/http_client.resource` (sessão, base URL, headers).
+- **Massa** em `data/json/<dominio>.json` consumida por `libs/data/data_provider.py` via `resources/common/data_provider.resource`.
+- **Nomenclatura**: keywords iniciam com `Dado`, `Quando`, `Entao`; casos com prefixo UC (ex.: `UC-PROD-001`).
+
+### Tags (padrão)
+- Plataforma/domínio: `api`, `<dominio>` (ex.: `products`, `carts`, `users`, `auth`).
+- Natureza: `positive`, `negative`, `boundary`, `security`.
+- Nível opcional: `smoke`, `regression`.
+
+### Matriz mínima por domínio (Definition of Done)
+Para **cada** endpoint implementado no domínio:
+1) **Listar**: completo, `limit/skip` (boundary: `0,1,max,>max`), ordenação `sortBy`/`order` (asc/desc).
+2) **Buscar**: com resultado **e** sem resultado (`total=0` e lista vazia).
+3) **Por ID**: existente (**200**) e inexistente (**404**).
+4) **Criar**: válido (**200/201**) e inválido (**400/422**).
+5) **Atualizar**: caminhos suportados (ex.: merge/substituição) + inválido + inexistente (**404**).
+6) **Deletar**: sucesso (**200**) e inexistente (**404**).
+7) **Auth/Security** (quando aplicável): login válido/ inválido (**400**), `/auth/me` com token válido (**200**) e inválido (**401/403/500** conforme backend), refresh válido (**200**) e inválido (**401/403**).
+
+> **Nota DummyJSON** (ajuste pragmático): aceitar **200/201** em criação; `/carts/user/{id}` pode retornar **200 com lista vazia** ou **404** para usuário inexistente. Trate assertivas **inclusivas** quando o fornecedor variar.
+
+### Padrões de implementação
+- **Happy path** via **service** + **keywords**; cenários **negativos** podem chamar `GET/POST/PUT On Session` diretamente com `expected_status=any` para evitar exceções e deixar claro o status esperado.
+- **Sempre** validar **status** e **corpo** (campos, tamanhos, conteúdo).  
+  - JSON: `Evaluate    __import__('json').loads(r'''${RESP.text}''')` (até existir uma keyword util compartilhada).
+- **Logs**: inclua no `Log` o **arquivo:linha** e o **UC** (facilita rastreabilidade em grandes suítes).
+- **Português BR** em nomes e descrições.
+
+### Estrutura de arquivos a gerar por domínio
+- `resources/api/services/<dominio>.service.resource` (uma keyword por endpoint; sem regras).
+- `resources/api/keywords/<dominio>.keywords.resource` (fluxos BDD com asserts).
+- `data/json/<dominio>.json` (massa curada por cenário).
+- `tests/api/domains/<dominio>/<dominio>_fluxos.robot` (cenários chamando apenas keywords de negócio).
+
+### Conteúdo mínimo de massa (`data/json`) — exemplo (ajuste por domínio)
+- Chaves claras por cenário (ex.: `listar_todos`, `listar_paginado`, `busca_com_resultados`, `busca_sem_resultados`, `entidade_existente`, `entidade_inexistente`, `payload_valido`, `payload_invalido`, `atualizacao_valida`, `atualizacao_invalida`).
+- Inclua valores de **boundary** e IDs **existente/inexistente** no mesmo arquivo.
+
+### Critérios de aceite por PR
+- Atende a **matriz mínima** acima (positivo/negativo/boundary/security) para o(s) endpoint(s) do domínio.
+- Respeita arquitetura (camadas, nomes, locais) e **não** coloca regra nas suítes ou nos services.
+- Usa massa de `data/json` via data provider (não consumir `data/full_api_data` diretamente).
+- Assertivas refletem variação real da DummyJSON (ex.: **200/201**; **200/404** em `/carts/user`), com comentário curto no teste justificando.
+- Lint ok (robocop/robotidy, se configurados) e logs legíveis.
+
+### Escopo e limites (agora)
+- **Escopo**: somente **API DummyJSON** (domínios: `auth`, `products`, `carts`, `users`, `posts`, `comments`, `quotes`, `recipes`, `todos`).
+- **Fora do escopo neste momento**: Web/Mobile/gRPC, contratos de schema e DB (não gerar até instrução explícita).
+
+### Ao concluir uma entrega
+- Atualize o `project.instructions.md` em **Foco atual / Atividades concluídas** com o que foi feito (UCs cobertos e contagem de casos).
+- Sugira no chat **próximos passos objetivos** (ex.: quais endpoints/UCs faltam no mesmo domínio).
+
+<!-- Fim do PROMPT-PACK -->
+
+
 
 ## Atividades concluidas
 - Pastas pronizadas
@@ -64,9 +135,10 @@ A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor 
   - Service layer em resources/api/services/carts.service.resource 
   - Keywords layer em resources/api/keywords/carts.keywords.resource
   - Suíte de testes completa em tests/api/domains/carts/carts_fluxos.robot
-  - 14 casos de teste implementados cobrindo UC-CART-001 a UC-CART-006
-  - Todos os cenários de sucesso, erro e alternativos validados
-  - 100% dos testes passando (14/14) em execução completa
+    - 19 casos de teste após incremento (boundary + negativos adicionais) cobrindo UC-CART-001 a UC-CART-006 e variações B1-B3 / E2-E3
+    - Incluídas validações boundary (limit 0,1,alto) e erros adicionais (payload sem produtos, corpo vazio)
+    - Criado utilitário comum `resources/common/json_utils.resource` para conversão de resposta JSON (redução de duplicação futura)
+    - 100% dos testes passando (19/19) em execução completa
 
 ### Lições aprendidas
 Estas lições devem orientar os próximos domínios (products, carts, etc.) para manter consistência e robustez.
@@ -113,6 +185,10 @@ Estas lições devem orientar os próximos domínios (products, carts, etc.) par
     - Validação robusta de dados inválidos: DummyJSON retorna 400 consistentemente para payloads malformados, permitindo asserções determinísticas.
     - Padrão BDD em Robot: evitar palavras conectivas como "E" que não são reconhecidas automaticamente; usar múltiplas chamadas "Dado" quando necessário.
     - Service layer para cenários negativos: quando expected_status=any, melhor deixar na camada keyword para clareza da expectativa de erro.
+12. Incremento Carts (boundary & utilitário JSON)
+    - Centralização de parsing JSON via `Converter Resposta Em Json` reduzindo repetição e preparando refactor em outros domínios.
+    - Boundary de paginação padronizado (limit {0,1,>total} / skip {0,1,alto}) estabelecendo modelo reutilizável.
+    - Novos cenários negativos explícitos diferenciam "payload estruturalmente inválido", "payload vazio" e "lista de produtos vazia" para granularidade nas validações de backend.
 
 ## Objetivo final
 - Criar um repositório de testes automatizados com diversos casos de testes funcionais, aplicando os princípios de Padrões de Projeto (Design Patterns) e boas práticas de codificação.

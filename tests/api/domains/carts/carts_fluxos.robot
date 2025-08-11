@@ -4,6 +4,7 @@ Documentation    Suíte de testes para API de Carrinhos DummyJSON
 ...              Cobre cenários de listagem, consulta, criação, atualização e deleção de carrinhos
 Resource         ../../../../resources/api/keywords/carts.keywords.resource
 Resource         ../../../../resources/common/data_provider.resource
+Resource         ../../../../resources/common/json_utils.resource
 Variables        ../../../../environments/dev.py
 Suite Setup      Setup API Session
 Suite Teardown   Delete All Sessions
@@ -22,6 +23,27 @@ UC-CART-001-A1 - Obter Carrinhos Com Paginacao
     [Tags]    paginacao
     Quando Solicito A Lista De Carrinhos Com Paginacao
     Entao Devo Receber A Lista Paginada De Carrinhos
+
+UC-CART-001-B1 - Boundary Paginacao Limit 0 Skip 0
+    [Documentation]    Boundary: limit=0 skip=0 deve retornar estrutura válida (lista possivelmente vazia)
+    [Tags]    boundary    paginacao
+    Dado Que Possuo Parametros Boundary De Paginacao De Carrinhos
+    Quando Solicito Carrinhos Com Limit E Skip    ${BOUNDARY_PAGINACAO['limit_min']}    ${BOUNDARY_PAGINACAO['skip_zero']}
+    Entao A Resposta De Paginacao Deve Ser Valida Para Boundary    ${BOUNDARY_PAGINACAO['limit_min']}    ${BOUNDARY_PAGINACAO['skip_zero']}
+
+UC-CART-001-B2 - Boundary Paginacao Limit 1 Skip 1
+    [Documentation]    Boundary: limit=1 skip=1
+    [Tags]    boundary    paginacao
+    Dado Que Possuo Parametros Boundary De Paginacao De Carrinhos
+    Quando Solicito Carrinhos Com Limit E Skip    ${BOUNDARY_PAGINACAO['limit_um']}    ${BOUNDARY_PAGINACAO['skip_um']}
+    Entao A Resposta De Paginacao Deve Ser Valida Para Boundary    ${BOUNDARY_PAGINACAO['limit_um']}    ${BOUNDARY_PAGINACAO['skip_um']}
+
+UC-CART-001-B3 - Boundary Paginacao Limit Alto
+    [Documentation]    Boundary: limit maior que total conhecido - API deve aceitar e limitar
+    [Tags]    boundary    paginacao
+    Dado Que Possuo Parametros Boundary De Paginacao De Carrinhos
+    Quando Solicito Carrinhos Com Limit E Skip    ${BOUNDARY_PAGINACAO['limit_maior']}    ${BOUNDARY_PAGINACAO['skip_zero']}
+    Entao A Resposta De Paginacao Deve Ser Valida Para Boundary    ${BOUNDARY_PAGINACAO['limit_maior']}    ${BOUNDARY_PAGINACAO['skip_zero']}
 
 UC-CART-002 - Obter Carrinho Por ID Existente
     [Documentation]    Testa a obtenção de detalhes de um carrinho específico usando ID válido
@@ -64,6 +86,19 @@ UC-CART-004-E1 - Erro Ao Criar Carrinho Com Dados Invalidos
     Dado Que Possuo Dados Invalidos Para Criar Carrinho
     Quando Tento Criar Carrinho Com Dados Invalidos
     Entao Devo Receber Erro De Dados Invalidos
+
+UC-CART-004-E2 - Erro Ao Criar Carrinho Sem Produtos
+    [Documentation]    Tenta criar carrinho com lista de produtos vazia (boundary negativo)
+    [Tags]    erro    boundary    criacao
+    Dado Que Possuo Payload Sem Produtos Para Criar Carrinho
+    Quando Tentar Criar Carrinho Vazio
+    Entao Devo Receber Erro De Carrinho Vazio
+
+UC-CART-004-E3 - Erro Ao Criar Carrinho Com Corpo Vazio
+    [Documentation]    Tenta criar carrinho com corpo vazio
+    [Tags]    erro    boundary    criacao
+    Quando Tentar Criar Carrinho Com Corpo Vazio
+    Entao Devo Receber Erro De Corpo Vazio
 
 UC-CART-005 - Atualizar Carrinho Mesclando Produtos
     [Documentation]    Testa a atualização de carrinho mesclando produtos existentes com novos

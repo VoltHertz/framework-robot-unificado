@@ -126,6 +126,9 @@ repo-qa/
 │
 ├─ docs/                         # Documentação funcional e técnica
 │  ├─ aplicacoes_testadas.md     # Visão geral dos alvos (DummyJSON, DemoQA, grpcbin, Mobile)
+│  ├─ feedbackAI/                # Arquivos com feedbacks para melhoria repassados a Inteligência Artificial afim de melhorar processos ou corrigir erros
+│  ├─ fireCrawl/                 # Documentos baixados via firecrawl afim de facilitar o entendimento da IA acerca dos sites usados no código
+│  │  └─ dummyjson/              # Documentação sobre as APIs do dummyJson para analise da Inteligência Artificial.
 │  ├─ use_cases/                 # Casos de uso por domínio (fonte de verdade das suítes)
 │  │  ├─ Auth_Use_Cases.md
 │  │  ├─ Products_Use_Cases.md

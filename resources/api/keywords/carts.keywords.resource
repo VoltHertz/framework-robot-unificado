@@ -1,6 +1,7 @@
 *** Settings ***
 Resource    ../services/carts.service.resource
 Resource    ../../common/data_provider.resource
+Resource    ../../common/json_utils.resource
 Library     Collections
 Library     BuiltIn
 
@@ -28,7 +29,7 @@ Quando Solicito A Lista De Carrinhos Com Paginacao
 
 Entao Devo Receber A Lista De Carrinhos Com Sucesso
     Should Be Equal As Integers    ${RESP_CARRINHOS.status_code}    200
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_CARRINHOS.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_CARRINHOS}
     Should Contain    ${json}    carts
     Should Contain    ${json}    total
     Should Contain    ${json}    skip
@@ -39,13 +40,42 @@ Entao Devo Receber A Lista De Carrinhos Com Sucesso
 
 Entao Devo Receber A Lista Paginada De Carrinhos
     Should Be Equal As Integers    ${RESP_CARRINHOS_PAGINADO.status_code}    200
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_CARRINHOS_PAGINADO.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_CARRINHOS_PAGINADO}
     Should Be Equal As Integers    ${json['limit']}    ${PARAMS_PAGINACAO['limit']}
     Should Be Equal As Integers    ${json['skip']}    ${PARAMS_PAGINACAO['skip']}
     Should Be Equal As Integers    ${json['total']}    ${PARAMS_PAGINACAO['expected_total']}
     ${carts_count}=    Get Length    ${json['carts']}
     Should Be Equal As Integers    ${carts_count}    ${PARAMS_PAGINACAO['limit']}
     Log    [carts.keywords.resource:L46] Validação de paginação realizada. Limit: ${json['limit']}, Skip: ${json['skip']}
+
+# Boundary de paginação (limites)
+Dado Que Possuo Parametros Boundary De Paginacao De Carrinhos
+    ${dados}=    Obter Massa De Teste    carts    listar_boundary
+    Set Test Variable    ${BOUNDARY_PAGINACAO}    ${dados}
+    Log    [carts.keywords.resource:LB1] Boundary params carregados: ${dados}
+
+Quando Solicito Carrinhos Com Limit E Skip
+    [Arguments]    ${limit}    ${skip}
+    ${resp}=    Listar Todos Os Carrinhos    limit=${limit}    skip=${skip}
+    Set Test Variable    ${RESP_BOUNDARY}    ${resp}
+    Log    [carts.keywords.resource:LB2] Boundary list status=${resp.status_code} limit=${limit} skip=${skip}
+
+Entao A Resposta De Paginacao Deve Ser Valida Para Boundary
+    [Arguments]    ${limit}    ${skip}
+    Should Be Equal As Integers    ${RESP_BOUNDARY.status_code}    200
+    ${json}=    Converter Resposta Em Json    ${RESP_BOUNDARY}
+    Should Be Equal As Integers    ${json['skip']}    ${skip}
+    # Comportamento DummyJSON: quando limit=0 ou limit > total, API retorna limit=total (50) em vez do solicitado.
+    ${expected_total}=    Set Variable    ${BOUNDARY_PAGINACAO['expected_total']}
+    IF    ${limit} == 0
+        Should Be True    ${json['limit']} in (0, ${expected_total})    msg=Limit retornado deve ser 0 ou total quando solicitado 0
+    ELSE IF    ${limit} > ${expected_total}
+        Should Be Equal As Integers    ${json['limit']}    ${expected_total}
+    ELSE
+        Should Be Equal As Integers    ${json['limit']}    ${limit}
+    END
+    Should Contain    ${json}    total
+    Log    [carts.keywords.resource:LB3] Boundary validado limit_req=${limit} limit_resp=${json['limit']} skip=${skip}
 
 # UC-CART-002: Obter um Único Carrinho
 Dado Que Possuo Um ID De Carrinho Existente
@@ -70,7 +100,7 @@ Quando Consulto Um Carrinho Inexistente
 
 Entao Devo Receber Os Detalhes Do Carrinho
     Should Be Equal As Integers    ${RESP_CARRINHO.status_code}    200
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_CARRINHO.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_CARRINHO}
     Should Be Equal As Integers    ${json['id']}    ${CARRINHO_EXISTENTE['id']}
     Should Be Equal As Integers    ${json['userId']}    ${CARRINHO_EXISTENTE['expected_userId']}
     Should Contain    ${json}    products
@@ -85,7 +115,7 @@ Entao Devo Receber Os Detalhes Do Carrinho
 
 Entao Devo Receber Erro De Carrinho Nao Encontrado
     Should Be Equal As Integers    ${RESP_CARRINHO_INEXISTENTE.status_code}    404
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_CARRINHO_INEXISTENTE.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_CARRINHO_INEXISTENTE}
     Should Contain    ${json['message']}    not found
     Log    [carts.keywords.resource:L87] Validação de erro 404 realizada
 
@@ -112,7 +142,7 @@ Quando Consulto Os Carrinhos De Usuario Sem Carrinhos
 
 Entao Devo Receber Os Carrinhos Do Usuario
     Should Be Equal As Integers    ${RESP_CARRINHOS_USUARIO.status_code}    200
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_CARRINHOS_USUARIO.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_CARRINHOS_USUARIO}
     Should Contain    ${json}    carts
     ${carts_count}=    Get Length    ${json['carts']}
     Should Be True    ${carts_count} > 0    msg=Usuário deve ter pelo menos um carrinho
@@ -130,7 +160,7 @@ Entao Devo Receber Lista Vazia De Carrinhos
     # DummyJSON retorna 404 para usuário inexistente, não 200 com lista vazia
     Should Be True    ${RESP_CARRINHOS_USUARIO_VAZIO.status_code} in (200,404)    msg=Deve retornar 200 com lista vazia ou 404 para usuário inexistente
     IF    ${RESP_CARRINHOS_USUARIO_VAZIO.status_code} == 200
-        ${json}=    Evaluate    __import__('json').loads(r'''${RESP_CARRINHOS_USUARIO_VAZIO.text}''')
+        ${json}=    Converter Resposta Em Json    ${RESP_CARRINHOS_USUARIO_VAZIO}
         Should Contain    ${json}    carts
         ${carts_count}=    Get Length    ${json['carts']}
         Should Be Equal As Integers    ${carts_count}    0    msg=Lista deve estar vazia para usuário sem carrinhos
@@ -156,6 +186,24 @@ Quando Crio Um Novo Carrinho
     Set Test Variable    ${RESP_NOVO_CARRINHO}    ${resp}
     Log    [carts.keywords.resource:L147] Criação de carrinho status=${resp.status_code}
 
+Dado Que Possuo Payload Sem Produtos Para Criar Carrinho
+    ${dados}=    Obter Massa De Teste    carts    payload_sem_produtos
+    Set Test Variable    ${PAYLOAD_SEM_PRODUTOS}    ${dados}
+    Log    [carts.keywords.resource:LB4] Payload sem produtos carregado
+
+Quando Tentar Criar Carrinho Vazio
+    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${resp}=    POST On Session    DUMMYJSON    /carts/add    json=${PAYLOAD_SEM_PRODUTOS}    headers=${headers}    expected_status=any
+    Set Test Variable    ${RESP_CARRINHO_VAZIO}    ${resp}
+    Log    [carts.keywords.resource:LB5] Criação carrinho vazio status=${resp.status_code}
+
+Quando Tentar Criar Carrinho Com Corpo Vazio
+    ${dados}=    Obter Massa De Teste    carts    corpo_vazio
+    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${resp}=    POST On Session    DUMMYJSON    /carts/add    json=${dados}    headers=${headers}    expected_status=any
+    Set Test Variable    ${RESP_CARRINHO_CORPO_VAZIO}    ${resp}
+    Log    [carts.keywords.resource:LB6] Criação carrinho corpo vazio status=${resp.status_code}
+
 Quando Tento Criar Carrinho Com Dados Invalidos
     # Chamada direta para enviar dados inválidos propositalmente
     ${headers}=    Create Dictionary    Content-Type=application/json
@@ -169,7 +217,7 @@ Quando Tento Criar Carrinho Com Dados Invalidos
 Entao O Carrinho Deve Ser Criado Com Sucesso
     # DummyJSON pode retornar 200 ou 201 para criação
     Should Be True    ${RESP_NOVO_CARRINHO.status_code} in (200,201)    msg=Status deve ser 200 ou 201 para criação
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_NOVO_CARRINHO.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_NOVO_CARRINHO}
     Should Contain    ${json}    id
     Should Be Equal As Integers    ${json['userId']}    ${NOVO_CARRINHO['userId']}
     Should Contain    ${json}    products
@@ -181,6 +229,14 @@ Entao O Carrinho Deve Ser Criado Com Sucesso
 Entao Devo Receber Erro De Dados Invalidos
     Should Be True    ${RESP_CARRINHO_INVALIDO.status_code} in (400,422)    msg=Status deve indicar erro de validação
     Log    [carts.keywords.resource:L170] Validação de erro de dados inválidos realizada
+
+Entao Devo Receber Erro De Carrinho Vazio
+    Should Be True    ${RESP_CARRINHO_VAZIO.status_code} in (400,422)    msg=Deve retornar erro para products vazio
+    Log    [carts.keywords.resource:LB7] Validação payload sem produtos
+
+Entao Devo Receber Erro De Corpo Vazio
+    Should Be True    ${RESP_CARRINHO_CORPO_VAZIO.status_code} in (400,422)    msg=Deve retornar erro para corpo vazio
+    Log    [carts.keywords.resource:LB8] Validação corpo vazio
 
 # UC-CART-005: Atualizar um Carrinho
 Dado Que Possuo Dados Para Atualizar Um Carrinho
@@ -225,14 +281,14 @@ Quando Tento Atualizar Carrinho Com Dados Invalidos
 
 Entao O Carrinho Deve Ser Atualizado Com Sucesso
     Should Be Equal As Integers    ${RESP_ATUALIZACAO.status_code}    200
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_ATUALIZACAO.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_ATUALIZACAO}
     Should Be Equal As Integers    ${json['id']}    ${ATUALIZACAO_CARRINHO['id']}
     Should Contain    ${json}    products
     Log    [carts.keywords.resource:L215] Validação de atualização realizada
 
 Entao O Carrinho Deve Ter Produtos Substituidos
     Should Be Equal As Integers    ${RESP_SUBSTITUICAO.status_code}    200
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_SUBSTITUICAO.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_SUBSTITUICAO}
     Should Be Equal As Integers    ${json['id']}    ${SUBSTITUICAO_CARRINHO['id']}
     ${products_count}=    Get Length    ${json['products']}
     ${expected_count}=    Get Length    ${SUBSTITUICAO_CARRINHO['products']}
@@ -241,7 +297,7 @@ Entao O Carrinho Deve Ter Produtos Substituidos
 
 Entao Devo Receber Erro De Carrinho Inexistente Para Atualizacao
     Should Be Equal As Integers    ${RESP_ATUALIZACAO_INEXISTENTE.status_code}    404
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_ATUALIZACAO_INEXISTENTE.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_ATUALIZACAO_INEXISTENTE}
     Should Contain    ${json['message']}    not found
     Log    [carts.keywords.resource:L230] Validação de erro 404 em atualização realizada
 
@@ -262,7 +318,7 @@ Quando Tento Deletar Carrinho Inexistente
 
 Entao O Carrinho Deve Ser Deletado Com Sucesso
     Should Be Equal As Integers    ${RESP_DELECAO.status_code}    200
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_DELECAO.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_DELECAO}
     Should Be Equal As Integers    ${json['id']}    ${CARRINHO_EXISTENTE['id']}
     Should Be True    ${json['isDeleted']}
     Should Contain    ${json}    deletedOn
@@ -270,6 +326,6 @@ Entao O Carrinho Deve Ser Deletado Com Sucesso
 
 Entao Devo Receber Erro De Carrinho Inexistente Para Delecao
     Should Be Equal As Integers    ${RESP_DELECAO_INEXISTENTE.status_code}    404
-    ${json}=    Evaluate    __import__('json').loads(r'''${RESP_DELECAO_INEXISTENTE.text}''')
+    ${json}=    Converter Resposta Em Json    ${RESP_DELECAO_INEXISTENTE}
     Should Contain    ${json['message']}    not found
     Log    [carts.keywords.resource:L259] Validação de erro 404 em deleção realizada

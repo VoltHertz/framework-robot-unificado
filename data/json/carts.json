@@ -9,6 +9,15 @@
     "skip": 2,
     "expected_total": 50
   },
+  "listar_boundary": {
+    "limit_min": 0,
+    "limit_um": 1,
+    "limit_maior": 100,
+    "skip_zero": 0,
+    "skip_um": 1,
+    "skip_alto": 49,
+    "expected_total": 50
+  },
   "carrinho_existente": {
     "id": 1,
     "expected_userId": 33,
@@ -64,5 +73,10 @@
   },
   "corpo_invalido_atualizacao": {
     "products": "invalid_format"
+  },
+  "corpo_vazio": {},
+  "payload_sem_produtos": {
+    "userId": 1,
+    "products": []
   }
 }
