@@ -30,37 +30,8 @@ Este é um projeto de automação de testes Robot Framework focado na implementa
 
 A estrutura do projeto está descrita em .github/instructions/arquitetura.instructions.md
 
-## Backlog de atividades
-A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor humano revise.
 
-- Implementação da automatização dos casos de teste docs/use_cases em robot framework para DummyJSON (padrão de arquitetura + Strategy/Factory para massa). Implemente os casos de testes das apis do dummujson em robot, seguindo todos os direcionamentos do projeto. A massa está disponivel em data/full_api_data/DummyJson/, porém essa é a massa total da aplicação. Crie a massa que será utilizada nos testes em data/json.
-    - (x) auth
-    - (x) products
-    - (x) carts
-    - (x) users
-    - ( ) posts
-    - ( ) comments
-    - ( ) quotes
-    - ( ) recipes
-    - ( ) todos
-
-- Planejamento formal: elaborar o PRD (Product Requirements Document) do projeto Levando em consideração todos os aspectos do projetos anteriormente levantandos e mantendo a complexidade e robostez para o resto.
-    - Implementarmos todas as APIs do https://dummyjson.com/ documentadas nos casos de uso de forma robusta pelo robot (seguindo todas as boas praticas sugeridas nas documentações desse projeto), iremos testa-las e garantir que elas de fato estão funcionando como esperado nos casos de uso. As implementaçòes deverão seguir o modelo BDD ajustado para o portugues. 
-    - Implementação da documentação de caosos de uso no portal https://demoqa.com/ e execução de testes no portal com implementação de robot com webUI, seguindo a mesma robustez.
-    - Implementação da documentação de casos de uso no grpcbin — “httpbin do gRPC” e execução de testes no grpcbin com robot.
-
-
-## Foco atual
-
-Atender as melhorias descritas no prompt packt abaixo "Objetivo Imediato" visando melhorar a implementação de testes funcionais, levando em consideração o arquivo de feedback passado em "docs/feedback/feedback001.md. Adicionamos documentação do site dummyJson na pasta docs/fireCrawl/dummyjson/ para facilitar a interpretação das apis e aplicar as melhorias do feedback001.md. Use também os casos de uso disponiveis em docs/use_cases/. Vamos realizar as melhorias em partes para que não perdamos contexto:
-    - (x) auth (ampliado: cenários negative/boundary/security adicionais cobrindo login campos vazios, usuário inexistente, payloads malformados, ausência/malformação de headers, refresh variantes)
-    - (x) carts (incrementado: boundary paginação limit/skip, payloads inválidos extras: corpo vazio, products vazio; utilitário JSON central criado)
-    - (x) users (incrementado: boundary paginação (0,1,alto), ordenação inválida, filtros (válido, sem resultado, chave inválida), busca caracteres especiais, criação payload variantes (sem campo, corpo vazio), atualização payload vazio/inválido)
-    - (x) products (incrementado: boundary avançado limit/skip (0,1,grande,skip alto), ordenação asc/desc + inválida, select de campos, buscas (resultado, sem resultado, caracteres especiais, termo vazio), criação payload variantes (válido, tipo inválido, vazio, malformado), atualização payload vazio, deleção id inválido tipo, service ampliado suportando sortBy/order/select e asserts inclusivos 200/201 em criação)
-
-<!-- PROMPT-PACK: Copilot (GPT-5) — Testes Funcionais API DummyJSON (Robot) -->
-
-## Objetivo imediato
+## Diretrizes na implementação de testes com robot
 Gerar e evoluir **suítes Robot Framework** para as APIs DummyJSON seguindo BDD em português, com **camadas separadas**, **massa centralizada** e cobertura **positiva, negativa, boundary e security**. Entregas devem respeitar a estrutura e convenções deste repositório.
 
 ### Regras de Arquitetura (obrigatórias)
@@ -91,36 +62,35 @@ Para **cada** endpoint implementado no domínio:
 ### Padrões de implementação
 - **Happy path** via **service** + **keywords**; cenários **negativos** podem chamar `GET/POST/PUT On Session` diretamente com `expected_status=any` para evitar exceções e deixar claro o status esperado.
 - **Sempre** validar **status** e **corpo** (campos, tamanhos, conteúdo).  
-  - JSON: `Evaluate    __import__('json').loads(r'''${RESP.text}''')` (até existir uma keyword util compartilhada).
 - **Logs**: inclua no `Log` o **arquivo:linha** e o **UC** (facilita rastreabilidade em grandes suítes).
 - **Português BR** em nomes e descrições.
 
-### Estrutura de arquivos a gerar por domínio
-- `resources/api/services/<dominio>.service.resource` (uma keyword por endpoint; sem regras).
-- `resources/api/keywords/<dominio>.keywords.resource` (fluxos BDD com asserts).
-- `data/json/<dominio>.json` (massa curada por cenário).
-- `tests/api/domains/<dominio>/<dominio>_fluxos.robot` (cenários chamando apenas keywords de negócio).
 
-### Conteúdo mínimo de massa (`data/json`) — exemplo (ajuste por domínio)
-- Chaves claras por cenário (ex.: `listar_todos`, `listar_paginado`, `busca_com_resultados`, `busca_sem_resultados`, `entidade_existente`, `entidade_inexistente`, `payload_valido`, `payload_invalido`, `atualizacao_valida`, `atualizacao_invalida`).
-- Inclua valores de **boundary** e IDs **existente/inexistente** no mesmo arquivo.
+## Backlog de atividades
+A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor humano revise.
 
-### Critérios de aceite por PR
-- Atende a **matriz mínima** acima (positivo/negativo/boundary/security) para o(s) endpoint(s) do domínio.
-- Respeita arquitetura (camadas, nomes, locais) e **não** coloca regra nas suítes ou nos services.
-- Usa massa de `data/json` via data provider (não consumir `data/full_api_data` diretamente).
-- Assertivas refletem variação real da DummyJSON (ex.: **200/201**; **200/404** em `/carts/user`), com comentário curto no teste justificando.
-- Lint ok (robocop/robotidy, se configurados) e logs legíveis.
 
-### Escopo e limites (agora)
-- **Escopo**: somente **API DummyJSON** (domínios: `auth`, `products`, `carts`, `users`, `posts`, `comments`, `quotes`, `recipes`, `todos`).
-- **Fora do escopo neste momento**: Web/Mobile/gRPC, contratos de schema e DB (não gerar até instrução explícita).
 
-### Ao concluir uma entrega
-- Atualize o `project.instructions.md` em **Foco atual / Atividades concluídas** com o que foi feito (UCs cobertos e contagem de casos).
-- Sugira no chat **próximos passos objetivos** (ex.: quais endpoints/UCs faltam no mesmo domínio).
+- Planejamento formal: elaborar o PRD (Product Requirements Document) do projeto Levando em consideração todos os aspectos do projetos anteriormente levantandos e mantendo a complexidade e robostez para o resto.
+    - Implementarmos todas as APIs do https://dummyjson.com/ documentadas nos casos de uso de forma robusta pelo robot (seguindo todas as boas praticas sugeridas nas documentações desse projeto), iremos testa-las e garantir que elas de fato estão funcionando como esperado nos casos de uso. As implementaçòes deverão seguir o modelo BDD ajustado para o portugues. 
+    - Implementação da documentação de caosos de uso no portal https://demoqa.com/ e execução de testes no portal com implementação de robot com webUI, seguindo a mesma robustez.
+    - Implementação da documentação de casos de uso no grpcbin — “httpbin do gRPC” e execução de testes no grpcbin com robot.
 
-<!-- Fim do PROMPT-PACK -->
+
+## Foco atual
+
+- Implementação da automatização dos casos de teste docs/use_cases em robot framework para DummyJSON (padrão de arquitetura + Strategy/Factory para massa). Implemente os casos de testes das apis do dummujson em robot, seguindo todos os direcionamentos do projeto. A massa está disponivel em data/full_api_data/DummyJson/, porém essa é a massa total da aplicação. Crie a massa que será utilizada nos testes em data/json.
+    - (x) auth
+    - (x) products
+    - (x) carts
+    - (x) users
+    - (x) posts
+    - ( ) comments
+    - ( ) quotes
+    - ( ) recipes
+    - ( ) todos
+
+
 
 
 
@@ -139,6 +109,11 @@ Para **cada** endpoint implementado no domínio:
     - Incluídas validações boundary (limit 0,1,alto) e erros adicionais (payload sem produtos, corpo vazio)
     - Criado utilitário comum `resources/common/json_utils.resource` para conversão de resposta JSON (redução de duplicação futura)
     - 100% dos testes passando (19/19) em execução completa
+- Atender as melhorias descritas no prompt packt abaixo "Objetivo Imediato" visando melhorar a implementação de testes funcionais, levando em consideração o arquivo de feedback passado em "docs/feedback/feedback001.md. Adicionamos documentação do site dummyJson na pasta docs/fireCrawl/dummyjson/ para facilitar a interpretação das apis e aplicar as melhorias do feedback001.md. Use também os casos de uso disponiveis em docs/use_cases/. Vamos realizar as melhorias em partes para que não perdamos contexto:
+  - (x) auth (ampliado: cenários negative/boundary/security adicionais cobrindo login campos vazios, usuário inexistente, payloads malformados, ausência/malformação de headers, refresh variantes)
+  - (x) carts (incrementado: boundary paginação limit/skip, payloads inválidos extras: corpo vazio, products vazio; utilitário JSON central criado)
+  - (x) users (incrementado: boundary paginação (0,1,alto), ordenação inválida, filtros (válido, sem resultado, chave inválida), busca caracteres especiais, criação payload variantes (sem campo, corpo vazio), atualização payload vazio/inválido)
+  - (x) products (incrementado: boundary avançado limit/skip (0,1,grande,skip alto), ordenação asc/desc + inválida, select de campos, buscas (resultado, sem resultado, caracteres especiais, termo vazio), criação payload variantes (válido, tipo inválido, vazio, malformado), atualização payload vazio, deleção id inválido tipo, service ampliado suportando sortBy/order/select e asserts inclusivos 200/201 em criação)
 
 ### Lições aprendidas
 Estas lições devem orientar os próximos domínios (products, carts, etc.) para manter consistência e robustez.
@@ -198,6 +173,14 @@ Estas lições devem orientar os próximos domínios (products, carts, etc.) par
     - Deleção cobre id inexistente e id de tipo inválido (string) com assert intervalo (400/404) e separação do caso válido (checando isDeleted == True).
     - Busca termo vazio e caracteres especiais tratadas como 200 mantendo consistência com design tolerante da API.
     - Execução pós-incremento: 29 casos Products (100% PASS) abrangendo UC-PROD-001 a UC-PROD-008 + variantes boundary/negativas adicionais (B1-B4, A1-A3, E1-E3, etc.).
+- Implementação completa de automatização para API Posts DummyJSON:
+    - Massa de dados curada em data/json/posts.json
+    - Service layer em resources/api/services/posts.service.resource
+    - Keywords layer em resources/api/keywords/posts.keywords.resource
+    - Suíte de testes completa em tests/api/domains/posts/posts_fluxos.robot
+        - 36 casos de teste cobrindo UC-POST-001 a UC-POST-012 com variações boundary e negativas (paginação 0/1/grande/skip alto, ordenação asc/desc e inválida, select de campos, busca com resultado/sem resultado/paginação/termo vazio/caracteres especiais, por ID 200/404, por tag existente/inexistente, por usuário com/sem posts com assertiva inclusiva 200/404, comentários 200/404, criação válida/ inválida/payload vazio/malformado, atualização PUT/PATCH válida/inexistente/payload vazio, deleção válida/inexistente/id tipo inválido)
+        - Ajustes conforme comportamento real do DummyJSON: endpoints que podem retornar 200/201 em criação e 200 ou 404 para coleções inexistentes receberam assertivas inclusivas
+        - 100% dos testes passando (36/36) em execução completa com dependências mínimas (Robot + Requests)
 
 ## Objetivo final
 - Criar um repositório de testes automatizados com diversos casos de testes funcionais, aplicando os princípios de Padrões de Projeto (Design Patterns) e boas práticas de codificação.
