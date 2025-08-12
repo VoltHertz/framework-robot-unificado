@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "product_detail.schema.json",
+  "type": "object",
+  "required": ["id", "title"],
+  "properties": {
+    "id": { "type": "integer" },
+    "title": { "type": "string" },
+    "description": { "type": "string" },
+    "price": { "type": "number" },
+    "discountPercentage": { "type": ["number", "null"] },
+    "rating": { "type": ["number", "null"] },
+    "stock": { "type": ["integer", "null"] },
+    "brand": { "type": ["string", "null"] },
+    "category": { "type": ["string", "null"] },
+    "thumbnail": { "type": ["string", "null"] },
+    "images": { "type": ["array", "null"], "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

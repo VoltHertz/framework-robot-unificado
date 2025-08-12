@@ -89,9 +89,8 @@ A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor 
 ## Foco atual
 
 - Ajustar scripts já implementados para estrutura de camadas conforme explicado em docs/feedbackAI/feedback002.md. Realizar tal processo cada um por vez por domínio já implementado:
- - Ajustar scripts já implementados para estrutura de camadas conforme explicado em docs/feedbackAI/feedback002.md. Realizar tal processo cada um por vez por domínio já implementado:
-     - (x) auth
-    - ( ) products
+    - (x) auth
+    - (x) products
     - ( ) carts
     - ( ) users
     - ( ) posts
@@ -121,84 +120,50 @@ A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor 
 ### Lições aprendidas
 Estas lições devem orientar os próximos domínios (products, carts, etc.) para manter consistência e robustez.
 
+1. Cenários negativos (HTTPError)
+    - Evite exceções do Requests usando `expected_status=any` no adapter ou chamando `GET/POST/PUT On Session` diretamente nos negativos. Services ficam focados no “happy path”.
 
-1. Tratamento de cenários negativos (HTTPError):
-    - Para evitar exceções do `robotframework-requests` em respostas esperadas de erro, usar `expected_status=any` no service ou chamar diretamente `POST/GET On Session` com `expected_status=<codigo>` nos casos negativos.
-    - Padrão adotado: serviços expõem fluxo "feliz"; testes negativos podem chamar direto o adapter (service é opcional nesses casos) para deixar clara a expectativa do código de status.
+2. JSON centralizado
+    - Use `resources/common/json_utils.resource` (ex.: `Converter Resposta Em Json`) para parsing e reduza duplicação nas keywords.
 
-2. Parsing de JSON em Keywords:
-    - Usar `Evaluate __import__('json').loads(r'''${RESP.text}''')` ao invés de `Evaluate ${RESP.json()}` (que retornava dict e quebrava porque Evaluate espera expressão string). Próximo incremento: criar keyword utilitária central em `resources/common` (ex: `Converter Resposta Em Json`) para remover duplicação.
+3. Retornos de keywords
+    - Utilize `RETURN` (Robot >= 7) em vez de `[Return]` em services e keywords.
 
-3. Retorno de keywords Python de service:
-    - Substituído uso depreciado `[Return]` por `RETURN` (compatível com Robot >=7), guideline a seguir em todos os novos resources.
+4. Adapter HTTP isolado
+    - Não dependa de variáveis externas; mantenha headers locais por chamada. Se surgir um padrão, crie uma keyword para mesclar cabeçalhos.
 
-4. Isolamento de adapter HTTP:
-    - Adapter não deve depender de variáveis ainda não importadas. Removida variável de headers globais e adotado cabeçalhos locais em cada chamada; caso padrão evoluir (ex: autenticação comum), criar keyword para mesclar cabeçalhos base.
+5. Variáveis por fornecedor
+    - Configure bases específicas por provedor (ex.: `BASE_URL_API_DUMMYJSON`) em `environments/` para evitar colisões.
 
-5. Variáveis de ambiente específicas por fornecedor:
-    - Introduzida `BASE_URL_API_DUMMYJSON` em `environments/dev.py`. Padrão: cada provedor ou backend distinto ganha sua própria variável explícita para evitar colisão futura quando coexistirem múltiplas APIs.
+6. BDD em Português
+    - Keywords de negócio começam com `Dado`, `Quando`, `Entao`; nomes curtos e focados na intenção.
 
-6. BDD em Português:
-    - Convenção de prefixos `Dado`, `Quando`, `Entao` aplicada em keywords de negócio. Manter nomes curtos e focados em intenção, deixando detalhes técnicos na camada service/adapter.
+7. Estrutura por domínio
+    - Reutilize o adapter, mantenha um service por agrupamento de endpoints e valide contrato por domínio em `resources/api/contracts/<dominio>/`.
 
-7. Estratégia para próximos domínios:
-    - Reutilizar adapter atual.
-    - Criar um service por agrupamento lógico de endpoints (ex: `products.service.resource`).
-    - Adicionar validação de contrato (futuro) em pasta `resources/api/contracts/<dominio>/` e keyword de asserção dedicada.
+8. Status não determinísticos
+    - Use assertivas inclusivas apenas quando a API variar de fato; prefira asserts exatos quando a documentação for determinística.
 
-8. Padrão para cenários negativos multi-status:
-    - Usar `Should Be True    ${RESP.status_code} in (401,403,500)` somente quando a API externa variar; preferir assert exato quando documentação oficial for determinística.
+9. Paginação (boundary padrão)
+    - Aplique `limit {0,1,>total}` e `skip {0,1,alto}` de forma consistente nos domínios que listam coleções.
 
-9. Próxima melhoria técnica (planejada):
-    - Centralizar conversão JSON e extração de campos em keywords reutilizáveis (reduzir repetição em ~5 pontos atuais) antes de escalar para novos domínios.
+10. Comportos específicos do DummyJSON (consolidados)
+    - Criação pode retornar 200 ou 201; trate assertivas inclusivas.
+    - `/carts/user/{id}` pode retornar 404 para usuário inexistente; aceite 200/404 conforme o fornecedor.
 
-10. Lições adicionais (fase Products DummyJSON)
-    - Uso seguro de tamanho de listas: substituir construções inválidas `${len(${json}['items'])}` por `Get Length` para evitar erros de variável.
-    - Flexibilização de códigos em endpoints não determinísticos (ex: criação retornando 200 ou 201) usando assert inclusivo e comentário explicativo.
-    - Padronização de logs incluindo nome de arquivo e linha continuada (já aplicado nos novos resources) reforça rastreabilidade em grandes suítes.
+11. Boas práticas de verificação e log
+    - Use `Get Length` para tamanhos de listas e inclua logs com `arquivo:linha` e UC em pontos-chave.
 
-11. Lições específicas (fase Carts DummyJSON)
-    - Comportamento específico do DummyJSON: endpoint `/carts/user/{userId}` retorna 404 para usuário inexistente, não 200 com lista vazia conforme documentação sugeria.
-    - Tratamento flexível de cenários alternativos: usar `Should Be True ${status} in (200,404)` para APIs que variam comportamento entre documentação e implementação real.
-    - Validação robusta de dados inválidos: DummyJSON retorna 400 consistentemente para payloads malformados, permitindo asserções determinísticas.
-    - Padrão BDD em Robot: evitar palavras conectivas como "E" que não são reconhecidas automaticamente; usar múltiplas chamadas "Dado" quando necessário.
-    - Service layer para cenários negativos: quando expected_status=any, melhor deixar na camada keyword para clareza da expectativa de erro.
-12. Incremento Carts (boundary & utilitário JSON)
-    - Centralização de parsing JSON via `Converter Resposta Em Json` reduzindo repetição e preparando refactor em outros domínios.
-    - Boundary de paginação padronizado (limit {0,1,>total} / skip {0,1,alto}) estabelecendo modelo reutilizável.
-    - Novos cenários negativos explícitos diferenciam "payload estruturalmente inválido", "payload vazio" e "lista de produtos vazia" para granularidade nas validações de backend.
-13. Incremento Products (boundary & profundidade negativa)
-    - Ampliação da massa em `data/json/products.json` incluindo paginação boundary estendida (limit 0,1,500; skip 0,1,10000), ordenação válida/ inválida, select de campos e múltiplas variantes de buscas (sem resultado, caracteres especiais, termo vazio).
-    - Service `products.service.resource` agora aceita parâmetros sortBy/order/select e criação com `raw_body` para simular JSON malformado.
-    - Keywords refatoradas para usar `Converter Resposta Em Json` eliminando Evaluate duplicado e adicionando 30 novas keywords de negócio para casos boundary/negativos.
-    - Matriz de criação expandida: payload válido, tipo inválido (campo numérico onde espera string), payload vazio, corpo malformado (string truncada) com assert inclusivo de erros (400/500) ou simulação (200/201) conforme comportamento DummyJSON.
-    - Ordenação validada construindo lista de títulos e comparando com lista ordenada (asc) e reversa (desc); caso inválido aceita 200 (fallback sem erro) ou 400 se backend validar futuramente.
-    - Deleção cobre id inexistente e id de tipo inválido (string) com assert intervalo (400/404) e separação do caso válido (checando isDeleted == True).
-    - Busca termo vazio e caracteres especiais tratadas como 200 mantendo consistência com design tolerante da API.
-    - Execução pós-incremento: 29 casos Products (100% PASS) abrangendo UC-PROD-001 a UC-PROD-008 + variantes boundary/negativas adicionais (B1-B4, A1-A3, E1-E3, etc.).
-- Implementação completa de automatização para API Posts DummyJSON:
-    - Massa de dados curada em data/json/posts.json
-    - Service layer em resources/api/services/posts.service.resource
-    - Keywords layer em resources/api/keywords/posts.keywords.resource
-    - Suíte de testes completa em tests/api/domains/posts/posts_fluxos.robot
-        - 36 casos de teste cobrindo UC-POST-001 a UC-POST-012 com variações boundary e negativas (paginação 0/1/grande/skip alto, ordenação asc/desc e inválida, select de campos, busca com resultado/sem resultado/paginação/termo vazio/caracteres especiais, por ID 200/404, por tag existente/inexistente, por usuário com/sem posts com assertiva inclusiva 200/404, comentários 200/404, criação válida/ inválida/payload vazio/malformado, atualização PUT/PATCH válida/inexistente/payload vazio, deleção válida/inexistente/id tipo inválido)
-        - Ajustes conforme comportamento real do DummyJSON: endpoints que podem retornar 200/201 em criação e 200 ou 404 para coleções inexistentes receberam assertivas inclusivas
-        - 100% dos testes passando (36/36) em execução completa com dependências mínimas (Robot + Requests)
+12. Contracts (JSONSchemaLibrary)
+    - Inicialize com base `${EXECDIR}/resources/api/contracts/<dominio>/v1` e chame `Validate Json    <schema>.json    ${json}` (schema primeiro).
+    - Utilize nomes de schema relativos; evite paths absolutos.
+    - Para `select`, mantenha schemas flexíveis (`additionalProperties: true` e `required` mínimos).
 
-- Implementação completa de automatização para API Comments DummyJSON:
-    - Massa de dados curada em data/json/comments.json
-    - Service layer em resources/api/services/comments.service.resource
-    - Keywords layer em resources/api/keywords/comments.keywords.resource
-    - Suíte de testes completa em tests/api/domains/comments/comments_fluxos.robot
-        - 21 casos de teste cobrindo UC-COM-001 a UC-COM-007 com variações boundary e negativas:
-            - Listar: completo; paginação customizada; boundary limit=0, limit=1, skip alto; select de campos; limit inválido tratado (200/400/422)
-            - Por ID: existente (200) e inexistente (404)
-            - Por Post: existente (200), sem comentários (200 lista vazia) e post inexistente (200 lista vazia ou 404) com assertivas inclusivas
-            - Criar: válido (200/201), inválido por tipo e campo obrigatório faltante (200/201/400/422 conforme simulação do fornecedor)
-            - Atualizar: PUT/PATCH válidos; inexistente tratado (200/404 inclusivo)
-            - Deletar: sucesso (200) e inexistente (200/404 inclusivo)
-        - 100% dos testes passando (21/21) em execução local
-    - Ajustes conforme comportamento real do DummyJSON: em /comments/post com skip alto o limit pode retornar 0; asserts atualizados para aceitar esse retorno e manter robustez.
+13. Hooks nas suítes
+    - Importe somente `resources/common/hooks.resource` e keywords de negócio; padronize `Suite Setup/Teardown` com `Setup Suite Padrao` e `Teardown Suite Padrao`.
+
+14. Execução (dry-run x real)
+    - Faça dry-run para validar sintaxe/imports e rode ao menos 1–2 casos reais para validar integrações (bibliotecas, schemas, paths).
 
 ## Objetivo final
 - Criar um repositório de testes automatizados com diversos casos de testes funcionais, aplicando os princípios de Padrões de Projeto (Design Patterns) e boas práticas de codificação.

@@ -1,11 +1,11 @@
 *** Settings ***
 Documentation    Suíte de testes Products DummyJSON baseada em docs/use_cases/Products_Use_Cases.md
 Resource    ../../../../resources/common/data_provider.resource
-Resource    ../../../../resources/api/adapters/http_client.resource
+Resource    ../../../../resources/common/hooks.resource
 Resource    ../../../../resources/api/keywords/products.keywords.resource
 Variables   ../../../../environments/dev.py
-Suite Setup    Iniciar Sessao API DummyJSON
-Suite Teardown    Encerrar Sessao API DummyJSON
+Suite Setup    Setup Suite Padrao
+Suite Teardown    Teardown Suite Padrao
 
 *** Test Cases ***
 UC-PROD-001 Lista Completa De Produtos
