@@ -28,7 +28,7 @@ Obter Carrinho Por ID
 Obter Carrinhos Por Usuario
     [Arguments]    ${user_id}
     Log    [carts.service.resource:L29] Iniciando chamada GET /carts/user/${user_id}
-    ${resp}=    GET On Session    DUMMYJSON    /carts/user/${user_id}
+    ${resp}=    GET On Session    DUMMYJSON    /carts/user/${user_id}    expected_status=any
     Log    [carts.service.resource:L31] Resposta carrinhos do usuário status=${resp.status_code}
     RETURN    ${resp}
 
@@ -55,4 +55,21 @@ Deletar Carrinho
     Log    [carts.service.resource:L54] Iniciando chamada DELETE /carts/${cart_id}
     ${resp}=    DELETE On Session    DUMMYJSON    /carts/${cart_id}    expected_status=any
     Log    [carts.service.resource:L56] Resposta deletar carrinho status=${resp.status_code}
+    RETURN    ${resp}
+
+# Operações com payload bruto para cenários negativos/boundary
+Adicionar Novo Carrinho Com Payload
+    [Arguments]    ${payload}
+    Log    [carts.service.resource:L60] Iniciando chamada POST /carts/add (payload bruto)
+    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${resp}=    POST On Session    DUMMYJSON    /carts/add    json=${payload}    headers=${headers}    expected_status=any
+    Log    [carts.service.resource:L63] Resposta adicionar carrinho (payload bruto) status=${resp.status_code}
+    RETURN    ${resp}
+
+Atualizar Carrinho Com Payload
+    [Arguments]    ${cart_id}    ${payload}
+    Log    [carts.service.resource:L66] Iniciando chamada PUT /carts/${cart_id} (payload bruto)
+    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${resp}=    PUT On Session    DUMMYJSON    /carts/${cart_id}    json=${payload}    headers=${headers}    expected_status=any
+    Log    [carts.service.resource:L69] Resposta atualizar carrinho (payload bruto) status=${resp.status_code}
     RETURN    ${resp}

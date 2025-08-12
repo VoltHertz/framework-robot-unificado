@@ -3,11 +3,10 @@ Documentation    Suíte de testes para API de Carrinhos DummyJSON
 ...              Casos de uso: UC-CART-001 a UC-CART-006
 ...              Cobre cenários de listagem, consulta, criação, atualização e deleção de carrinhos
 Resource         ../../../../resources/api/keywords/carts.keywords.resource
-Resource         ../../../../resources/common/data_provider.resource
-Resource         ../../../../resources/common/json_utils.resource
+Resource         ../../../../resources/common/hooks.resource
 Variables        ../../../../environments/dev.py
-Suite Setup      Setup API Session
-Suite Teardown   Delete All Sessions
+Suite Setup      Setup Suite Padrao
+Suite Teardown   Teardown Suite Padrao
 Force Tags       api    carts    regression
 
 *** Test Cases ***
@@ -146,6 +145,4 @@ UC-CART-006-E1 - Erro Ao Deletar Carrinho Inexistente
     Entao Devo Receber Erro De Carrinho Inexistente Para Delecao
 
 *** Keywords ***
-Setup API Session
-    Log    [carts_fluxos.robot:L107] Iniciando configuração da sessão API para DummyJSON
-    Create Session    DUMMYJSON    ${BASE_URL_API_DUMMYJSON}    verify=${False}
+# Suite-specific keywords (se necessário). Setup movido para hooks comuns.

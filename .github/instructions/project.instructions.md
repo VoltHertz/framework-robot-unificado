@@ -18,6 +18,8 @@ applyTo: "**"
 - As palavras-chave devem ser reutilizáveis e modulares.
 - Implementar boas práticas de codificação, como nomeação clara de variáveis e funções, e documentação adequada.
 - Todas as suites de teste deverão possuir apenas a visão negocial, sendo a questão técnica encapsulada nos arquivos da pasta resources.
+- A documentação das libs utilizadas nesse projeto está detalhada em docs/libs.
+- A documentação das APIs REST está descrita em docs/fireCrawl/dummyjson.
 - Conforme as atividades de backlog do projeto forem inciadas, este arquivo deve ser atualizado. Conforme elas forem evoluindo esse arquivo deverá ser atualizado, conforme elas forem finalizadas este arquivo deverá ser atualizado. Assim saberemos o que precisa ser feito, o que já foi feito e o que vamos fazer.
 - Neste arquivo não iremos criar novas seçoes, caso haja o desejo de faze-lo para acompanhar algo importante, primeiro é preciso pedir permissão ao desenvolvedor humano.
 - Toda a documentação e desenvolviemnto do código deverá ser feito seguindo o português brasileiro.
@@ -29,6 +31,20 @@ Este é um projeto de automação de testes Robot Framework focado na implementa
 ## Estrutura do projeto
 
 A estrutura do projeto está descrita em .github/instructions/arquitetura.instructions.md
+
+## Informações de versão do projeto:
+Robot Framework 7.3.2                   # Python 3.13.5 on Fedora Linux 42 (wsl)
+robotframework-browser==18.6.1          # Web UI Playwright (docs/libs/browser.md)  # NOTE: latest 19.x avaliar antes de upgrade
+robotframework-requests==0.9.6          # HTTP keywords (docs/libs/requestslibrary.md)
+robotframework-appiumlibrary==2.0.0     # Mobile automation (docs/libs/appiumlibrary.md)
+grpcio==1.66.0                          # gRPC runtime (docs/libs/grpc.md)
+grpcio-tools==1.66.0                    # gRPC codegen plugin (protoc) (docs/libs/grpc.md)
+protobuf==5.27.2                        # Protocol Buffers (docs/libs/protobuf.md)
+pyodbc==5.1.0                            # DB access (docs/libs/pyodbc.md)
+python-dotenv==1.0.1                     # Env loader (docs/libs/python-dotenv.md)
+requests==2.32.3                         # Underlying HTTP client (docs/libs/requests.md)
+robotframework-jsonschemalibrary==1.0    # Validação de respostas via JSON Schema
+
 
 
 ## Diretrizes na implementação de testes com robot
@@ -91,7 +107,7 @@ A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor 
 - Ajustar scripts já implementados para estrutura de camadas conforme explicado em docs/feedbackAI/feedback002.md. Realizar tal processo cada um por vez por domínio já implementado:
     - (x) auth
     - (x) products
-    - ( ) carts
+    - (x) carts
     - ( ) users
     - ( ) posts
     - ( ) comments
@@ -110,7 +126,13 @@ A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor 
     - 19 casos de teste após incremento (boundary + negativos adicionais) cobrindo UC-CART-001 a UC-CART-006 e variações B1-B3 / E2-E3
     - Incluídas validações boundary (limit 0,1,alto) e erros adicionais (payload sem produtos, corpo vazio)
     - Criado utilitário comum `resources/common/json_utils.resource` para conversão de resposta JSON (redução de duplicação futura)
-    - 100% dos testes passando (19/19) em execução completa
+        - 100% dos testes passando (19/19) em execução completa
+    - Refactor para arquitetura em camadas conforme feedback002 aplicado ao domínio carts:
+        - Contracts v1 criados em `resources/api/contracts/carts/v1/` (schemas `cart_list.schema.json`, `cart.schema.json`, `cart_delete.schema.json`) e resource `resources/api/contracts/carts/carts.contracts.resource` com keywords `Validate Json` por endpoint
+        - Keywords refatoradas para usar somente services (sem chamadas diretas a Requests) e validar contrato nos happy paths; cenários negativos passaram a usar helpers de service com payload bruto (ex.: `Adicionar Novo Carrinho Com Payload`, `Atualizar Carrinho Com Payload`)
+        - Suíte de domínio passou a usar hooks comuns (`resources/common/hooks.resource`) com `Setup Suite Padrao`/`Teardown Suite Padrao` (remoção de `Create Session` da suíte)
+        - Suíte de contratos adicionada em `tests/api/contract/carts/carts_contract.robot` (lista, detalhe e deleção)
+        - Dry-run verde pós-refactor (19/19) validando imports, contratos e hooks
 - Atender as melhorias descritas no prompt packt abaixo "Objetivo Imediato" visando melhorar a implementação de testes funcionais, levando em consideração o arquivo de feedback passado em "docs/feedback/feedback001.md. Adicionamos documentação do site dummyJson na pasta docs/fireCrawl/dummyjson/ para facilitar a interpretação das apis e aplicar as melhorias do feedback001.md. Use também os casos de uso disponiveis em docs/use_cases/. Vamos realizar as melhorias em partes para que não perdamos contexto:
   - (x) auth (ampliado: cenários negative/boundary/security adicionais cobrindo login campos vazios, usuário inexistente, payloads malformados, ausência/malformação de headers, refresh variantes)
   - (x) carts (incrementado: boundary paginação limit/skip, payloads inválidos extras: corpo vazio, products vazio; utilitário JSON central criado)

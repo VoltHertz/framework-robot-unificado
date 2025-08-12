@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "cart_list.schema.json",
+  "type": "object",
+  "required": ["carts", "total", "skip", "limit"],
+  "properties": {
+    "carts": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/cart" }
+    },
+    "total": { "type": "integer" },
+    "skip": { "type": "integer" },
+    "limit": { "type": "integer" }
+  },
+  "definitions": {
+    "product": {
+      "type": "object",
+      "required": ["id", "price", "quantity", "total", "discountPercentage", "discountedTotal"],
+      "properties": {
+        "id": { "type": "integer" },
+        "title": { "type": ["string", "null"] },
+        "price": { "type": ["number", "integer"] },
+        "quantity": { "type": "integer" },
+        "total": { "type": ["number", "integer"] },
+        "discountPercentage": { "type": ["number", "integer"] },
+        "discountedTotal": { "type": ["number", "integer"] }
+      },
+      "additionalProperties": true
+    },
+    "cart": {
+      "type": "object",
+      "required": ["id", "products", "total", "discountedTotal", "userId", "totalProducts", "totalQuantity"],
+      "properties": {
+        "id": { "type": "integer" },
+        "products": { "type": "array", "items": { "$ref": "#/definitions/product" } },
+        "total": { "type": ["number", "integer"] },
+        "discountedTotal": { "type": ["number", "integer"] },
+        "userId": { "type": "integer" },
+        "totalProducts": { "type": "integer" },
+        "totalQuantity": { "type": "integer" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
