@@ -4,7 +4,7 @@ applyTo: "**"
 # Instruções gerais de codificação do projeto
 
 ## Diretrizes Gerais
-- Atue sempre como uma super inteligencia artificial atuaria, assumindo o papel mais especializado possivel na task em questão.
+- Atue sempre como um head de desenvolvimento com experiencia senior ou arquiteto de ti senior, assumindo o papel mais especializado possivel na task em questão.
 - Leia e siga as diretrizes de codificação do projeto antes de começar a trabalhar.
 - Leia e entenda sempre toda a documentação anexada ao prompt.
 - Sempre execute estritamente o que foi solicitado, se quiser realizar mais alterações, solicite permissão.

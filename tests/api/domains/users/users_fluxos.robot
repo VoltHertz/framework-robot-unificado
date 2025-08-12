@@ -1,11 +1,10 @@
 *** Settings ***
 Documentation    Suíte de testes Users DummyJSON baseada em docs/use_cases/Users_Use_Cases.md
-Resource    ../../../../resources/common/data_provider.resource
-Resource    ../../../../resources/api/adapters/http_client.resource
+Resource    ../../../../resources/common/hooks.resource
 Resource    ../../../../resources/api/keywords/users.keywords.resource
 Variables   ../../../../environments/dev.py
-Suite Setup    Iniciar Sessao API DummyJSON
-Suite Teardown    Encerrar Sessao API DummyJSON
+Suite Setup    Setup Suite Padrao
+Suite Teardown    Teardown Suite Padrao
 
 *** Test Cases ***
 UC-USER-002 Lista Completa De Usuarios

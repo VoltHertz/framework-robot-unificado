@@ -14,12 +14,13 @@ applyTo: "**"
     - Strategy Pattern, para definir diferentes estratégias de teste.
     - Page Object Model, para organizar o código relacionado a navegação em páginas HTML.
     - Facade Pattern, para simplificar um grupo de interfaces.
+    - Desenvolva os testes em camadas.
 - Manter uma estrutura clara, separando Casos de Teste, Palavras-chave (Keywords), Recursos e Variáveis.
 - As palavras-chave devem ser reutilizáveis e modulares.
 - Implementar boas práticas de codificação, como nomeação clara de variáveis e funções, e documentação adequada.
 - Todas as suites de teste deverão possuir apenas a visão negocial, sendo a questão técnica encapsulada nos arquivos da pasta resources.
 - A documentação das libs utilizadas nesse projeto está detalhada em docs/libs.
-- A documentação das APIs REST está descrita em docs/fireCrawl/dummyjson.
+- A documentação das APIs REST está descrita em docs/fireCrawl/dummyJson/*.
 - Conforme as atividades de backlog do projeto forem inciadas, este arquivo deve ser atualizado. Conforme elas forem evoluindo esse arquivo deverá ser atualizado, conforme elas forem finalizadas este arquivo deverá ser atualizado. Assim saberemos o que precisa ser feito, o que já foi feito e o que vamos fazer.
 - Neste arquivo não iremos criar novas seçoes, caso haja o desejo de faze-lo para acompanhar algo importante, primeiro é preciso pedir permissão ao desenvolvedor humano.
 - Toda a documentação e desenvolviemnto do código deverá ser feito seguindo o português brasileiro.
@@ -33,6 +34,7 @@ Este é um projeto de automação de testes Robot Framework focado na implementa
 A estrutura do projeto está descrita em .github/instructions/arquitetura.instructions.md
 
 ## Informações de versão do projeto:
+Bibliotecas e versões já implementadas no ambiente.
 Robot Framework 7.3.2                   # Python 3.13.5 on Fedora Linux 42 (wsl)
 robotframework-browser==18.6.1          # Web UI Playwright (docs/libs/browser.md)  # NOTE: latest 19.x avaliar antes de upgrade
 robotframework-requests==0.9.6          # HTTP keywords (docs/libs/requestslibrary.md)
@@ -44,8 +46,6 @@ pyodbc==5.1.0                            # DB access (docs/libs/pyodbc.md)
 python-dotenv==1.0.1                     # Env loader (docs/libs/python-dotenv.md)
 requests==2.32.3                         # Underlying HTTP client (docs/libs/requests.md)
 robotframework-jsonschemalibrary==1.0    # Validação de respostas via JSON Schema
-
-
 
 ## Diretrizes na implementação de testes com robot
 Gerar e evoluir **suítes Robot Framework** para as APIs DummyJSON seguindo BDD em português, com **camadas separadas**, **massa centralizada** e cobertura **positiva, negativa, boundary e security**. Entregas devem respeitar a estrutura e convenções deste repositório.
@@ -81,6 +81,22 @@ Para **cada** endpoint implementado no domínio:
 - **Logs**: inclua no `Log` o **arquivo:linha** e o **UC** (facilita rastreabilidade em grandes suítes).
 - **Português BR** em nomes e descrições.
 
+## Desenvolvimento em camadas.
+Use estes pontos em TODOs de PR e antes de rodar os testes para evitar desvios de arquitetura e execução.
+
+1) Camadas obrigatórias: suites → keywords → services → adapters. Suites só importam hooks + keywords (nunca adapters/requests).
+2) Hooks: sempre `Setup Suite Padrao`/`Teardown Suite Padrao`; não crie sessão HTTP nas suítes.
+3) Services 1:1 endpoints: sem regra de negócio. Negativos podem usar `expected_status=any`; prefira services também nos negativos quando viável.
+4) Contratos: `JSONSchemaLibrary` com base `${EXECDIR}/resources/api/contracts/<dominio>/v1`. Valide happy paths; schemas versionados e flexíveis quando necessário.
+5) JSON util: use `Converter Resposta Em Json` (não reimplemente parsing nas keywords).
+6) Retornos: use `RETURN` (Robot ≥ 7) em services/keywords; evite `[Return]`.
+7) Paginação padrão: validar `limit {0,1,>total}` e `skip {0,1,alto}`; aceite ajuste de `limit` feito pelo fornecedor.
+8) Status variáveis DummyJSON: criação `200/201`; `/carts/user/{id}` pode ser `200` (lista vazia) ou `404` — use assertivas inclusivas.
+9) Logs: inclua `arquivo:linha` e UC em pontos-chave com `Log`.
+10) Execução: rode com o Python da venv e `--variablefile environments/<env>.py`; faça `--dryrun` antes da execução real. Ex.: `.venv/bin/python -m robot -d results/... -v ENV:dev`.
+11) Segurança/negativos: cubra payloads malformados, headers ausentes/malformados e IDs inexistentes; valide status + shape, não mensagens exatas.
+12) Deprecações: trocar `Run Keyword Unless` por `IF/ELSE` nas mudanças novas.
+
 
 ## Backlog de atividades
 A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor humano revise.
@@ -108,7 +124,8 @@ A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor 
     - (x) auth
     - (x) products
     - (x) carts
-    - ( ) users
+    - (x) users
+        (Ajustado o domínio de users para a arquitetura em camadas conforme docs/feedbackAI/feedback002.md: adicionados contracts v1, validações nas keywords, suíte de contrato e hooks comuns nas suítes.)
     - ( ) posts
     - ( ) comments
 
@@ -139,53 +156,9 @@ A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor 
   - (x) users (incrementado: boundary paginação (0,1,alto), ordenação inválida, filtros (válido, sem resultado, chave inválida), busca caracteres especiais, criação payload variantes (sem campo, corpo vazio), atualização payload vazio/inválido)
   - (x) products (incrementado: boundary avançado limit/skip (0,1,grande,skip alto), ordenação asc/desc + inválida, select de campos, buscas (resultado, sem resultado, caracteres especiais, termo vazio), criação payload variantes (válido, tipo inválido, vazio, malformado), atualização payload vazio, deleção id inválido tipo, service ampliado suportando sortBy/order/select e asserts inclusivos 200/201 em criação)
 
-### Lições aprendidas
-Estas lições devem orientar os próximos domínios (products, carts, etc.) para manter consistência e robustez.
 
-1. Cenários negativos (HTTPError)
-    - Evite exceções do Requests usando `expected_status=any` no adapter ou chamando `GET/POST/PUT On Session` diretamente nos negativos. Services ficam focados no “happy path”.
+## Lições aprendidas.
 
-2. JSON centralizado
-    - Use `resources/common/json_utils.resource` (ex.: `Converter Resposta Em Json`) para parsing e reduza duplicação nas keywords.
-
-3. Retornos de keywords
-    - Utilize `RETURN` (Robot >= 7) em vez de `[Return]` em services e keywords.
-
-4. Adapter HTTP isolado
-    - Não dependa de variáveis externas; mantenha headers locais por chamada. Se surgir um padrão, crie uma keyword para mesclar cabeçalhos.
-
-5. Variáveis por fornecedor
-    - Configure bases específicas por provedor (ex.: `BASE_URL_API_DUMMYJSON`) em `environments/` para evitar colisões.
-
-6. BDD em Português
-    - Keywords de negócio começam com `Dado`, `Quando`, `Entao`; nomes curtos e focados na intenção.
-
-7. Estrutura por domínio
-    - Reutilize o adapter, mantenha um service por agrupamento de endpoints e valide contrato por domínio em `resources/api/contracts/<dominio>/`.
-
-8. Status não determinísticos
-    - Use assertivas inclusivas apenas quando a API variar de fato; prefira asserts exatos quando a documentação for determinística.
-
-9. Paginação (boundary padrão)
-    - Aplique `limit {0,1,>total}` e `skip {0,1,alto}` de forma consistente nos domínios que listam coleções.
-
-10. Comportos específicos do DummyJSON (consolidados)
-    - Criação pode retornar 200 ou 201; trate assertivas inclusivas.
-    - `/carts/user/{id}` pode retornar 404 para usuário inexistente; aceite 200/404 conforme o fornecedor.
-
-11. Boas práticas de verificação e log
-    - Use `Get Length` para tamanhos de listas e inclua logs com `arquivo:linha` e UC em pontos-chave.
-
-12. Contracts (JSONSchemaLibrary)
-    - Inicialize com base `${EXECDIR}/resources/api/contracts/<dominio>/v1` e chame `Validate Json    <schema>.json    ${json}` (schema primeiro).
-    - Utilize nomes de schema relativos; evite paths absolutos.
-    - Para `select`, mantenha schemas flexíveis (`additionalProperties: true` e `required` mínimos).
-
-13. Hooks nas suítes
-    - Importe somente `resources/common/hooks.resource` e keywords de negócio; padronize `Suite Setup/Teardown` com `Setup Suite Padrao` e `Teardown Suite Padrao`.
-
-14. Execução (dry-run x real)
-    - Faça dry-run para validar sintaxe/imports e rode ao menos 1–2 casos reais para validar integrações (bibliotecas, schemas, paths).
 
 ## Objetivo final
 - Criar um repositório de testes automatizados com diversos casos de testes funcionais, aplicando os princípios de Padrões de Projeto (Design Patterns) e boas práticas de codificação.

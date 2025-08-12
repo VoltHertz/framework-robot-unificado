@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "user_list.schema.json",
+  "type": "object",
+  "required": ["users", "total", "skip", "limit"],
+  "properties": {
+    "users": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/User" }
+    },
+    "total": { "type": "integer", "minimum": 0 },
+    "skip": { "type": "integer", "minimum": 0 },
+    "limit": { "type": "integer", "minimum": 0 }
+  },
+  "additionalProperties": true,
+  "definitions": {
+    "Hair": {
+      "type": "object",
+      "properties": {
+        "color": { "type": "string" },
+        "type": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "Address": {
+      "type": "object",
+      "properties": {
+        "address": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "postalCode": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "User": {
+      "type": "object",
+      "required": ["id", "firstName", "lastName"],
+      "properties": {
+        "id": { "type": "integer" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "maidenName": { "type": "string" },
+        "age": { "type": "integer" },
+        "gender": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "username": { "type": "string" },
+        "password": { "type": "string" },
+        "birthDate": { "type": "string" },
+        "image": { "type": "string" },
+        "bloodGroup": { "type": "string" },
+        "height": { "type": "number" },
+        "weight": { "type": "number" },
+        "eyeColor": { "type": "string" },
+        "hair": { "$ref": "#/definitions/Hair" },
+        "domain": { "type": "string" },
+        "ip": { "type": "string" },
+        "address": { "$ref": "#/definitions/Address" },
+        "macAddress": { "type": "string" },
+        "university": { "type": "string" },
+        "bank": { "type": "object" },
+        "company": { "type": "object" },
+        "ein": { "type": "string" },
+        "ssn": { "type": "string" },
+        "userAgent": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  }
+}

@@ -1,5 +1,6 @@
 *** Settings ***
 Resource    ../services/users.service.resource
+Resource    ../contracts/users/users.contracts.resource
 Resource    ../../common/data_provider.resource
 Resource    ../../common/json_utils.resource
 Library     Collections
@@ -25,6 +26,7 @@ Entao A Lista Completa De Usuarios Deve Ser Retornada
     Should Contain    ${json}    users
     ${qtd}=    Get Length    ${json['users']}
     Should Be True    ${qtd} > 0
+    Validar Contrato Lista De Usuarios v1    ${RESP_LISTA_USUARIOS}
     Log    [users.keywords.resource:L25] Lista usuários tamanho=${qtd}
 
 Dado Que Tenho Parametros De Paginacao De Usuarios
@@ -42,6 +44,7 @@ Entao A Lista Paginada De Usuarios Deve Ser Retornada
     ${json}=    Converter Resposta Em Json    ${RESP_LISTA_PAGINADA_USERS}
     Should Be Equal As Integers    ${json['limit']}    ${PARAM_PAGINACAO_USERS['limit']}
     Should Be Equal As Integers    ${json['skip']}    ${PARAM_PAGINACAO_USERS['skip']}
+    Validar Contrato Lista De Usuarios v1    ${RESP_LISTA_PAGINADA_USERS}
     Log    [users.keywords.resource:L43] Paginação usuários validada.
 
 Dado Que Tenho Parametros De Ordenacao Asc
@@ -64,6 +67,7 @@ Entao A Lista Deve Estar Ordenada Ascendentemente
     ${lista_ordenada}=    Copy List    ${lista}
     Sort List    ${lista_ordenada}
     Should Be Equal    ${lista}    ${lista_ordenada}
+    Validar Contrato Lista De Usuarios v1    ${RESP_ORD_ASC}
     Log    [users.keywords.resource:L66] Ordenação asc validada.
 
 Dado Que Tenho Parametros De Ordenacao Desc
@@ -87,6 +91,7 @@ Entao A Lista Deve Estar Ordenada Descendentemente
     Sort List    ${lista_ordenada}
     Reverse List    ${lista_ordenada}
     Should Be Equal    ${lista}    ${lista_ordenada}
+    Validar Contrato Lista De Usuarios v1    ${RESP_ORD_DESC}
     Log    [users.keywords.resource:L90] Ordenação desc validada.
 
 Dado Que Possuo Um Usuario Existente
@@ -104,6 +109,7 @@ Entao Os Detalhes Do Usuario Devem Ser Retornados
     ${json}=    Converter Resposta Em Json    ${RESP_USUARIO}
     Should Be Equal As Integers    ${json['id']}    ${USUARIO_EXISTENTE['id']}
     Should Be Equal    ${json['username']}    ${USUARIO_EXISTENTE['expected_username']}
+    Validar Contrato Usuario v1    ${RESP_USUARIO}
     Log    [users.keywords.resource:L108] Usuário retornado corresponde ao ID.
 
 Dado Que Possuo Um Usuario Inexistente
@@ -137,6 +143,7 @@ Entao A Lista De Usuarios Correspondentes Deve Ser Retornada
     ${json}=    Converter Resposta Em Json    ${RESP_BUSCA_USERS}
     ${qtd}=    Get Length    ${json['users']}
     Should Be True    ${qtd} > 0
+    Validar Contrato Lista De Usuarios v1    ${RESP_BUSCA_USERS}
     Log    [users.keywords.resource:L143] Busca usuários retornou ${qtd} itens.
 
 Dado Que Desejo Pesquisar Usuarios Com Termo Sem Resultado
@@ -155,6 +162,7 @@ Entao Uma Lista Vazia De Usuarios Deve Ser Retornada
     Should Be Equal As Integers    ${json['total']}    0
     ${qtd}=    Get Length    ${json['users']}
     Should Be Equal As Integers    ${qtd}    0
+    Validar Contrato Lista De Usuarios v1    ${RESP_BUSCA_USERS_VAZIA}
     Log    [users.keywords.resource:L161] Validação de busca vazia de usuários OK.
 
 Dado Que Possuo Dados Validos Para Novo Usuario
@@ -232,6 +240,7 @@ Entao O Usuario Deve Ser Deletado (Simulado)
     Should Be Equal As Integers    ${RESP_DELETAR_USUARIO.status_code}    200
     ${json}=    Converter Resposta Em Json    ${RESP_DELETAR_USUARIO}
     Should Be True    ${json['isDeleted']} == True
+    Validar Contrato Delecao De Usuario v1    ${RESP_DELETAR_USUARIO}
     Log    [users.keywords.resource:L244] Usuário deletado marcado isDeleted=True.
 
 Dado Que Possuo Um Usuario Inexistente Para Delecao
@@ -268,6 +277,7 @@ Entao A Resposta Deve Conter Paginacao Valida Para Boundary
     Run Keyword If    ${limit}==0    Should Be True    ${json['limit']} in (0, ${json['total']})
     Run Keyword Unless    ${limit}==0    Should Be True    ${json['limit']} <= ${limit}
     Should Be Equal As Integers    ${json['skip']}    ${skip}
+    Validar Contrato Lista De Usuarios v1    ${RESP_BOUNDARY_PAG}
     Log    [users.keywords.resource:LB12] Boundary valida (limit_param=${limit} limit_resp=${json['limit']} skip=${skip})
 
 Dado Que Possuo Parametros De Ordenacao Invalidos
@@ -317,6 +327,7 @@ Entao A Lista Filtrada Deve Ser Retornada
     ${json}=    Converter Resposta Em Json    ${RESP_FILTRO_VALIDO}
     ${qtd}=    Get Length    ${json['users']}
     Should Be True    ${qtd} > 0
+    Validar Contrato Lista De Usuarios v1    ${RESP_FILTRO_VALIDO}
     Log    [users.keywords.resource:LB51] Filtro válido retornou ${qtd} itens
 
 Dado Que Desejo Filtrar Usuarios Sem Resultados
@@ -335,6 +346,7 @@ Entao A Lista Filtrada Deve Ser Vazia
     Should Be Equal As Integers    ${json['total']}    0
     ${qtd}=    Get Length    ${json['users']}
     Should Be Equal As Integers    ${qtd}    0
+    Validar Contrato Lista De Usuarios v1    ${RESP_FILTRO_VAZIO}
     Log    [users.keywords.resource:LB65] Filtro vazio validado
 
 Dado Que Desejo Filtrar Usuarios Com Chave Invalida
