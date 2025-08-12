@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["comments", "total", "skip", "limit"],
+  "properties": {
+    "comments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "body", "postId", "user"],
+        "properties": {
+          "id": { "type": "integer" },
+          "body": { "type": "string" },
+          "postId": { "type": "integer" },
+          "user": {
+            "type": "object",
+            "required": ["id", "username"],
+            "properties": {
+              "id": { "type": "integer" },
+              "username": { "type": "string" }
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "total": { "type": "integer" },
+    "skip": { "type": "integer", "minimum": 0 },
+    "limit": { "type": "integer", "minimum": 0 }
+  },
+  "additionalProperties": true
+}

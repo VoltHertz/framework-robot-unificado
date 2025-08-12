@@ -1,11 +1,10 @@
 *** Settings ***
 Documentation    Suíte de testes Posts DummyJSON baseada em docs/use_cases/Posts_Use_Cases.md
-Resource    ../../../../resources/common/data_provider.resource
-Resource    ../../../../resources/api/adapters/http_client.resource
 Resource    ../../../../resources/api/keywords/posts.keywords.resource
+Resource    ../../../../resources/common/hooks.resource
 Variables   ../../../../environments/dev.py
-Suite Setup    Iniciar Sessao API DummyJSON
-Suite Teardown    Encerrar Sessao API DummyJSON
+Suite Setup    Setup Suite Padrao
+Suite Teardown    Teardown Suite Padrao
 
 *** Test Cases ***
 UC-POST-001 Lista Completa De Posts

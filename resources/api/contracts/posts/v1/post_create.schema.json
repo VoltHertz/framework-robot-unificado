@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["id", "title", "body", "userId"],
+  "properties": {
+    "id": {
+      "oneOf": [
+        { "type": "integer" },
+        { "type": "string", "pattern": "^\\d+$" }
+      ]
+    },
+    "title": { "type": "string" },
+    "body": { "type": "string" },
+    "userId": {
+      "oneOf": [
+        { "type": "integer" },
+        { "type": "string", "pattern": "^\\d+$" }
+      ]
+    },
+    "tags": { "type": "array" },
+    "reactions": {}
+  },
+  "additionalProperties": true
+}

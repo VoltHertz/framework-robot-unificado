@@ -87,13 +87,16 @@ Use estes pontos em TODOs de PR e antes de rodar os testes para evitar desvios d
 1) Camadas obrigatórias: suites → keywords → services → adapters. Suites só importam hooks + keywords (nunca adapters/requests).
 2) Hooks: sempre `Setup Suite Padrao`/`Teardown Suite Padrao`; não crie sessão HTTP nas suítes.
 3) Services 1:1 endpoints: sem regra de negócio. Negativos podem usar `expected_status=any`; prefira services também nos negativos quando viável.
-4) Contratos: `JSONSchemaLibrary` com base `${EXECDIR}/resources/api/contracts/<dominio>/v1`. Valide happy paths; schemas versionados e flexíveis quando necessário.
+4) Contratos: `JSONSchemaLibrary` com base `${EXECDIR}/resources/api/contracts/<dominio>/v1`. Valide happy paths; schemas versionados e flexíveis quando necessário. Para respostas parciais (ex.: `select`), use schema específico da variante ou não aplique validação de contrato completa. Quando o fornecedor variar tipos numéricos, aceite `integer` ou `string` numérica no schema (oneOf).
 5) JSON util: use `Converter Resposta Em Json` (não reimplemente parsing nas keywords).
 6) Retornos: use `RETURN` (Robot ≥ 7) em services/keywords; evite `[Return]`.
 7) Paginação padrão: validar `limit {0,1,>total}` e `skip {0,1,alto}`; aceite ajuste de `limit` feito pelo fornecedor.
 8) Status variáveis DummyJSON: criação `200/201`; `/carts/user/{id}` pode ser `200` (lista vazia) ou `404` — use assertivas inclusivas.
 9) Logs: inclua `arquivo:linha` e UC em pontos-chave com `Log`.
 10) Execução: rode com o Python da venv e `--variablefile environments/<env>.py`; faça `--dryrun` antes da execução real. Ex.: `.venv/bin/python -m robot -d results/... -v ENV:dev`.
+10.1) Ambiente/venv: sempre instale dependências e execute os testes usando a venv local do repositório (`.venv`). Evite o Python do sistema para não sofrer com erros de import (ex.: `ModuleNotFoundError: JSONSchemaLibrary`). Em pipelines/VS Code, garanta que:
+    - a instalação (`pip install -r requirements.txt`) ocorre dentro da venv; e
+    - a execução usa explicitamente `.venv/bin/python -m robot`.
 11) Segurança/negativos: cubra payloads malformados, headers ausentes/malformados e IDs inexistentes; valide status + shape, não mensagens exatas.
 12) Deprecações: trocar `Run Keyword Unless` por `IF/ELSE` nas mudanças novas.
 
@@ -125,8 +128,7 @@ A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor 
     - (x) products
     - (x) carts
     - (x) users
-        (Ajustado o domínio de users para a arquitetura em camadas conforme docs/feedbackAI/feedback002.md: adicionados contracts v1, validações nas keywords, suíte de contrato e hooks comuns nas suítes.)
-    - ( ) posts
+    - (x) posts
     - ( ) comments
 
 ## Atividades concluidas
@@ -157,7 +159,13 @@ A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor 
   - (x) products (incrementado: boundary avançado limit/skip (0,1,grande,skip alto), ordenação asc/desc + inválida, select de campos, buscas (resultado, sem resultado, caracteres especiais, termo vazio), criação payload variantes (válido, tipo inválido, vazio, malformado), atualização payload vazio, deleção id inválido tipo, service ampliado suportando sortBy/order/select e asserts inclusivos 200/201 em criação)
 
 
-## Lições aprendidas.
+## Lições aprendidas
+
+- Contratos estritos quebram facilmente: no domínio Posts, a criação retornou `id/userId` como string numérica em alguns casos. Ajustamos o schema para aceitar `integer` ou `string` numérica (oneOf). Padronize essa flexibilidade onde o fornecedor variar tipos.
+- Caminho relativo em resources: `posts.contracts.resource` referenciou `json_utils.resource` com path incorreto inicialmente. Padronize paths relativos e valide com `--dryrun` para detectar erros de import antes da execução real.
+- Suite de contratos é essencial: os fluxos passaram, mas a suite de contratos apontou ruptura no schema. Execute sempre a suite `contract` junto com a de domínio para capturar desvios de contrato cedo.
+- Seleção de campos (`select`) não deve usar o contrato completo: valide conteúdo/shape mínimo ou crie schema específico da variante para evitar falsos negativos quando a resposta vier reduzida.
+- Evite reinstalar dependências desnecessariamente: utilize a venv do repositório para execução e confirme bibliotecas (ex.: JSONSchemaLibrary) com `--dryrun` antes de alterações maiores; isso evita falhas de build externas irrelevantes ao escopo dos testes de API.
 
 
 ## Objetivo final

@@ -180,6 +180,8 @@ Entao O Usuario Deve Ser Criado (Simulado)
     ${json}=    Converter Resposta Em Json    ${RESP_ADD_USUARIO}
     Should Contain    ${json}    id
     Should Be Equal    ${json['firstName']}    ${NOVO_USUARIO['firstName']}
+    # Validação de contrato do usuário criado (DummyJSON simula retorno do recurso)
+    Validar Contrato Usuario v1    ${RESP_ADD_USUARIO}
     Log    [users.keywords.resource:L179] Usuário criado id=${json['id']}
 
 Dado Que Possuo Dados Invalidos Para Novo Usuario
@@ -210,6 +212,8 @@ Entao O Usuario Deve Ser Atualizado (Simulado)
     Should Be Equal As Integers    ${RESP_ATUALIZAR_USUARIO.status_code}    200
     ${json}=    Converter Resposta Em Json    ${RESP_ATUALIZAR_USUARIO}
     Should Be Equal As Integers    ${json['id']}    ${ATUALIZACAO_USUARIO_VALIDA['id']}
+    # Validação de contrato do usuário atualizado
+    Validar Contrato Usuario v1    ${RESP_ATUALIZAR_USUARIO}
     Log    [users.keywords.resource:L211] Usuário atualizado retorna mesmo ID.
 
 Dado Que Possuo Dados Para Atualizacao De Usuario Inexistente
@@ -274,8 +278,13 @@ Entao A Resposta Deve Conter Paginacao Valida Para Boundary
     [Arguments]    ${limit}    ${skip}
     Should Be Equal As Integers    ${RESP_BOUNDARY_PAG.status_code}    200
     ${json}=    Converter Resposta Em Json    ${RESP_BOUNDARY_PAG}
-    Run Keyword If    ${limit}==0    Should Be True    ${json['limit']} in (0, ${json['total']})
-    Run Keyword Unless    ${limit}==0    Should Be True    ${json['limit']} <= ${limit}
+    IF    ${limit} == 0
+        # Boundary específico do DummyJSON: ao enviar limit=0 alguns provedores retornam 0, outros ajustam para total
+        Should Be True    ${json['limit']} in (0, ${json['total']})
+    ELSE
+        # Quando limit > 0, a API pode ajustar para um valor menor ou igual ao solicitado
+        Should Be True    ${json['limit']} <= ${limit}
+    END
     Should Be Equal As Integers    ${json['skip']}    ${skip}
     Validar Contrato Lista De Usuarios v1    ${RESP_BOUNDARY_PAG}
     Log    [users.keywords.resource:LB12] Boundary valida (limit_param=${limit} limit_resp=${json['limit']} skip=${skip})

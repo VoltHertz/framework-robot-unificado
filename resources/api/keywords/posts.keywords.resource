@@ -2,6 +2,7 @@
 Resource    ../services/posts.service.resource
 Resource    ../../common/data_provider.resource
 Resource    ../../common/json_utils.resource
+Resource    ../../api/contracts/posts/posts.contracts.resource
 Library     Collections
 Library     BuiltIn
 
@@ -26,6 +27,7 @@ Entao A Lista Completa De Posts Deve Ser Retornada
     Should Contain    ${json}    total
     ${qtd}=    Get Length    ${json['posts']}
     Log    [posts.keywords.resource:L26] Lista validada tamanho=${qtd}
+    Validar Contrato Lista De Posts v1    ${RESP_LISTA_POSTS}
 
 Dado Que Desejo Buscar Posts Com Paginacao
     ${dados}=    Obter Massa De Teste    posts    paginacao_customizada
@@ -61,6 +63,7 @@ Entao A Lista De Posts Deve Respeitar Os Parametros De Paginacao
     Should Be Equal As Integers    ${json['limit']}    ${PARAM_PAGINACAO['limit']}
     Should Be Equal As Integers    ${json['skip']}     ${PARAM_PAGINACAO['skip']}
     Log    [posts.keywords.resource:L44] Validação de paginação OK.
+    Validar Contrato Lista De Posts v1    ${RESP_LISTA_PAGINADA}
 
 Dado Que Possuo Um Post Existente
     ${dados}=    Obter Massa De Teste    posts    post_existente
@@ -77,6 +80,7 @@ Entao Os Detalhes Do Post Devem Ser Retornados
     ${json}=    Converter Resposta Em Json    ${RESP_POST}
     Should Be Equal As Integers    ${json['id']}    ${POST_EXISTENTE['id']}
     Log    [posts.keywords.resource:L61] Post retornado corresponde ao ID.
+    Validar Contrato Post Detalhe v1    ${RESP_POST}
 
 Dado Que Possuo Um Post Inexistente
     ${dados}=    Obter Massa De Teste    posts    post_inexistente
@@ -111,6 +115,7 @@ Entao A Lista De Posts Correspondentes Deve Ser Retornada
     ${qtd_busca}=    Get Length    ${json['posts']}
     Should Be True    ${qtd_busca} > 0
     Log    [posts.keywords.resource:L96] Busca retornou ${qtd_busca} itens.
+    Validar Contrato Lista De Posts v1    ${RESP_BUSCA}
 
 Dado Que Desejo Pesquisar Posts Sem Resultado
     ${dados}=    Obter Massa De Teste    posts    busca_sem_resultados
@@ -145,6 +150,7 @@ Entao A Lista De Posts Devera Ser Vazia Ou 200 Sem Erro
     ${json}=    Converter Resposta Em Json    ${RESP_BUSCA_CARACTERES}
     Should Contain    ${json}    posts
     Log    [posts.keywords.resource:L126] Busca caracteres especiais tratada.
+    Validar Contrato Lista De Posts v1    ${RESP_BUSCA_CARACTERES}
 
 Dado Que Desejo Pesquisar Posts Com Termo Vazio
     ${dados}=    Obter Massa De Teste    posts    busca_vazia
@@ -161,6 +167,7 @@ Entao A Lista De Posts Devera Ser Retornada Ou Vazia Sem Erro
     ${json}=    Converter Resposta Em Json    ${RESP_BUSCA_VAZIA_PARAM}
     Should Contain    ${json}    posts
     Log    [posts.keywords.resource:L138] Busca termo vazio aceita.
+    Validar Contrato Lista De Posts v1    ${RESP_BUSCA_VAZIA_PARAM}
 
 Quando Listo Todas As Tags Objetos
     ${resp}=    Listar Tags Objetos
@@ -173,6 +180,7 @@ Entao A Lista De Tags Objetos Deve Ser Retornada
     ${qtd}=    Get Length    ${json}
     Should Be True    ${qtd} > 0
     Log    [posts.keywords.resource:L126] Tags objetos retornadas: ${qtd}
+    Validar Contrato Tags Objetos v1    ${RESP_TAGS_OBJ}
 
 Quando Listo Todas As Tags Simples
     ${resp}=    Listar Tags Lista
@@ -185,6 +193,7 @@ Entao A Lista De Tags Simples Deve Ser Retornada
     ${qtd}=    Get Length    ${json}
     Should Be True    ${qtd} > 0
     Log    [posts.keywords.resource:L138] Tags lista retornadas: ${qtd}
+    Validar Contrato Tags Lista v1    ${RESP_TAGS_LISTA}
 
 Dado Que Possuo Uma Tag Existente Para Filtrar
     ${dados}=    Obter Massa De Teste    posts    tag_existente
@@ -202,6 +211,7 @@ Entao A Lista De Posts Da Tag Deve Ser Retornada
     ${qtd}=    Get Length    ${json['posts']}
     Should Be True    ${qtd} > 0
     Log    [posts.keywords.resource:L155] Posts por tag retornados: ${qtd}
+    Validar Contrato Lista De Posts v1    ${RESP_TAG_POSTS}
 
 Dado Que Possuo Uma Tag Inexistente
     ${dados}=    Obter Massa De Teste    posts    tag_inexistente
@@ -270,6 +280,7 @@ Entao A Resposta De Posts Devera Conter Status 200 E Parametros Ecoados
     ${json}=    Converter Resposta Em Json    ${RESP_PAG_BOUNDARY}
     Should Contain    ${json}    posts
     Log    [posts.keywords.resource:NB3] Boundary paginação validada.
+    Validar Contrato Lista De Posts v1    ${RESP_PAG_BOUNDARY}
 
 Quando Solicito Lista De Posts Com Limit Zero
     ${resp}=    Listar Posts    ${PAG_BOUNDARY['limit_zero']}    ${PAG_BOUNDARY['skip_zero']}
@@ -281,6 +292,7 @@ Entao A Lista De Posts Deve Conter Todos Os Itens Quando Limit Zero
     ${json}=    Converter Resposta Em Json    ${RESP_LIMIT_ZERO}
     Should Be Equal As Integers    ${json['total']}    ${json['limit']}
     Log    [posts.keywords.resource:NB3e] Limit=0 retornou todos itens.
+    Validar Contrato Lista De Posts v1    ${RESP_LIMIT_ZERO}
 
 Dado Que Tenho Parametros De Ordenacao Valida Para Posts
     ${dados}=    Obter Massa De Teste    posts    ordenacao_valida
@@ -303,6 +315,7 @@ Entao A Lista De Posts Deve Estar Ordenada Ascendente
     Sort List    ${ordenada}
     Should Be Equal    ${titulos}    ${ordenada}
     Log    [posts.keywords.resource:NB6] Ordenacao asc validada.
+    Validar Contrato Lista De Posts v1    ${RESP_ORD_ASC}
 
 Quando Solicito Lista De Posts Ordenada Descendente
     ${resp}=    Listar Posts    sortBy=${ORD_VALIDA['sortBy']}    order=${ORD_VALIDA['order_desc']}
@@ -321,6 +334,7 @@ Entao A Lista De Posts Deve Estar Ordenada Descendente
     Reverse List    ${ordenada}
     Should Be Equal    ${titulos}    ${ordenada}
     Log    [posts.keywords.resource:NB8] Ordenacao desc validada.
+    Validar Contrato Lista De Posts v1    ${RESP_ORD_DESC}
 
 Dado Que Possuo Parametros De Ordenacao Invalida Para Posts
     ${dados}=    Obter Massa De Teste    posts    ordenacao_invalida
@@ -371,6 +385,7 @@ Entao O Post Deve Ser Criado (Simulado)
     Should Contain    ${json}    id
     Should Be Equal    ${json['title']}    ${NOVO_POST['title']}
     Log    [posts.keywords.resource:L312] Post criado id=${json['id']}
+    Validar Contrato Criacao De Post v1    ${RESP_ADD_POST}
 
 Dado Que Possuo Dados Invalidos Para Novo Post
     ${dados}=    Obter Massa De Teste    posts    novo_post_invalido
@@ -429,6 +444,7 @@ Entao O Post Deve Ser Atualizado (Simulado)
     ${json}=    Converter Resposta Em Json    ${RESP_ATUALIZAR}
     Should Be Equal As Integers    ${json['id']}    ${ATUALIZACAO_VALIDA['id']}
     Log    [posts.keywords.resource:L374] Post atualizado retorna mesmo ID.
+    Validar Contrato Atualizacao De Post v1    ${RESP_ATUALIZAR}
 
 Quando Atualizo O Post Parcialmente
     ${resp}=    Atualizar Post Parcial    ${ATUALIZACAO_VALIDA['id']}    ${ATUALIZACAO_VALIDA['payload']}
@@ -440,6 +456,7 @@ Entao O Post Deve Ser Atualizado Parcialmente (Simulado)
     ${json}=    Converter Resposta Em Json    ${RESP_ATUALIZAR_PAR}
     Should Be Equal As Integers    ${json['id']}    ${ATUALIZACAO_VALIDA['id']}
     Log    [posts.keywords.resource:L377e] Post atualizado parcialmente retorna mesmo ID.
+    Validar Contrato Atualizacao De Post v1    ${RESP_ATUALIZAR_PAR}
 
 Dado Que Possuo Dados Para Atualizacao De Post Inexistente
     ${dados}=    Obter Massa De Teste    posts    atualizacao_inexistente
@@ -485,6 +502,7 @@ Entao O Post Deve Ser Deletado (Simulado)
     Should Contain    ${json}    isDeleted
     Should Be True    ${json['isDeleted']} == True
     Log    [posts.keywords.resource:L422] Post deletado marcado isDeleted=True.
+    Validar Contrato Delecao De Post v1    ${RESP_DELETAR}
 
 Dado Que Possuo Um Post Inexistente Para Delecao
     ${dados}=    Obter Massa De Teste    posts    delecao_inexistente
@@ -529,6 +547,7 @@ Entao A Lista De Comentarios Deve Ser Retornada
     ${json}=    Converter Resposta Em Json    ${RESP_COMMENTS}
     Run Keyword If    ${RESP_COMMENTS.status_code} == 200    Should Contain    ${json}    comments
     Log    [posts.keywords.resource:L468] Comentários tratados.
+    Run Keyword If    ${RESP_COMMENTS.status_code} == 200    Validar Contrato Comentarios Do Post v1    ${RESP_COMMENTS}
 
 Dado Que Possuo Um Post Inexistente Para Comentarios
     ${dados}=    Obter Massa De Teste    posts    comments_post_inexistente
