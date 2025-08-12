@@ -23,3 +23,8 @@ Contrato - Delecao de Carrinho
     ${resp}=    Deletar Carrinho    1
     Should Be Equal As Integers    ${resp.status_code}    200
     Validar Contrato Delecao De Carrinho v1    ${resp}
+
+Contrato - Lista de Carrinhos por Usuario
+    ${resp}=    Obter Carrinhos Por Usuario    33
+    Should Be Equal As Integers    ${resp.status_code}    200
+    Validar Contrato Lista De Carrinhos v1    ${resp}

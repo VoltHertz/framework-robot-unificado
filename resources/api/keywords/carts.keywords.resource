@@ -166,12 +166,12 @@ Entao Devo Receber Lista Vazia De Carrinhos
     Should Be True    ${RESP_CARRINHOS_USUARIO_VAZIO.status_code} in (200,404)    msg=Deve retornar 200 com lista vazia ou 404 para usuário inexistente
     IF    ${RESP_CARRINHOS_USUARIO_VAZIO.status_code} == 200
         ${json}=    Converter Resposta Em Json    ${RESP_CARRINHOS_USUARIO_VAZIO}
-    Should Contain    ${json}    carts
-    Validar Contrato Lista De Carrinhos v1    ${RESP_CARRINHOS_USUARIO_VAZIO}
+        Should Contain    ${json}    carts
+        Validar Contrato Lista De Carrinhos v1    ${RESP_CARRINHOS_USUARIO_VAZIO}
         ${carts_count}=    Get Length    ${json['carts']}
         Should Be Equal As Integers    ${carts_count}    0    msg=Lista deve estar vazia para usuário sem carrinhos
     ELSE
-        ${json}=    Evaluate    __import__('json').loads(r'''${RESP_CARRINHOS_USUARIO_VAZIO.text}''')
+        ${json}=    Converter Resposta Em Json    ${RESP_CARRINHOS_USUARIO_VAZIO}
         Should Contain    ${json['message']}    not found
     END
     Log    [carts.keywords.resource:L136] Validação de usuário sem carrinhos realizada
@@ -237,6 +237,21 @@ Entao Devo Receber Erro De Carrinho Vazio
 Entao Devo Receber Erro De Corpo Vazio
     Should Be True    ${RESP_CARRINHO_CORPO_VAZIO.status_code} in (400,422)    msg=Deve retornar erro para corpo vazio
     Log    [carts.keywords.resource:LB8] Validação corpo vazio
+
+# Negativo adicional: JSON malformado (corpo RAW)
+Dado Que Possuo Corpo JSON Malformado Para Carrinho
+    ${raw}=    Set Variable    {"userId": 1, "products": [ {"id": 1, "quantity": 2 }   # fecha colchete ausente
+    Set Test Variable    ${CORPO_MALFORMADO}    ${raw}
+    Log    [carts.keywords.resource:LB9] Corpo malformado preparado
+
+Quando Tentar Criar Carrinho Com JSON Malformado
+    ${resp}=    Adicionar Novo Carrinho Com Corpo Raw    ${CORPO_MALFORMADO}
+    Set Test Variable    ${RESP_CARRINHO_JSON_MALFORMADO}    ${resp}
+    Log    [carts.keywords.resource:LB10] Criação carrinho JSON malformado status=${resp.status_code}
+
+Entao Devo Receber Erro De JSON Malformado
+    Should Be True    ${RESP_CARRINHO_JSON_MALFORMADO.status_code} in (400,422)    msg=Deve retornar erro para JSON malformado
+    Log    [carts.keywords.resource:LB11] Validação JSON malformado
 
 # UC-CART-005: Atualizar um Carrinho
 Dado Que Possuo Dados Para Atualizar Um Carrinho

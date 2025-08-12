@@ -73,3 +73,12 @@ Atualizar Carrinho Com Payload
     ${resp}=    PUT On Session    DUMMYJSON    /carts/${cart_id}    json=${payload}    headers=${headers}    expected_status=any
     Log    [carts.service.resource:L69] Resposta atualizar carrinho (payload bruto) status=${resp.status_code}
     RETURN    ${resp}
+
+# Envia corpo RAW (string) para simular JSON malformado ou payloads não serializáveis
+Adicionar Novo Carrinho Com Corpo Raw
+    [Arguments]    ${raw_body}
+    Log    [carts.service.resource:L75] Iniciando chamada POST /carts/add (corpo RAW)
+    ${headers}=    Create Dictionary    Content-Type=application/json
+    ${resp}=    POST On Session    DUMMYJSON    /carts/add    data=${raw_body}    headers=${headers}    expected_status=any
+    Log    [carts.service.resource:L78] Resposta adicionar carrinho (corpo RAW) status=${resp.status_code}
+    RETURN    ${resp}

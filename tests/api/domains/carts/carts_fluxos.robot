@@ -44,6 +44,13 @@ UC-CART-001-B3 - Boundary Paginacao Limit Alto
     Quando Solicito Carrinhos Com Limit E Skip    ${BOUNDARY_PAGINACAO['limit_maior']}    ${BOUNDARY_PAGINACAO['skip_zero']}
     Entao A Resposta De Paginacao Deve Ser Valida Para Boundary    ${BOUNDARY_PAGINACAO['limit_maior']}    ${BOUNDARY_PAGINACAO['skip_zero']}
 
+UC-CART-001-B4 - Boundary Paginacao Skip Alto
+    [Documentation]    Boundary: skip alto próximo ao total
+    [Tags]    boundary    paginacao
+    Dado Que Possuo Parametros Boundary De Paginacao De Carrinhos
+    Quando Solicito Carrinhos Com Limit E Skip    ${BOUNDARY_PAGINACAO['limit_um']}    ${BOUNDARY_PAGINACAO['skip_alto']}
+    Entao A Resposta De Paginacao Deve Ser Valida Para Boundary    ${BOUNDARY_PAGINACAO['limit_um']}    ${BOUNDARY_PAGINACAO['skip_alto']}
+
 UC-CART-002 - Obter Carrinho Por ID Existente
     [Documentation]    Testa a obtenção de detalhes de um carrinho específico usando ID válido
     [Tags]    smoke    consulta
@@ -98,6 +105,13 @@ UC-CART-004-E3 - Erro Ao Criar Carrinho Com Corpo Vazio
     [Tags]    erro    boundary    criacao
     Quando Tentar Criar Carrinho Com Corpo Vazio
     Entao Devo Receber Erro De Corpo Vazio
+
+UC-CART-004-E4 - Erro Ao Criar Carrinho Com JSON Malformado
+    [Documentation]    Tenta criar carrinho com JSON malformado (corpo RAW)
+    [Tags]    erro    criacao    security
+    Dado Que Possuo Corpo JSON Malformado Para Carrinho
+    Quando Tentar Criar Carrinho Com JSON Malformado
+    Entao Devo Receber Erro De JSON Malformado
 
 UC-CART-005 - Atualizar Carrinho Mesclando Produtos
     [Documentation]    Testa a atualização de carrinho mesclando produtos existentes com novos
