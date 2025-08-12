@@ -69,16 +69,6 @@ Para **cada** endpoint implementado no domínio:
 ## Backlog de atividades
 A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor humano revise.
 
-
-
-- Planejamento formal: elaborar o PRD (Product Requirements Document) do projeto Levando em consideração todos os aspectos do projetos anteriormente levantandos e mantendo a complexidade e robostez para o resto.
-    - Implementarmos todas as APIs do https://dummyjson.com/ documentadas nos casos de uso de forma robusta pelo robot (seguindo todas as boas praticas sugeridas nas documentações desse projeto), iremos testa-las e garantir que elas de fato estão funcionando como esperado nos casos de uso. As implementaçòes deverão seguir o modelo BDD ajustado para o portugues. 
-    - Implementação da documentação de caosos de uso no portal https://demoqa.com/ e execução de testes no portal com implementação de robot com webUI, seguindo a mesma robustez.
-    - Implementação da documentação de casos de uso no grpcbin — “httpbin do gRPC” e execução de testes no grpcbin com robot.
-
-
-## Foco atual
-
 - Implementação da automatização dos casos de teste docs/use_cases em robot framework para DummyJSON (padrão de arquitetura + Strategy/Factory para massa). Implemente os casos de testes das apis do dummujson em robot, seguindo todos os direcionamentos do projeto. A massa está disponivel em data/full_api_data/DummyJson/, porém essa é a massa total da aplicação. Crie a massa que será utilizada nos testes em data/json.
     - (x) auth
     - (x) products
@@ -90,9 +80,22 @@ A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor 
     - ( ) recipes
     - ( ) todos
 
+- Planejamento formal: elaborar o PRD (Product Requirements Document) do projeto Levando em consideração todos os aspectos do projetos anteriormente levantandos e mantendo a complexidade e robostez para o resto.
+    - Implementarmos todas as APIs do https://dummyjson.com/ documentadas nos casos de uso de forma robusta pelo robot (seguindo todas as boas praticas sugeridas nas documentações desse projeto), iremos testa-las e garantir que elas de fato estão funcionando como esperado nos casos de uso. As implementaçòes deverão seguir o modelo BDD ajustado para o portugues. 
+    - Implementação da documentação de caosos de uso no portal https://demoqa.com/ e execução de testes no portal com implementação de robot com webUI, seguindo a mesma robustez.
+    - Implementação da documentação de casos de uso no grpcbin — “httpbin do gRPC” e execução de testes no grpcbin com robot.
 
 
+## Foco atual
 
+- Ajustar scripts já implementados para estrutura de camadas conforme explicado em docs/feedbackAI/feedback002.md. Realizar tal processo cada um por vez por domínio já implementado:
+ - Ajustar scripts já implementados para estrutura de camadas conforme explicado em docs/feedbackAI/feedback002.md. Realizar tal processo cada um por vez por domínio já implementado:
+     - (x) auth
+    - ( ) products
+    - ( ) carts
+    - ( ) users
+    - ( ) posts
+    - ( ) comments
 
 ## Atividades concluidas
 - Pastas pronizadas

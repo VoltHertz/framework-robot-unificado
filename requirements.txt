@@ -17,3 +17,6 @@ pyodbc==5.1.0                      # DB access (docs/libs/pyodbc.md)
 python-dotenv==1.0.1               # Env loader (docs/libs/python-dotenv.md)
 
 requests==2.32.3                   # Underlying HTTP client (docs/libs/requests.md)
+
+# Contract validation
+robotframework-jsonschemalibrary==1.0    # Validação de respostas via JSON Schema
