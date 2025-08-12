@@ -129,7 +129,7 @@ A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor 
     - (x) carts
     - (x) users
     - (x) posts
-    - ( ) comments
+    - (x) comments
 
 ## Atividades concluidas
 - Pastas pronizadas

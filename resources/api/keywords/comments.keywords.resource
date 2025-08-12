@@ -1,5 +1,6 @@
 *** Settings ***
 Resource    ../services/comments.service.resource
+Resource    ../contracts/comments/comments.contracts.resource
 Resource    ../../common/data_provider.resource
 Resource    ../../common/json_utils.resource
 Library     Collections
@@ -26,6 +27,8 @@ Entao A Lista Completa De Comentarios Deve Ser Retornada
     Should Contain    ${json}    total
     ${qtd}=    Get Length    ${json['comments']}
     Log    [comments.keywords.resource:L26] Lista validada tamanho=${qtd}
+    # Validação de contrato para lista completa
+    Validar Contrato Lista De Comentarios v1    ${RESP_LISTA_COMMENTS}
 
 Dado Que Tenho Parametros De Paginacao Customizada Para Comentarios
     ${dados}=    Obter Massa De Teste    comments    paginacao_customizada
@@ -43,6 +46,7 @@ Entao A Lista De Comentarios Deve Respeitar Os Parametros De Paginacao
     Should Be Equal As Integers    ${json['limit']}    ${PARAM_PAGINACAO['limit']}
     Should Be Equal As Integers    ${json['skip']}     ${PARAM_PAGINACAO['skip']}
     Log    [comments.keywords.resource:L44] Validação de paginação OK.
+    Validar Contrato Lista De Comentarios v1    ${RESP_LISTA_PAGINADA}
 
 Dado Que Possuo Um Comentario Existente
     ${dados}=    Obter Massa De Teste    comments    comentario_existente
@@ -59,6 +63,7 @@ Entao Os Detalhes Do Comentario Devem Ser Retornados
     ${json}=    Converter Resposta Em Json    ${RESP_COMMENT}
     Should Be Equal As Integers    ${json['id']}    ${COMENT_EXISTENTE['id']}
     Log    [comments.keywords.resource:L61] Comentario retornado corresponde ao ID.
+    Validar Contrato Comentario v1    ${RESP_COMMENT}
 
 Dado Que Possuo Um Comentario Inexistente
     ${dados}=    Obter Massa De Teste    comments    comentario_inexistente
@@ -92,6 +97,7 @@ Entao A Lista De Comentarios Do Post Deve Ser Retornada
     ${qtd}=    Get Length    ${json['comments']}
     Should Be True    ${qtd} >= 0
     Log    [comments.keywords.resource:L95] Comments do post retornados: ${qtd}
+    Validar Contrato Lista De Comentarios v1    ${RESP_COMMENTS_POST}
 
 Dado Que Possuo Um Post Sem Comentarios
     ${dados}=    Obter Massa De Teste    comments    post_sem_comentarios
@@ -127,6 +133,7 @@ Entao Os Comentarios Do Post Devem Respeitar A Paginacao
     Should Be Equal As Integers    ${json['skip']}     ${PAG_POST['skip']}
     Should Be True    ${json['limit']} in (${PAG_POST['limit']}, 0)
     Log    [comments.keywords.resource:L129] Paginacao em comments/post validada (limit pode ser 0 quando skip > total).
+    Validar Contrato Lista De Comentarios v1    ${RESP_PAG_POST}
 
 Dado Que Possuo Dados Validos Para Novo Comentario
     ${dados}=    Obter Massa De Teste    comments    novo_comentario_valido
@@ -144,6 +151,7 @@ Entao O Comentario Deve Ser Criado (Simulado)
     Should Contain    ${json}    id
     Should Be Equal    ${json['body']}    ${NOVO_COMMENT['body']}
     Log    [comments.keywords.resource:L147] Comentario criado id=${json['id']}
+    Validar Contrato Criacao De Comentario v1    ${RESP_ADD_COMMENT}
 
 Dado Que Possuo Dados Invalidos Para Novo Comentario
     ${dados}=    Obter Massa De Teste    comments    novo_comentario_invalido
@@ -188,6 +196,7 @@ Entao O Comentario Deve Ser Atualizado (Simulado)
     ${json}=    Converter Resposta Em Json    ${RESP_UPD}
     Should Be Equal    ${json['body']}    ${ATUALIZA['payload']['body']}
     Log    [comments.keywords.resource:L179] Comentário atualizado OK.
+    Validar Contrato Atualizacao De Comentario v1    ${RESP_UPD}
 
 Dado Que Possuo Dados Para Atualizacao Parcial De Comentario
     ${dados}=    Obter Massa De Teste    comments    atualizacao_valida
@@ -204,6 +213,7 @@ Entao O Comentario Deve Ser Atualizado Parcialmente (Simulado)
     ${json}=    Converter Resposta Em Json    ${RESP_PATCH}
     Should Be Equal    ${json['body']}    ${ATUALIZA_PARCIAL['payload']['body']}
     Log    [comments.keywords.resource:L196] Comentário patch OK.
+    Validar Contrato Atualizacao De Comentario v1    ${RESP_PATCH}
 
 Dado Que Possuo Um Comentario Para Deletar
     ${dados}=    Obter Massa De Teste    comments    delecao_valida
@@ -220,6 +230,7 @@ Entao O Comentario Deve Ser Deletado (Simulado)
     ${json}=    Converter Resposta Em Json    ${RESP_DEL}
     Should Be True    ${json['isDeleted']} == True
     Log    [comments.keywords.resource:L213] Comentário deletado OK.
+    Validar Contrato Delecao De Comentario v1    ${RESP_DEL}
 
 # -------- Boundary e negativos adicionais para cobrir DoD do projeto --------
 
