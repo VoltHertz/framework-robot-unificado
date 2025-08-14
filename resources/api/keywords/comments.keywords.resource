@@ -2,9 +2,9 @@
 Resource    ../services/comments.service.resource
 Resource    ../contracts/comments/comments.contracts.resource
 Resource    ../../common/data_provider.resource
-Resource    ../../common/json_utils.resource
-Library     Collections
-Library     BuiltIn
+# Resource ../../common/json_utils.resource removido (já importado em comments.contracts.resource)
+# Library Collections removida (já importada em comments.service.resource e disponível globalmente)
+# Library BuiltIn removida (carregada automaticamente pelo Robot Framework)
 
 *** Keywords ***
 # Arquivo: resources/api/keywords/comments.keywords.resource
