@@ -1,11 +1,9 @@
 *** Settings ***
 Resource    ../services/auth.service.resource
-Resource    ../adapters/http_client.resource
 Resource    ../../common/data_provider.resource
-Resource    ../../common/json_utils.resource
 Resource    ../contracts/auth/auth.contracts.resource
-Library     Collections
-Library     BuiltIn
+# Removidos imports duplicados: http_client (já importado em service), json_utils (reexportado via contracts),
+# Collections (já importado em service) e BuiltIn (implícito). Mantemos apenas o necessário segundo arquitetura.
 
 *** Variables ***
 ${_CTX_LOGIN}=    NONE

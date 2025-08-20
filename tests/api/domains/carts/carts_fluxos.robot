@@ -7,7 +7,7 @@ Resource         ../../../../resources/common/hooks.resource
 Variables        ../../../../environments/dev.py
 Suite Setup      Setup Suite Padrao
 Suite Teardown   Teardown Suite Padrao
-Force Tags       api    carts    regression
+Test Tags       api    carts    regression
 
 *** Test Cases ***
 UC-CART-001 - Obter Todos os Carrinhos

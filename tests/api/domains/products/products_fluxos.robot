@@ -9,6 +9,8 @@ Suite Teardown    Teardown Suite Padrao
 
 *** Test Cases ***
 UC-PROD-001 Lista Completa De Produtos
+    [Documentation]     Verifica a listagem completa de produtos com patinição default retornona lista de produtos validos.
+    ...                 UC: UC-PROD-001 - Lista basica de produtos
     [Tags]    api    products    regression    smoke
     Dado Que Tenho Parametros Padrao De Lista De Produtos
     Quando Solicito A Lista Completa De Produtos
