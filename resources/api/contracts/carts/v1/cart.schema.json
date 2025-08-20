@@ -9,7 +9,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "price", "quantity", "total", "discountPercentage", "discountedTotal"],
+  "required": ["id", "price", "quantity", "total", "discountPercentage", "discountedPrice"],
         "properties": {
           "id": { "type": "integer" },
           "title": { "type": ["string", "null"] },
@@ -17,7 +17,7 @@
           "quantity": { "type": "integer" },
           "total": { "type": ["number", "integer"] },
           "discountPercentage": { "type": ["number", "integer"] },
-          "discountedTotal": { "type": ["number", "integer"] }
+          "discountedPrice": { "type": ["number", "integer"] }
         },
         "additionalProperties": true
       }
