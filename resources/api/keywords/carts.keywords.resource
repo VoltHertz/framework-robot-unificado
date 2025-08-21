@@ -12,6 +12,19 @@ Resource    ../../common/json_utils.resource
 
 # UC-CART-001: Obter Todos os Carrinhos
 Dado Que Quero Obter A Lista De Todos Os Carrinhos
+    [Documentation]    Prepara os parâmetros para listar todos os carrinhos
+        ...    
+    ...    *Arguments:*
+    ...    - none
+    ...    
+    ...    *Returns:*
+    ...    - none
+    ...    
+    ...    *Example:*
+    ...     Dado Que Quero Obter A Lista De Todos Os Carrinhos
+    ...    
+    ...    *JIRA issue:*
+    ...    - HERA-101
     ${dados}=    Obter Massa De Teste    carts    listar_todos
     Set Test Variable    ${PARAMS_LISTAGEM}    ${dados}
     Log    [carts.keywords.resource:L13] Parâmetros de listagem carregados: ${dados}
