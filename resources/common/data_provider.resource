@@ -1,5 +1,5 @@
 *** Settings ***
-Library    ${EXECDIR}/libs/data/data_provider.py
+Library    ../../libs/data/data_provider.py
 
 *** Keywords ***
 # Json
