@@ -23,6 +23,27 @@ Repositório de referência para automação com Robot Framework utilizando cama
    - Lint: `.venv/bin/robocop resources tests`
    - Format (opcional): `.venv/bin/robotidy resources tests`
 
+## Exemplos de Execução
+- Por tags (AND): `.venv/bin/python -m robot -d results/api/products -i api -i products -i regression tests`
+- Por tags (AND abreviado): `.venv/bin/python -m robot -d results/api/products -i 'apiANDproductsANDregression' tests`
+- Excluindo tags: `.venv/bin/python -m robot -d results/api/products -i api -i products -e negative -e flaky tests`
+- Caso específico: `.venv/bin/python -m robot -d results/api/products -t 'UC-PROD-002*' tests/api/domains/products`
+- Contratos apenas: `.venv/bin/python -m robot -d results/api/contracts -i api -i contract tests/api/contract`
+
+### Estrutura de resultados (exemplo)
+```
+results/
+  api/
+    products/
+      log.html
+      report.html
+      output.xml
+    carts/
+      log.html
+      report.html
+      output.xml
+```
+
 ## Padrões do Projeto
 - Layering & Imports: `RequestsLibrary` apenas no adapter; services usam `Collections` quando necessário; keywords orquestram negócio; contratos usam `JSONSchemaLibrary` + `json_utils`.
 - Documentação de casos: siga o modelo de `docs/feedbackAI/feedback003.md` (Objetivo, Pré‑requisitos, Dados, Resultado, JIRA, Confluence, Risco). As suítes possuem um bloco‑modelo no topo como referência.
