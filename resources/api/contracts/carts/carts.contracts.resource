@@ -1,5 +1,4 @@
 *** Settings ***
-Library    OperatingSystem
 Resource   ../../../common/json_utils.resource
 Library    JSONSchemaLibrary    ${EXECDIR}/resources/api/contracts/carts/v1
 

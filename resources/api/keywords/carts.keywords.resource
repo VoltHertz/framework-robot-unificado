@@ -3,8 +3,7 @@ Resource    ../services/carts.service.resource
 Resource    ../contracts/carts/carts.contracts.resource
 Resource    ../../common/data_provider.resource
 Resource    ../../common/json_utils.resource
-# Library     Collections (retirar)
-# Library     BuiltIn
+Library     Collections
 
 *** Keywords ***
 # Arquivo: resources/api/keywords/carts.keywords.resource

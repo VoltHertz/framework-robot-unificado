@@ -1,7 +1,6 @@
 *** Settings ***
 Resource    ../adapters/http_client.resource
 Library     Collections
-Library     RequestsLibrary
 
 *** Keywords ***
 # Arquivo: resources/api/services/carts.service.resource

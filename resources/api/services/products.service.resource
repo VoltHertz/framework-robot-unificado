@@ -1,6 +1,5 @@
 *** Settings ***
 Resource    ../adapters/http_client.resource
-Library     RequestsLibrary
 Library     Collections
 
 *** Keywords ***
