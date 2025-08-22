@@ -1,6 +1,6 @@
 # QA Monorepo — Guia Rápido
 
-Repositório de referência para automação com Robot Framework utilizando camadas claras (adapters → services/pages/screens → keywords → suites). Exemplos baseados nas APIs DummyJSON.
+Repositório de referência para automação com Robot Framework utilizando camadas claras (adapters → services/pages → keywords → suites). Exemplos baseados nas APIs DummyJSON.
 
 ## Estrutura
 - tests: somente suítes (.robot) sem lógica. Ex.: `tests/api/domains/<dominio>/<nome>_fluxos.robot`, `tests/api/contract/<dominio>/<nome>_contract.robot`.

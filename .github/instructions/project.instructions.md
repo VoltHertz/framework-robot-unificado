@@ -38,7 +38,7 @@ Bibliotecas e versões já implementadas no ambiente.
 Robot Framework 7.3.2                   # Python 3.13.5 on Fedora Linux 42 (wsl)
 robotframework-browser==18.6.1          # Web UI Playwright (docs/libs/browser.md)  # NOTE: latest 19.x avaliar antes de upgrade
 robotframework-requests==0.9.6          # HTTP keywords (docs/libs/requestslibrary.md)
-robotframework-appiumlibrary==2.0.0     # Mobile automation (docs/libs/appiumlibrary.md)
+ 
 grpcio==1.66.0                          # gRPC runtime (docs/libs/grpc.md)
 grpcio-tools==1.66.0                    # gRPC codegen plugin (protoc) (docs/libs/grpc.md)
 protobuf==5.27.2                        # Protocol Buffers (docs/libs/protobuf.md)
@@ -133,7 +133,7 @@ A cada item abaixo finalizado, deve-se parar o projeto para que o desenvolvedor 
 
 ## Atividades concluidas
 - Pastas pronizadas
-- Documento docs/aplicacoes_testadas.md ampliado com seções detalhadas (DummyJSON, DemoQA, grpcbin, Mobile) e links oficiais adicionais.
+- Documento docs/aplicacoes_testadas.md ampliado com seções detalhadas (DummyJSON, DemoQA, grpcbin) e links oficiais adicionais.
 - Casos de uso DummyJSON completos e enriquecidos com validação cruzada de toda a documentação oficial (products, carts, users, auth, posts, comments, quotes, recipes, todos).
 - Analise o codebase do projeto, focando na pasta src e no arquivo requirements.txt, e identifique todas as bibliotecas de tericeiros usadas. Use o Context7 MCP para buscar a documentação relevante de cada uma. Depois, crie arquivos .md na pasta /docs/libs com essas informações (por exemplo browser.md, requests.md ...). Garanta que utilizará o Context7 MCP, pesquise na web caso não encontre documentação ou use outros tools/MCPs. Toda biblioteca de robot framework possui um repositório github rico em informações atualizadas de como as coisas devem ser executadas e quais as melhores praticas.
 - Melhorar os requirements.txt

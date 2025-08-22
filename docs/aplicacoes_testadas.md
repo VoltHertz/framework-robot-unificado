@@ -1,4 +1,4 @@
-Perfeito — abaixo está a **documentação padronizada e ampliada** dos quatro alvos‑modelo que vamos usar no projeto: **DummyJSON (APIs REST)**, **DemoQA (Web UI)**, **grpcbin (gRPC)** e **Sauce Labs My Demo App (Mobile/Appium)**. Mantivemos um formato consistente: visão geral, como usamos no repositório, exemplos/padrões de Robot, armadilhas, links oficiais e notas de design alinhadas com `arquitetura.instructions.md`.
+Perfeito — abaixo está a **documentação padronizada e ampliada** dos alvos‑modelo que vamos usar no projeto: **DummyJSON (APIs REST)**, **DemoQA (Web UI)** e **grpcbin (gRPC)**. Mantivemos um formato consistente: visão geral, como usamos no repositório, exemplos/padrões de Robot, armadilhas, links oficiais e notas de design alinhadas com `arquitetura.instructions.md`.
 
 > Objetivo desta página: servir como catálogo rápido para entendimento de escopo das aplicações externas, apoiar criação/atualização de casos de uso (`docs/use_cases`), padronizar capabilities/configuração e antecipar pontos frágeis para execuções repetíveis em CI/CD.
 
@@ -146,4 +146,3 @@ Servidor gRPC público para exercícios de **unary** e **streaming**, com portas
  [5]: https://grpcb.in/?utm_source=chatgpt.com "grpcbin: gRPC Request & Response Service"
  [6]: https://github.com/moul/grpcbin?utm_source=chatgpt.com "moul/grpcbin: httpbin like for gRPC"
  [7]: https://learning.postman.com/docs/sending-requests/grpc/first-grpc-request/?utm_source=chatgpt.com "Invoke a gRPC request in Postman"
-

@@ -152,9 +152,9 @@ repo-qa/
 
 ## Por que assim?
 
-* **Separação por camadas**: `adapters` (baixo nível, libs Browser/Requests/gRPC/Appium) → `services/pages/screens` (objetos) → `keywords` (negócio) → `tests` (cenários).
+* **Separação por camadas**: `adapters` (baixo nível, libs Browser/Requests/gRPC) → `services/pages` (objetos) → `keywords` (negócio) → `tests` (cenários).
   Resultado: trocar Requests por outra lib, ou JSON por SQL, **não mexe** nas suítes.
-* **Domínios de negócio** dentro de `tests/**/domains/` evitam “suites por tecnologia”. Você testa “contas”, “pagamentos”, etc., e só decide a plataforma pela pasta pai (api/web/mobile).
+* **Domínios de negócio** dentro de `tests/**/domains/` evitam “suites por tecnologia”. Você testa “contas”, “pagamentos”, etc., e só decide a plataforma pela pasta pai (api/web).
 * **Contracts/Schemas** perto dos serviços: facilita manter **teste de contrato** separado de regressão funcional.
 * **Data provider** central: troca de JSON → SQL Server vira detalhe de implementação, não um refactor global.
 

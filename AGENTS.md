@@ -23,7 +23,7 @@
  - Casos: prefixe IDs de negócio como `UC-<DOM>-<SEQ>` (ex.: `UC-PROD-001`).
 
 ## Testing Guidelines
-- Framework: Robot Framework + Requests/Browser/Appium; contratos com `JSONSchemaLibrary` em `resources/api/contracts/<dominio>/v1`.
+- Framework: Robot Framework + Requests/Browser; contratos com `JSONSchemaLibrary` em `resources/api/contracts/<dominio>/v1`.
 - Dados: centralize em `data/json/<dominio>.json` via keyword `Get_Test_Data`.
 - Abrangência: cubra cenários positivos, negativos, boundary e security; valide status, payload e contrato.
 - Execução local: prefira `--dryrun` antes da execução real; gere artefatos em `results/<plataforma>/<dominio>`.
