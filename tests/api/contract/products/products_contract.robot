@@ -1,3 +1,13 @@
+# Modelo de [Documentation] por caso (contratos)
+# [Documentation]    Validação de contrato <recurso> (v<versão>)
+# ...                Objetivo: confirmar conformidade com JSONSchema
+# ...                Pré-requisitos: sessão/ID válido quando aplicável
+# ...                Dados de teste: N/A ou ID/params
+# ...                Resultado esperado: status e JSONSchema OK
+# ...                JIRA Issue: PROJ-123
+# ...                Confluence: https://confluence.company.com/display/QA/...
+# ...                Nível de risco: Baixo|Médio|Alto
+
 *** Settings ***
 Documentation    Testes de contrato Products DummyJSON (schemas v1)
 Resource    ../../../../resources/common/hooks.resource

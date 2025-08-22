@@ -1,3 +1,13 @@
+# Modelo de [Documentation] por caso (use nas novas adições)
+# [Documentation]    Descrição breve
+# ...                Objetivo: o que validar
+# ...                Pré-requisitos: condições/ambiente
+# ...                Dados de teste: massa/parametros
+# ...                Resultado esperado: status/corpo/contrato
+# ...                JIRA Issue: PROJ-123
+# ...                Confluence: https://confluence.company.com/display/QA/...
+# ...                Nível de risco: Baixo|Médio|Alto
+
 *** Settings ***
 Documentation    Suíte de testes para API de Carrinhos DummyJSON
 ...              Cobre cenários de listagem, consulta, criação, atualização e deleção de carrinhos

@@ -1,3 +1,13 @@
+# Modelo de [Documentation] por caso (use nas novas adições)
+# [Documentation]    Descrição breve
+# ...                Objetivo: o que validar
+# ...                Pré-requisitos: condições/ambiente
+# ...                Dados de teste: massa/parametros
+# ...                Resultado esperado: status/corpo/contrato
+# ...                JIRA Issue: PROJ-123
+# ...                Confluence: https://confluence.company.com/display/QA/...
+# ...                Nível de risco: Baixo|Médio|Alto
+
 *** Settings ***
 Documentation    Suíte de testes Products DummyJSON baseada em docs/use_cases/Products_Use_Cases.md
 Resource    ../../../../resources/common/data_provider.resource
