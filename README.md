@@ -1,24 +1,34 @@
-# QA Monorepo Estrutura Inicial
+# QA Monorepo — Guia Rápido
 
-Estrutura criada conforme `arquitetura.instructions.md` para separação clara de camadas:
+Repositório de referência para automação com Robot Framework utilizando camadas claras (adapters → services/pages/screens → keywords → suites). Exemplos baseados nas APIs DummyJSON.
 
-- tests → somente suítes (.robot) sem lógica
-- resources → adapters (baixo nível), objetos (services/pages/screens), keywords (negócio), contracts/schemas
-- data → massas (json/csv) e factories
-- environments → variáveis por ambiente (expor BASE_URL_API, etc.)
-- grpc → proto e stubs gerados
-- libs → bibliotecas Python de suporte (data provider, db, http, etc.)
-- configs → lint/format/perfis
-- tools → scripts utilitários
+## Estrutura
+- tests: somente suítes (.robot) sem lógica. Ex.: `tests/api/domains/<dominio>/<nome>_fluxos.robot`, `tests/api/contract/<dominio>/<nome>_contract.robot`.
+- resources: `api/adapters` (Requests), `api/services` (endpoints), `api/keywords` (negócio), `api/contracts/<dominio>/v1` (JSON Schema), `common/` (hooks/utils/data provider).
+- data: `json/<dominio>.json` (massa curada) e `full_api_data/` (referência).
+- environments: variáveis por ambiente (`dev.py`, `uat.py`).
+- libs: utilitários Python (ex.: `libs/data/data_provider.py`).
+- results: artefatos de execução por plataforma/domínio.
 
-## Próximos Passos
-1. Implementar data provider em `libs/data/data_provider.py` e expor keyword em `resources/common/data_provider.resource`.
-2. Criar adapters iniciais (HTTP, Browser, Appium) conforme necessidade real.
-3. Adicionar schemas de contrato em `resources/api/contracts/<dominio>/`.
-4. Configurar `environments/dev.py` e demais ambientes.
-5. Ajustar `requirements.txt` conforme libs realmente usadas.
+## Comece Rápido
+1) Criar venv e instalar deps
+   - `python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt`
+2) Dry run (checagem rápida)
+   - `.venv/bin/python -m robot --dryrun -i api tests`
+3) Executar exemplos
+   - Carts: `.venv/bin/python -m robot -d results/api/carts tests/api/domains/carts`
+   - Products: `.venv/bin/python -m robot -d results/api/products tests/api/domains/products`
+   - Filtrar por tags: `-i "api AND products AND regression"`
+4) Qualidade
+   - Lint: `.venv/bin/robocop resources tests`
+   - Format (opcional): `.venv/bin/robotidy resources tests`
 
-## Execução Exemplo
-```
-robot -d outputs/api_smoke -i apiANDsmoke -v ENV:dev tests/api
-```
+## Padrões do Projeto
+- Layering & Imports: `RequestsLibrary` apenas no adapter; services usam `Collections` quando necessário; keywords orquestram negócio; contratos usam `JSONSchemaLibrary` + `json_utils`.
+- Documentação de casos: siga o modelo de `docs/feedbackAI/feedback003.md` (Objetivo, Pré‑requisitos, Dados, Resultado, JIRA, Confluence, Risco). As suítes possuem um bloco‑modelo no topo como referência.
+- Convenções: casos `UC-<DOM>-<SEQ>`; tags por plataforma/domínio/tipo e prioridade (`Priority-Low|Medium|High`). Commits no padrão Conventional Commits.
+
+## Referências
+- Diretrizes do repositório: `AGENTS.md`
+- Arquitetura detalhada: `.github/instructions/arquitetura.instructions.md`
+- Instruções de projeto: `.github/instructions/project.instructions.md`
