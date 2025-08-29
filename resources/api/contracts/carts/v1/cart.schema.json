@@ -9,15 +9,15 @@
       "type": "array",
       "items": {
         "type": "object",
-  "required": ["id", "price", "quantity", "total", "discountPercentage", "discountedPrice"],
+  "required": ["id", "price", "quantity", "total"],
         "properties": {
           "id": { "type": "integer" },
           "title": { "type": ["string", "null"] },
           "price": { "type": ["number", "integer"] },
           "quantity": { "type": "integer" },
           "total": { "type": ["number", "integer"] },
-          "discountPercentage": { "type": ["number", "integer"] },
-          "discountedPrice": { "type": ["number", "integer"] }
+          "discountPercentage": { "type": ["number", "integer"], "nullable": true },
+          "discountedPrice": { "type": ["number", "integer"], "nullable": true }
         },
         "additionalProperties": true
       }

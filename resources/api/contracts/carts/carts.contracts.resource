@@ -1,9 +1,9 @@
 *** Settings ***
 Resource   ../../../common/json_utils.resource
-Library    JSONSchemaLibrary    ../../../../resources/api/contracts/carts/v1
+Library    JSONSchemaLibrary    ${CURDIR}/v1
 
 *** Variables ***
-${CARTS_CONTRACTS_DIR}    ../../../../resources/api/contracts/carts/v1
+${CARTS_CONTRACTS_DIR}    ${CURDIR}/v1
 
 *** Keywords ***
 # Arquivo: resources/api/contracts/carts/carts.contracts.resource
