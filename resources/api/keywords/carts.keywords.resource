@@ -2,9 +2,9 @@
 Resource    ../services/carts.service.resource
 Resource    ../contracts/carts/carts.contracts.resource
 Resource    ../../common/data_provider.resource
+Resource    ../../common/logger.resource
 Resource    ../../common/json_utils.resource
 Library     Collections
-Library     BuiltIn
 
 *** Keywords ***
 # Arquivo: resources/api/keywords/carts.keywords.resource
@@ -12,21 +12,34 @@ Library     BuiltIn
 
 # UC-CART-001: Obter Todos os Carrinhos
 Dado Que Quero Obter A Lista De Todos Os Carrinhos
+    [Documentation]    Prepara os parâmetros para listar todos os carrinhos
+        ...    
+    ...    *Arguments:*
+    ...    - none
+    ...    
+    ...    *Returns:*
+    ...    - none
+    ...    
+    ...    *Example:*
+    ...     Dado Que Quero Obter A Lista De Todos Os Carrinhos
+    ...    
+    ...    *JIRA issue:*
+    ...    - HERA-101
     ${dados}=    Obter Massa De Teste    carts    listar_todos
     Set Test Variable    ${PARAMS_LISTAGEM}    ${dados}
-    Log    [carts.keywords.resource:L13] Parâmetros de listagem carregados: ${dados}
+    Log Estilizado    Parâmetros de listagem carregados: ${dados}
 
 Quando Solicito A Lista De Carrinhos
     ${resp}=    Listar Todos Os Carrinhos
     Set Test Variable    ${RESP_CARRINHOS}    ${resp}
-    Log    [carts.keywords.resource:L18] Listagem de carrinhos status=${resp.status_code}
+    Log Estilizado    Listagem de carrinhos status=${resp.status_code}
 
 Quando Solicito A Lista De Carrinhos Com Paginacao
     ${dados}=    Obter Massa De Teste    carts    listar_paginado
     ${resp}=    Listar Todos Os Carrinhos    limit=${dados['limit']}    skip=${dados['skip']}
     Set Test Variable    ${RESP_CARRINHOS_PAGINADO}    ${resp}
     Set Test Variable    ${PARAMS_PAGINACAO}    ${dados}
-    Log    [carts.keywords.resource:L25] Listagem paginada status=${resp.status_code}
+    Log Estilizado    Listagem paginada status=${resp.status_code}
 
 Entao Devo Receber A Lista De Carrinhos Com Sucesso
     Should Be Equal As Integers    ${RESP_CARRINHOS.status_code}    200
@@ -38,7 +51,7 @@ Entao Devo Receber A Lista De Carrinhos Com Sucesso
     ${carts_count}=    Get Length    ${json['carts']}
     Should Be True    ${carts_count} > 0    msg=Lista de carrinhos não pode estar vazia
     Validar Contrato Lista De Carrinhos v1    ${RESP_CARRINHOS}
-    Log    [carts.keywords.resource:L36] Validação de listagem completa realizada. Total: ${json['total']}
+    Log Estilizado    Validação de listagem completa realizada. Total: ${json['total']}
 
 Entao Devo Receber A Lista Paginada De Carrinhos
     Should Be Equal As Integers    ${RESP_CARRINHOS_PAGINADO.status_code}    200
@@ -48,19 +61,19 @@ Entao Devo Receber A Lista Paginada De Carrinhos
     Should Be Equal As Integers    ${json['total']}    ${PARAMS_PAGINACAO['expected_total']}
     ${carts_count}=    Get Length    ${json['carts']}
     Should Be Equal As Integers    ${carts_count}    ${PARAMS_PAGINACAO['limit']}
-    Log    [carts.keywords.resource:L46] Validação de paginação realizada. Limit: ${json['limit']}, Skip: ${json['skip']}
+    Log Estilizado    Validação de paginação realizada. Limit: ${json['limit']}, Skip: ${json['skip']}
 
 # Boundary de paginação (limites)
 Dado Que Possuo Parametros Boundary De Paginacao De Carrinhos
     ${dados}=    Obter Massa De Teste    carts    listar_boundary
     Set Test Variable    ${BOUNDARY_PAGINACAO}    ${dados}
-    Log    [carts.keywords.resource:LB1] Boundary params carregados: ${dados}
+    Log Estilizado    Boundary params carregados: ${dados}
 
 Quando Solicito Carrinhos Com Limit E Skip
     [Arguments]    ${limit}    ${skip}
     ${resp}=    Listar Todos Os Carrinhos    limit=${limit}    skip=${skip}
     Set Test Variable    ${RESP_BOUNDARY}    ${resp}
-    Log    [carts.keywords.resource:LB2] Boundary list status=${resp.status_code} limit=${limit} skip=${skip}
+    Log Estilizado    Boundary list status=${resp.status_code} limit=${limit} skip=${skip}
 
 Entao A Resposta De Paginacao Deve Ser Valida Para Boundary
     [Arguments]    ${limit}    ${skip}
@@ -78,28 +91,28 @@ Entao A Resposta De Paginacao Deve Ser Valida Para Boundary
     END
     Should Contain    ${json}    total
     Validar Contrato Lista De Carrinhos v1    ${RESP_BOUNDARY}
-    Log    [carts.keywords.resource:LB3] Boundary validado limit_req=${limit} limit_resp=${json['limit']} skip=${skip}
+    Log Estilizado    Boundary validado limit_req=${limit} limit_resp=${json['limit']} skip=${skip}
 
 # UC-CART-002: Obter um Único Carrinho
 Dado Que Possuo Um ID De Carrinho Existente
     ${dados}=    Obter Massa De Teste    carts    carrinho_existente
     Set Test Variable    ${CARRINHO_EXISTENTE}    ${dados}
-    Log    [carts.keywords.resource:L52] ID de carrinho existente carregado: ${dados['id']}
+    Log Estilizado    ID de carrinho existente carregado: ${dados['id']}
 
 Dado Que Possuo Um ID De Carrinho Inexistente
     ${dados}=    Obter Massa De Teste    carts    carrinho_inexistente
     Set Test Variable    ${CARRINHO_INEXISTENTE}    ${dados}
-    Log    [carts.keywords.resource:L57] ID de carrinho inexistente carregado: ${dados['id']}
+    Log Estilizado    ID de carrinho inexistente carregado: ${dados['id']}
 
 Quando Consulto O Carrinho Por ID
     ${resp}=    Obter Carrinho Por ID    ${CARRINHO_EXISTENTE['id']}
     Set Test Variable    ${RESP_CARRINHO}    ${resp}
-    Log    [carts.keywords.resource:L62] Consulta de carrinho status=${resp.status_code}
+    Log Estilizado    Consulta de carrinho status=${resp.status_code}
 
 Quando Consulto Um Carrinho Inexistente
     ${resp}=    Obter Carrinho Por ID    ${CARRINHO_INEXISTENTE['id']}
     Set Test Variable    ${RESP_CARRINHO_INEXISTENTE}    ${resp}
-    Log    [carts.keywords.resource:L67] Consulta de carrinho inexistente status=${resp.status_code}
+    Log Estilizado    Consulta de carrinho inexistente status=${resp.status_code}
 
 Entao Devo Receber Os Detalhes Do Carrinho
     Should Be Equal As Integers    ${RESP_CARRINHO.status_code}    200
@@ -115,34 +128,34 @@ Entao Devo Receber Os Detalhes Do Carrinho
     Should Be Equal As Integers    ${products_count}    ${CARRINHO_EXISTENTE['expected_products_count']}
     Should Be Equal As Integers    ${json['totalQuantity']}    ${CARRINHO_EXISTENTE['expected_total_quantity']}
     Validar Contrato Carrinho v1    ${RESP_CARRINHO}
-    Log    [carts.keywords.resource:L81] Validação de detalhes do carrinho realizada
+    Log Estilizado    Validação de detalhes do carrinho realizada
 
 Entao Devo Receber Erro De Carrinho Nao Encontrado
     Should Be Equal As Integers    ${RESP_CARRINHO_INEXISTENTE.status_code}    404
     ${json}=    Converter Resposta Em Json    ${RESP_CARRINHO_INEXISTENTE}
     Should Contain    ${json['message']}    not found
-    Log    [carts.keywords.resource:L87] Validação de erro 404 realizada
+    Log Estilizado    Validação de erro 404 realizada
 
 # UC-CART-003: Obter Carrinhos de um Usuário
 Dado Que Possuo Um Usuario Com Carrinhos
     ${dados}=    Obter Massa De Teste    carts    usuario_com_carrinhos
     Set Test Variable    ${USUARIO_COM_CARRINHOS}    ${dados}
-    Log    [carts.keywords.resource:L93] Usuário com carrinhos carregado: ${dados['userId']}
+    Log Estilizado    Usuário com carrinhos carregado: ${dados['userId']}
 
 Dado Que Possuo Um Usuario Sem Carrinhos
     ${dados}=    Obter Massa De Teste    carts    usuario_sem_carrinhos
     Set Test Variable    ${USUARIO_SEM_CARRINHOS}    ${dados}
-    Log    [carts.keywords.resource:L98] Usuário sem carrinhos carregado: ${dados['userId']}
+    Log Estilizado    Usuário sem carrinhos carregado: ${dados['userId']}
 
 Quando Consulto Os Carrinhos Do Usuario
     ${resp}=    Obter Carrinhos Por Usuario    ${USUARIO_COM_CARRINHOS['userId']}
     Set Test Variable    ${RESP_CARRINHOS_USUARIO}    ${resp}
-    Log    [carts.keywords.resource:L103] Consulta carrinhos do usuário status=${resp.status_code}
+    Log Estilizado    Consulta carrinhos do usuário status=${resp.status_code}
 
 Quando Consulto Os Carrinhos De Usuario Sem Carrinhos
     ${resp}=    Obter Carrinhos Por Usuario    ${USUARIO_SEM_CARRINHOS['userId']}
     Set Test Variable    ${RESP_CARRINHOS_USUARIO_VAZIO}    ${resp}
-    Log    [carts.keywords.resource:L108] Consulta carrinhos de usuário sem carrinhos status=${resp.status_code}
+    Log Estilizado    Consulta carrinhos de usuário sem carrinhos status=${resp.status_code}
 
 Entao Devo Receber Os Carrinhos Do Usuario
     Should Be Equal As Integers    ${RESP_CARRINHOS_USUARIO.status_code}    200
@@ -159,7 +172,7 @@ Entao Devo Receber Os Carrinhos Do Usuario
     FOR    ${expected_id}    IN    @{USUARIO_COM_CARRINHOS['expected_cart_ids']}
         Should Contain    ${cart_ids}    ${expected_id}    msg=Carrinho esperado ${expected_id} não encontrado
     END
-    Log    [carts.keywords.resource:L123] Validação de carrinhos do usuário realizada
+    Log Estilizado    Validação de carrinhos do usuário realizada
 
 Entao Devo Receber Lista Vazia De Carrinhos
     # DummyJSON retorna 404 para usuário inexistente, não 200 com lista vazia
@@ -174,44 +187,44 @@ Entao Devo Receber Lista Vazia De Carrinhos
         ${json}=    Converter Resposta Em Json    ${RESP_CARRINHOS_USUARIO_VAZIO}
         Should Contain    ${json['message']}    not found
     END
-    Log    [carts.keywords.resource:L136] Validação de usuário sem carrinhos realizada
+    Log Estilizado    Validação de usuário sem carrinhos realizada
 
 # UC-CART-004: Adicionar um Novo Carrinho
 Dado Que Possuo Dados Para Criar Um Novo Carrinho
     ${dados}=    Obter Massa De Teste    carts    novo_carrinho
     Set Test Variable    ${NOVO_CARRINHO}    ${dados}
-    Log    [carts.keywords.resource:L137] Dados para novo carrinho carregados: ${dados}
+    Log Estilizado    Dados para novo carrinho carregados: ${dados}
 
 Dado Que Possuo Dados Invalidos Para Criar Carrinho
     ${dados}=    Obter Massa De Teste    carts    corpo_invalido_criacao
     Set Test Variable    ${CARRINHO_INVALIDO}    ${dados}
-    Log    [carts.keywords.resource:L142] Dados inválidos para carrinho carregados: ${dados}
+    Log Estilizado    Dados inválidos para carrinho carregados: ${dados}
 
 Quando Crio Um Novo Carrinho
     ${resp}=    Adicionar Novo Carrinho    ${NOVO_CARRINHO['userId']}    ${NOVO_CARRINHO['products']}
     Set Test Variable    ${RESP_NOVO_CARRINHO}    ${resp}
-    Log    [carts.keywords.resource:L147] Criação de carrinho status=${resp.status_code}
+    Log Estilizado    Criação de carrinho status=${resp.status_code}
 
 Dado Que Possuo Payload Sem Produtos Para Criar Carrinho
     ${dados}=    Obter Massa De Teste    carts    payload_sem_produtos
     Set Test Variable    ${PAYLOAD_SEM_PRODUTOS}    ${dados}
-    Log    [carts.keywords.resource:LB4] Payload sem produtos carregado
+    Log Estilizado    Payload sem produtos carregado
 
 Quando Tentar Criar Carrinho Vazio
     ${resp}=    Adicionar Novo Carrinho    ${PAYLOAD_SEM_PRODUTOS['userId']}    ${PAYLOAD_SEM_PRODUTOS['products']}
     Set Test Variable    ${RESP_CARRINHO_VAZIO}    ${resp}
-    Log    [carts.keywords.resource:LB5] Criação carrinho vazio status=${resp.status_code}
+    Log Estilizado    Criação carrinho vazio status=${resp.status_code}
 
 Quando Tentar Criar Carrinho Com Corpo Vazio
     ${dados}=    Obter Massa De Teste    carts    corpo_vazio
     ${resp}=    Adicionar Novo Carrinho Com Payload    ${dados}
     Set Test Variable    ${RESP_CARRINHO_CORPO_VAZIO}    ${resp}
-    Log    [carts.keywords.resource:LB6] Criação carrinho corpo vazio status=${resp.status_code}
+    Log Estilizado    Criação carrinho corpo vazio status=${resp.status_code}
 
 Quando Tento Criar Carrinho Com Dados Invalidos
     ${resp}=    Adicionar Novo Carrinho Com Payload    ${CARRINHO_INVALIDO}
     Set Test Variable    ${RESP_CARRINHO_INVALIDO}    ${resp}
-    Log    [carts.keywords.resource:L154] Criação inválida de carrinho status=${resp.status_code}
+    Log Estilizado    Criação inválida de carrinho status=${resp.status_code}
 
 Entao O Carrinho Deve Ser Criado Com Sucesso
     # DummyJSON pode retornar 200 ou 201 para criação
@@ -224,70 +237,70 @@ Entao O Carrinho Deve Ser Criado Com Sucesso
     ${expected_count}=    Get Length    ${NOVO_CARRINHO['products']}
     Should Be Equal As Integers    ${products_count}    ${expected_count}
     Validar Contrato Carrinho v1    ${RESP_NOVO_CARRINHO}
-    Log    [carts.keywords.resource:L166] Validação de criação de carrinho realizada. ID: ${json['id']}
+    Log Estilizado    Validação de criação de carrinho realizada. ID: ${json['id']}
 
 Entao Devo Receber Erro De Dados Invalidos
     Should Be True    ${RESP_CARRINHO_INVALIDO.status_code} in (400,422)    msg=Status deve indicar erro de validação
-    Log    [carts.keywords.resource:L170] Validação de erro de dados inválidos realizada
+    Log Estilizado    Validação de erro de dados inválidos realizada
 
 Entao Devo Receber Erro De Carrinho Vazio
     Should Be True    ${RESP_CARRINHO_VAZIO.status_code} in (400,422)    msg=Deve retornar erro para products vazio
-    Log    [carts.keywords.resource:LB7] Validação payload sem produtos
+    Log Estilizado    Validação payload sem produtos
 
 Entao Devo Receber Erro De Corpo Vazio
     Should Be True    ${RESP_CARRINHO_CORPO_VAZIO.status_code} in (400,422)    msg=Deve retornar erro para corpo vazio
-    Log    [carts.keywords.resource:LB8] Validação corpo vazio
+    Log Estilizado    Validação corpo vazio
 
 # Negativo adicional: JSON malformado (corpo RAW)
 Dado Que Possuo Corpo JSON Malformado Para Carrinho
     ${raw}=    Set Variable    {"userId": 1, "products": [ {"id": 1, "quantity": 2 }   # fecha colchete ausente
     Set Test Variable    ${CORPO_MALFORMADO}    ${raw}
-    Log    [carts.keywords.resource:LB9] Corpo malformado preparado
+    Log Estilizado    Corpo malformado preparado
 
 Quando Tentar Criar Carrinho Com JSON Malformado
     ${resp}=    Adicionar Novo Carrinho Com Corpo Raw    ${CORPO_MALFORMADO}
     Set Test Variable    ${RESP_CARRINHO_JSON_MALFORMADO}    ${resp}
-    Log    [carts.keywords.resource:LB10] Criação carrinho JSON malformado status=${resp.status_code}
+    Log Estilizado    Criação carrinho JSON malformado status=${resp.status_code}
 
 Entao Devo Receber Erro De JSON Malformado
     Should Be True    ${RESP_CARRINHO_JSON_MALFORMADO.status_code} in (400,422)    msg=Deve retornar erro para JSON malformado
-    Log    [carts.keywords.resource:LB11] Validação JSON malformado
+    Log Estilizado    Validação JSON malformado
 
 # UC-CART-005: Atualizar um Carrinho
 Dado Que Possuo Dados Para Atualizar Um Carrinho
     ${dados}=    Obter Massa De Teste    carts    carrinho_atualizacao
     Set Test Variable    ${ATUALIZACAO_CARRINHO}    ${dados}
-    Log    [carts.keywords.resource:L176] Dados para atualização carregados: ${dados}
+    Log Estilizado    Dados para atualização carregados: ${dados}
 
 Dado Que Possuo Dados Para Substituir Produtos Do Carrinho
     ${dados}=    Obter Massa De Teste    carts    carrinho_substituicao
     Set Test Variable    ${SUBSTITUICAO_CARRINHO}    ${dados}
-    Log    [carts.keywords.resource:L181] Dados para substituição carregados: ${dados}
+    Log Estilizado    Dados para substituição carregados: ${dados}
 
 Dado Que Possuo Dados Invalidos Para Atualizar Carrinho
     ${dados}=    Obter Massa De Teste    carts    corpo_invalido_atualizacao
     Set Test Variable    ${ATUALIZACAO_INVALIDA}    ${dados}
-    Log    [carts.keywords.resource:L186] Dados inválidos para atualização carregados: ${dados}
+    Log Estilizado    Dados inválidos para atualização carregados: ${dados}
 
 Quando Atualizo O Carrinho Mesclando Produtos
     ${resp}=    Atualizar Carrinho    ${ATUALIZACAO_CARRINHO['id']}    ${ATUALIZACAO_CARRINHO['products']}    ${ATUALIZACAO_CARRINHO['merge']}
     Set Test Variable    ${RESP_ATUALIZACAO}    ${resp}
-    Log    [carts.keywords.resource:L191] Atualização com merge status=${resp.status_code}
+    Log Estilizado    Atualização com merge status=${resp.status_code}
 
 Quando Atualizo O Carrinho Substituindo Produtos
     ${resp}=    Atualizar Carrinho    ${SUBSTITUICAO_CARRINHO['id']}    ${SUBSTITUICAO_CARRINHO['products']}    ${SUBSTITUICAO_CARRINHO['merge']}
     Set Test Variable    ${RESP_SUBSTITUICAO}    ${resp}
-    Log    [carts.keywords.resource:L196] Atualização com substituição status=${resp.status_code}
+    Log Estilizado    Atualização com substituição status=${resp.status_code}
 
 Quando Tento Atualizar Carrinho Inexistente
     ${resp}=    Atualizar Carrinho    ${CARRINHO_INEXISTENTE['id']}    ${ATUALIZACAO_CARRINHO['products']}    ${ATUALIZACAO_CARRINHO['merge']}
     Set Test Variable    ${RESP_ATUALIZACAO_INEXISTENTE}    ${resp}
-    Log    [carts.keywords.resource:L201] Atualização de carrinho inexistente status=${resp.status_code}
+    Log Estilizado    Atualização de carrinho inexistente status=${resp.status_code}
 
 Quando Tento Atualizar Carrinho Com Dados Invalidos
     ${resp}=    Atualizar Carrinho Com Payload    1    ${ATUALIZACAO_INVALIDA}
     Set Test Variable    ${RESP_ATUALIZACAO_INVALIDA}    ${resp}
-    Log    [carts.keywords.resource:L208] Atualização inválida status=${resp.status_code}
+    Log Estilizado    Atualização inválida status=${resp.status_code}
 
 Entao O Carrinho Deve Ser Atualizado Com Sucesso
     Should Be Equal As Integers    ${RESP_ATUALIZACAO.status_code}    200
@@ -295,7 +308,7 @@ Entao O Carrinho Deve Ser Atualizado Com Sucesso
     Should Be Equal As Integers    ${json['id']}    ${ATUALIZACAO_CARRINHO['id']}
     Should Contain    ${json}    products
     Validar Contrato Carrinho v1    ${RESP_ATUALIZACAO}
-    Log    [carts.keywords.resource:L215] Validação de atualização realizada
+    Log Estilizado    Validação de atualização realizada
 
 Entao O Carrinho Deve Ter Produtos Substituidos
     Should Be Equal As Integers    ${RESP_SUBSTITUICAO.status_code}    200
@@ -305,28 +318,28 @@ Entao O Carrinho Deve Ter Produtos Substituidos
     ${expected_count}=    Get Length    ${SUBSTITUICAO_CARRINHO['products']}
     Should Be Equal As Integers    ${products_count}    ${expected_count}
     Validar Contrato Carrinho v1    ${RESP_SUBSTITUICAO}
-    Log    [carts.keywords.resource:L224] Validação de substituição de produtos realizada
+    Log Estilizado    Validação de substituição de produtos realizada
 
 Entao Devo Receber Erro De Carrinho Inexistente Para Atualizacao
     Should Be Equal As Integers    ${RESP_ATUALIZACAO_INEXISTENTE.status_code}    404
     ${json}=    Converter Resposta Em Json    ${RESP_ATUALIZACAO_INEXISTENTE}
     Should Contain    ${json['message']}    not found
-    Log    [carts.keywords.resource:L230] Validação de erro 404 em atualização realizada
+    Log Estilizado    Validação de erro 404 em atualização realizada
 
 Entao Devo Receber Erro De Dados Invalidos Para Atualizacao
     Should Be True    ${RESP_ATUALIZACAO_INVALIDA.status_code} in (400,422)    msg=Status deve indicar erro de validação
-    Log    [carts.keywords.resource:L234] Validação de erro de dados inválidos em atualização realizada
+    Log Estilizado    Validação de erro de dados inválidos em atualização realizada
 
 # UC-CART-006: Deletar um Carrinho
 Quando Deleto O Carrinho
     ${resp}=    Deletar Carrinho    ${CARRINHO_EXISTENTE['id']}
     Set Test Variable    ${RESP_DELECAO}    ${resp}
-    Log    [carts.keywords.resource:L240] Deleção de carrinho status=${resp.status_code}
+    Log Estilizado    Deleção de carrinho status=${resp.status_code}
 
 Quando Tento Deletar Carrinho Inexistente
     ${resp}=    Deletar Carrinho    ${CARRINHO_INEXISTENTE['id']}
     Set Test Variable    ${RESP_DELECAO_INEXISTENTE}    ${resp}
-    Log    [carts.keywords.resource:L245] Deleção de carrinho inexistente status=${resp.status_code}
+    Log Estilizado    Deleção de carrinho inexistente status=${resp.status_code}
 
 Entao O Carrinho Deve Ser Deletado Com Sucesso
     Should Be Equal As Integers    ${RESP_DELECAO.status_code}    200
@@ -335,10 +348,10 @@ Entao O Carrinho Deve Ser Deletado Com Sucesso
     Should Be True    ${json['isDeleted']}
     Should Contain    ${json}    deletedOn
     Validar Contrato Delecao De Carrinho v1    ${RESP_DELECAO}
-    Log    [carts.keywords.resource:L253] Validação de deleção realizada
+    Log Estilizado    Validação de deleção realizada
 
 Entao Devo Receber Erro De Carrinho Inexistente Para Delecao
     Should Be Equal As Integers    ${RESP_DELECAO_INEXISTENTE.status_code}    404
     ${json}=    Converter Resposta Em Json    ${RESP_DELECAO_INEXISTENTE}
     Should Contain    ${json['message']}    not found
-    Log    [carts.keywords.resource:L259] Validação de erro 404 em deleção realizada
+    Log Estilizado    Validação de erro 404 em deleção realizada

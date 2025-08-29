@@ -1,0 +1,15 @@
+==============================================================================
+Carts Fluxos :: Suíte de testes para API de Carrinhos DummyJSON Casos de us...
+==============================================================================
+UC-CART-004 - Adicionar Novo Carrinho Com Sucesso :: Testa a criaç... | PASS |
+------------------------------------------------------------------------------
+UC-CART-005 - Atualizar Carrinho Mesclando Produtos :: Testa a atu... | PASS |
+------------------------------------------------------------------------------
+UC-CART-005-A1 - Atualizar Carrinho Substituindo Produtos :: Testa... | PASS |
+------------------------------------------------------------------------------
+Carts Fluxos :: Suíte de testes para API de Carrinhos DummyJSON Ca... | PASS |
+3 tests, 3 passed, 0 failed
+==============================================================================
+Output:  /home/Volt/Robot_framework_gpt-5/framework-robot-unificado/results/api/carts_validation/output.xml
+Log:     /home/Volt/Robot_framework_gpt-5/framework-robot-unificado/results/api/carts_validation/log.html
+Report:  /home/Volt/Robot_framework_gpt-5/framework-robot-unificado/results/api/carts_validation/report.html

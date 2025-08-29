@@ -106,7 +106,7 @@ Principais opções:
 - `--json path/arquivo.json` gera artefato estruturado (analisar métricas / dashboards)
 
 ## Boas Práticas Aderentes ao Projeto
-1. Camadas: adapters -> services/pages/screens -> keywords de negócio -> suites.
+1. Camadas: adapters -> services/pages -> keywords de negócio -> suites.
 2. Suites só expressam intenção de negócio; nenhuma lógica técnica.
 3. Prefixos BDD PT‑BR (`Dado/Quando/Entao`) em keywords de alto nível.
 4. Evitar duplicação: concentrar parsing, conversões e utilidades em `resources/common` ou `libs/` Python.

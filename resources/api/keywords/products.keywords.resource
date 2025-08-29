@@ -4,7 +4,6 @@ Resource    ../../common/data_provider.resource
 Resource    ../../common/json_utils.resource
 Resource    ../contracts/products/products.contracts.resource
 Library     Collections
-Library     BuiltIn
 
 *** Keywords ***
 # Arquivo: resources/api/keywords/products.keywords.resource

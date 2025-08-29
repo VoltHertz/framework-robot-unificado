@@ -1,4 +1,4 @@
-Perfeito — abaixo está a **documentação padronizada e ampliada** dos quatro alvos‑modelo que vamos usar no projeto: **DummyJSON (APIs REST)**, **DemoQA (Web UI)**, **grpcbin (gRPC)** e **Sauce Labs My Demo App (Mobile/Appium)**. Mantivemos um formato consistente: visão geral, como usamos no repositório, exemplos/padrões de Robot, armadilhas, links oficiais e notas de design alinhadas com `arquitetura.instructions.md`.
+Perfeito — abaixo está a **documentação padronizada e ampliada** dos alvos‑modelo que vamos usar no projeto: **DummyJSON (APIs REST)**, **DemoQA (Web UI)** e **grpcbin (gRPC)**. Mantivemos um formato consistente: visão geral, como usamos no repositório, exemplos/padrões de Robot, armadilhas, links oficiais e notas de design alinhadas com `arquitetura.instructions.md`.
 
 > Objetivo desta página: servir como catálogo rápido para entendimento de escopo das aplicações externas, apoiar criação/atualização de casos de uso (`docs/use_cases`), padronizar capabilities/configuração e antecipar pontos frágeis para execuções repetíveis em CI/CD.
 
@@ -138,53 +138,6 @@ Servidor gRPC público para exercícios de **unary** e **streaming**, com portas
 
 ---
 
-# 4) Sauce Labs My Demo App — Mobile (Android / iOS)
-
-## O que é
-Aplicativo de demonstração (Android/iOS nativos) da Sauce Labs para showcase de funcionalidades: catálogo de produtos, login, carrinho, checkout, scanner de QR Code, permissões e fluxo de publicação contínua. Versões separadas: [Android][8] e [iOS][9]. A antiga versão React Native foi descontinuada.
-
-## Como usamos no repo
-| Camada | Local | Observações |
-|--------|-------|-------------|
-| Capabilities | `resources/mobile/capabilities/*.yaml` | Perfis por device/OS; evitar duplicação. |
-| Adapter Appium | `resources/mobile/adapters/appium_adapter.resource` | Sessão, timeouts, screenshots, vídeo condicional. |
-| Screen Objects | `resources/mobile/screens/*.screen.resource` | Ações atômicas. |
-| Fluxos | `resources/mobile/keywords/*.keywords.resource` | Combinação login→carrinho→checkout. |
-| Suítes | `tests/mobile/domains/<dominio>/` | Narrativa BDD PT-BR. |
-
-### Exemplo de Capability (Android - esqueleto)
-```yaml
-platformName: Android
-appium:automationName: UiAutomator2
-deviceName: Pixel_7_API_34
-platformVersion: 14
-app: ./apps/my-demo-app-android.apk  # baixar em pipeline, não versionar binário
-noReset: true
-newCommandTimeout: 120
-```
-
-## Armadilhas & Dicas
-* **Locators Divergentes**: Android (resource-id) vs iOS (accessibility id) → encapsular por Screen.
-* **Permissões**: QR Code exige câmera; criar keyword "Garantir Permissao De Camera".
-* **Estado Residual**: limpar carrinho antes de cenários críticos.
-* **Sessão Login**: separar smoke autenticado vs fluxo de login explícito.
-* **Performance de Build**: baixar APK/IPA durante CI (cache) para evitar blobs no repo.
-
-### Estratégia de Seletores
-1. Priorizar accessibility id.
-2. Evitar XPaths profundos; se necessário, documentar.
-3. Criar utilitário de espera resiliente (polling com timeout configurável).
-
-### Próximos Incrementos (Mobile)
-1. Mapear Screens: Login, Inventario, DetalheProduto, Carrinho, Checkout.
-2. Fluxo E2E smoke (Login → Add → Checkout).
-3. Gravação de vídeo somente em falha (flag).
-
-## Links Úteis
-* Android Repo: https://github.com/saucelabs/my-demo-app-android
-* iOS Repo: https://github.com/saucelabs/my-demo-app-ios
-* Sauce Docs (Mobile/Appium): https://docs.saucelabs.com/mobile-apps/
-
 ---
  [1]: https://dummyjson.com/docs?utm_source=chatgpt.com "Docs - DummyJSON - Free Fake REST API for Placeholder ..."
  [2]: https://dummyjson.com/docs/products?utm_source=chatgpt.com "Products - DummyJSON - Free Fake REST API for ..."
@@ -193,5 +146,3 @@ newCommandTimeout: 120
  [5]: https://grpcb.in/?utm_source=chatgpt.com "grpcbin: gRPC Request & Response Service"
  [6]: https://github.com/moul/grpcbin?utm_source=chatgpt.com "moul/grpcbin: httpbin like for gRPC"
  [7]: https://learning.postman.com/docs/sending-requests/grpc/first-grpc-request/?utm_source=chatgpt.com "Invoke a gRPC request in Postman"
- [8]: https://github.com/saucelabs/my-demo-app-android "Sauce Labs My Demo App - Android"
- [9]: https://github.com/saucelabs/my-demo-app-ios "Sauce Labs My Demo App - iOS"

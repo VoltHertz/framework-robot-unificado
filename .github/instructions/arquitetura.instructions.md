@@ -6,39 +6,27 @@ A ideia é separar camadas (baixo nível/adapters → keywords de domínio → s
 repo-qa/
 ├─ tests/                         # Somente suítes (.robot) — nada de lógica aqui
 │  ├─ api/
-│  │  ├─ smoke/
-│  │  ├─ regression/
+│  │  ├─ integration/
 │  │  ├─ contract/               # Contratos/Esquemas (validação automática)
 │  │  └─ domains/
 │  │     ├─ contas/
 │  │     │  ├─ contas_criacao.robot (exemplo - não criar)
 │  │     │  └─ contas_fluxos_negocio.robot (exemplo - não criar)
 │  │     └─ pagamentos/
-│  ├─ web/
-│  │  ├─ smoke/
-│  │  ├─ regression/
-│  │  └─ domains/
-│  │     └─ carrinho/
-│  │        └─ carrinho_checkout.robot (exemplo - não criar)
-│  └─ mobile/
-│     ├─ smoke/
-│     ├─ regression/
+│  └─ web/
+│     ├─ integration/
 │     └─ domains/
-│        └─ onboarding/
-│           └─ onboarding_fluxos.robot (exemplo - não criar)
+│        └─ carrinho/
+│           └─ carrinho_checkout.robot (exemplo - não criar)
 │
 ├─ resources/                    # Keywords reutilizáveis (.resource/.robot) por camada
 │  ├─ common/                    # Transversais às plataformas
-│  │  ├─ auth.resource (exemplo - não criar)
+│  │  ├─ json_utils.resourece    # Utilização de massa a partir de json
 │  │  ├─ data_provider.resource  # Abstrai origem de dados (JSON/SQL) (exemplo - não criar)
-│  │  ├─ assertions.resource (exemplo - não criar)
-│  │  ├─ dates.resource (exemplo - não criar)
+│  │  ├─ assertions.resource     # Abstrai a utilização de assertions
+│  │  ├─ dates.resource          # Abstrai a utilização de datas...
 │  │  ├─ hooks.resource          # Suite/Test Setup/Teardown padrões (exemplo - não criar)
 │  │  └─ db/
-│  │     ├─ sqlserver.resource   # Keywords DB genéricas (exemplo - não criar)
-│  │     └─ queries/             # SQL organizada por domínio
-│  │        ├─ contas/
-│  │        └─ pagamentos/
 │  │
 │  ├─ api/
 │  │  ├─ adapters/               # Baixo nível: Requests/gRPC
@@ -164,9 +152,9 @@ repo-qa/
 
 ## Por que assim?
 
-* **Separação por camadas**: `adapters` (baixo nível, libs Browser/Requests/gRPC/Appium) → `services/pages/screens` (objetos) → `keywords` (negócio) → `tests` (cenários).
+* **Separação por camadas**: `adapters` (baixo nível, libs Browser/Requests/gRPC) → `services/pages` (objetos) → `keywords` (negócio) → `tests` (cenários).
   Resultado: trocar Requests por outra lib, ou JSON por SQL, **não mexe** nas suítes.
-* **Domínios de negócio** dentro de `tests/**/domains/` evitam “suites por tecnologia”. Você testa “contas”, “pagamentos”, etc., e só decide a plataforma pela pasta pai (api/web/mobile).
+* **Domínios de negócio** dentro de `tests/**/domains/` evitam “suites por tecnologia”. Você testa “contas”, “pagamentos”, etc., e só decide a plataforma pela pasta pai (api/web).
 * **Contracts/Schemas** perto dos serviços: facilita manter **teste de contrato** separado de regressão funcional.
 * **Data provider** central: troca de JSON → SQL Server vira detalhe de implementação, não um refactor global.
 

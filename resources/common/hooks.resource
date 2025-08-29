@@ -1,6 +1,5 @@
 *** Settings ***
 Resource    ../api/adapters/http_client.resource
-Library     BuiltIn
 
 *** Keywords ***
 # Arquivo: resources/common/hooks.resource
