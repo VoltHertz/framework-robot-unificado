@@ -142,7 +142,7 @@ Library    JSONSchemaLibrary
 *** Keywords ***
 Validar Resposta Conta v1
     [Arguments]    ${resp}
-    Validate Json By Schema    ${resp.json()}    ${EXECDIR}/resources/api/contracts/contas/v1/conta.schema.json
+    Validate Json By Schema    ${resp.json()}    ../../../resources/api/contracts/contas/v1/conta.schema.json
 ```
 
 **Quando você mexe aqui:** mudou o **formato** (nova versão do schema, campo novo/obrigatório, depreciação).

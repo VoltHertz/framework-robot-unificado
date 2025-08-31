@@ -1,5 +1,5 @@
 *** Settings ***
-Library    JSONSchemaLibrary    ${EXECDIR}/resources/api/contracts/products/v1
+Library    JSONSchemaLibrary    resources/api/contracts/products/v1
 Resource   ../../../common/json_utils.resource
 
 *** Keywords ***

@@ -1,5 +1,6 @@
 *** Settings ***
 Resource    ../adapters/http_client.resource
+Resource    ../../common/logger.resource
 Library     Collections
 
 *** Keywords ***
@@ -14,61 +15,61 @@ Listar Produtos
     Run Keyword If    '${sortBy}'!='None'   Set To Dictionary    ${params}    sortBy=${sortBy}
     Run Keyword If    '${order}'!='None'    Set To Dictionary    ${params}    order=${order}
     Run Keyword If    '${select}'!='None'   Set To Dictionary    ${params}    select=${select}
-    Log    [products.service.resource:L15] GET /products params=${params}
+    Log Estilizado    GET /products params=${params}
     ${resp}=    GET On Session    DUMMYJSON    /products    params=${params}    expected_status=any
-    Log    [products.service.resource:L17] status=${resp.status_code}
+    Log Estilizado    status=${resp.status_code}
     RETURN    ${resp}
 
 Obter Produto Por Id
     [Arguments]    ${id}
-    Log    [products.service.resource:L22] GET /products/${id}
+    Log Estilizado    GET /products/${id}
     ${resp}=    GET On Session    DUMMYJSON    /products/${id}    expected_status=any
-    Log    [products.service.resource:L24] status=${resp.status_code}
+    Log Estilizado    status=${resp.status_code}
     RETURN    ${resp}
 
 Pesquisar Produtos
     [Arguments]    ${q}
-    Log    [products.service.resource:L29] GET /products/search?q=${q}
+    Log Estilizado    GET /products/search?q=${q}
     ${params}=    Create Dictionary    q=${q}
     ${resp}=    GET On Session    DUMMYJSON    /products/search    params=${params}    expected_status=200
-    Log    [products.service.resource:L32] status=${resp.status_code}
+    Log Estilizado    status=${resp.status_code}
     RETURN    ${resp}
 
 Listar Categorias De Produtos
-    Log    [products.service.resource:L36] GET /products/categories
+    Log Estilizado    GET /products/categories
     ${resp}=    GET On Session    DUMMYJSON    /products/categories    expected_status=200
-    Log    [products.service.resource:L38] status=${resp.status_code}
+    Log Estilizado    status=${resp.status_code}
     RETURN    ${resp}
 
 Listar Produtos Por Categoria
     [Arguments]    ${categoria}
-    Log    [products.service.resource:L43] GET /products/category/${categoria}
+    Log Estilizado    GET /products/category/${categoria}
     ${resp}=    GET On Session    DUMMYJSON    /products/category/${categoria}    expected_status=200
-    Log    [products.service.resource:L45] status=${resp.status_code}
+    Log Estilizado    status=${resp.status_code}
     RETURN    ${resp}
 
 Adicionar Produto
     [Arguments]    ${payload}=None    ${raw_body}=None
     # Se raw_body fornecido usamos data= para simular JSON malformado.
-    Run Keyword If    '${raw_body}'!='None'    Log    [products.service.resource:L50] POST /products/add raw_body=${raw_body}
-    ...    ELSE    Log    [products.service.resource:L50] POST /products/add payload=${payload}
+    Run Keyword If    '${raw_body}'!='None'    Log Estilizado    POST /products/add raw_body=${raw_body}
+    ...    ELSE    Log Estilizado    POST /products/add payload=${payload}
     # Construção explícita de headers quando usamos corpo cru para evitar "str has no attribute items".
     ${headers_raw}=    Run Keyword If    '${raw_body}'!='None'    Create Dictionary    Content-Type=application/json
     ${resp}=    Run Keyword If    '${raw_body}'!='None'    POST On Session    DUMMYJSON    /products/add    data=${raw_body}    headers=${headers_raw}    expected_status=any
     ...    ELSE    POST On Session    DUMMYJSON    /products/add    json=${payload}    expected_status=any
-    Log    [products.service.resource:L52] status=${resp.status_code}
+    Log Estilizado    status=${resp.status_code}
     RETURN    ${resp}
 
 Atualizar Produto
     [Arguments]    ${id}    ${payload}
-    Log    [products.service.resource:L57] PUT /products/${id}
+    Log Estilizado    PUT /products/${id}
     ${resp}=    PUT On Session    DUMMYJSON    /products/${id}    json=${payload}    expected_status=any
-    Log    [products.service.resource:L59] status=${resp.status_code}
+    Log Estilizado    status=${resp.status_code}
     RETURN    ${resp}
 
 Deletar Produto
     [Arguments]    ${id}
-    Log    [products.service.resource:L64] DELETE /products/${id}
+    Log Estilizado    DELETE /products/${id}
     ${resp}=    DELETE On Session    DUMMYJSON    /products/${id}    expected_status=any
-    Log    [products.service.resource:L66] status=${resp.status_code}
+    Log Estilizado    status=${resp.status_code}
     RETURN    ${resp}
