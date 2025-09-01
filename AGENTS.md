@@ -22,11 +22,11 @@
 - Sempre execute os testes a partir do diretório `framework-robot-unificado`.
 - Motivo: os contratos utilizam base de schemas em `resources/api/contracts/<dominio>/v1`. Executar a partir desse diretório garante resolução consistente de caminhos relativos em suítes/recursos.
 
-Exemplos prontos:
+Exemplos prontos (usar sempre `-d results/api/<dominio>`):
 - Dry run (checagem rápida): `cd framework-robot-unificado && .venv/bin/python -m robot --dryrun -i api tests`
-- Products (fluxos): `cd framework-robot-unificado && .venv/bin/python -m robot -d ../results/products tests/api/domains/products/products_fluxos.robot`
-- Carts (fluxos): `cd framework-robot-unificado && .venv/bin/python -m robot -d ../results/carts tests/api/domains/carts/carts_fluxos.robot`
-- Carts (fluxos + contratos): `cd framework-robot-unificado && .venv/bin/python -m robot -d ../results/carts_full tests/api/domains/carts/carts_fluxos.robot tests/api/contract/carts/carts_contract.robot`
+- Products (fluxos): `cd framework-robot-unificado && .venv/bin/python -m robot -d results/api/products tests/api/domains/products/products_fluxos.robot`
+- Carts (fluxos): `cd framework-robot-unificado && .venv/bin/python -m robot -d results/api/carts tests/api/domains/carts/carts_fluxos.robot`
+- Carts (fluxos + contratos): `cd framework-robot-unificado && .venv/bin/python -m robot -d results/api/carts tests/api/domains/carts/carts_fluxos.robot tests/api/contract/carts/carts_contract.robot`
 
 - Lint Robot files (Robocop): `cd framework-robot-unificado && .venv/bin/robocop resources tests`
  - Optional format (Robotidy): `cd framework-robot-unificado && .venv/bin/robotidy resources tests`

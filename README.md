@@ -105,7 +105,7 @@ Principais pilares
    - `.venv/bin/python -m robot --dryrun tests`
 3) Exemplos
    - Carts (fluxos): `.venv/bin/python -m robot -d results/api/carts tests/api/domains/carts`
-   - Carts (fluxos+contratos): `.venv/bin/python -m robot -d results_carts tests/api/domains/carts/carts_fluxos.robot tests/api/contract/carts/carts_contract.robot`
+   - Carts (fluxos+contratos): `.venv/bin/python -m robot -d results/api/carts tests/api/domains/carts/carts_fluxos.robot tests/api/contract/carts/carts_contract.robot`
    - Filtrar por tags: `-i "api AND products AND regression"`
 4) Qualidade de código
    - Lint: `.venv/bin/robocop resources tests`

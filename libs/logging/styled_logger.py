@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Tuple
 
 try:
     # robot.api.logger é usado somente quando executando testes
@@ -23,14 +23,21 @@ class StyledLogger:
 
     def __init__(self) -> None:
         self.ROBOT_LIBRARY_LISTENER = self
-        self._current_source: Optional[str] = None
-        self._current_lineno: Optional[int] = None
+        # Pilha de keywords em execução (source, lineno)
+        self._kw_stack: List[Tuple[Optional[str], Optional[int]]] = []
 
     # Listener hooks (v3)
     def start_keyword(self, data, result) -> None:  # noqa: D401
-        # `data` é um Keyword model com `source` e `lineno` do item chamado no arquivo .robot/.resource
-        self._current_source = getattr(data, "source", None)
-        self._current_lineno = getattr(data, "lineno", None)
+        # `data` é um Keyword model com `source` (arquivo onde o keyword é definido)
+        # e `lineno` (linha de definição). Empilha para permitir heurística do "caller".
+        src = getattr(data, "source", None)
+        lineno = getattr(data, "lineno", None)
+        self._kw_stack.append((src, lineno))
+        # Debug removido para evitar ruído no log
+
+    def end_keyword(self, data, result) -> None:  # noqa: D401
+        if self._kw_stack:
+            self._kw_stack.pop()
 
     # Public keywords
     def get_current_location(self, short: bool = True) -> str:
@@ -53,12 +60,35 @@ class StyledLogger:
         ...    | ${prefixo}= | Get Current Location | True |
         ...    | Log         | ${prefixo} Minha mensagem |
         """
-        if not self._current_source:
-            return ""
-        name = Path(self._current_source).name if short else str(self._current_source)
-        if not self._current_lineno:
+        # Heurística: pegar o frame mais recente que seja .robot/.resource
+        # e não pertença ao próprio logger (styled_logger.py) nem ao wrapper logger.resource.
+        preferred: Optional[Tuple[str, Optional[int]]] = None
+        for src, lineno in reversed(self._kw_stack):
+            if not src:
+                continue
+            s = str(src)
+            low = s.lower()
+            if low.endswith("styled_logger.py"):
+                continue
+            if low.endswith("resources/common/logger.resource"):
+                continue
+            if low.endswith(".robot") or low.endswith(".resource"):
+                preferred = (s, lineno)
+                break
+
+        # Fallback: usa o topo da pilha (pode ser lib Python)
+        if not preferred:
+            if not self._kw_stack or not self._kw_stack[-1][0]:
+                return ""
+            s, lineno = self._kw_stack[-1]
+            s = str(s)
+        else:
+            s, lineno = preferred
+
+        name = Path(s).name if short else s
+        if not lineno:
             return f"[{name}]"
-        return f"[{name}:L{self._current_lineno}]"
+        return f"[{name}:L{lineno}]"
 
     def build_log_prefix(self, short: bool = True) -> str:
         # Alias técnico para facilidade em bibliotecas Python ou recursos Robot
@@ -97,6 +127,13 @@ class StyledLogger:
 
 # Singleton para expor funções de módulo como keywords ao importar via caminho de arquivo
 _LOGGER = StyledLogger()
+
+# Expor variáveis no nível de módulo para quando a biblioteca for importada
+# como módulo (arquivo .py) diretamente no Robot. Isso garante o registro do
+# listener mesmo sem instanciar a classe explicitamente.
+ROBOT_LIBRARY_SCOPE = "GLOBAL"
+ROBOT_LISTENER_API_VERSION = 3
+ROBOT_LIBRARY_LISTENER = _LOGGER
 
 
 def get_current_location(short: bool = True) -> str:
