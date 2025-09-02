@@ -21,16 +21,17 @@
 ### Execução correta das suítes (importante)
 - Sempre execute os testes a partir do diretório `framework-robot-unificado`.
 - Motivo: os contratos utilizam base de schemas em `resources/api/contracts/<dominio>/v1`. Executar a partir desse diretório garante resolução consistente de caminhos relativos em suítes/recursos.
+- Ambiente (ENV): recomenda-se parametrizar o arquivo de variáveis via `-v ENV:<env>` e importar nas suítes com `Variables   ../../environments/${ENV}.py`. Alternativa: apontar diretamente para `environments/dev.py`.
 
 Exemplos prontos (usar sempre `-d results/api/<dominio>`):
-- Dry run (checagem rápida): `cd framework-robot-unificado && .venv/bin/python -m robot --dryrun -i api tests`
-- Products (fluxos): `cd framework-robot-unificado && .venv/bin/python -m robot -d results/api/products tests/api/domains/products/products_fluxos.robot`
-- Carts (fluxos): `cd framework-robot-unificado && .venv/bin/python -m robot -d results/api/carts tests/api/domains/carts/carts_fluxos.robot`
-- Carts (fluxos + contratos): `cd framework-robot-unificado && .venv/bin/python -m robot -d results/api/carts tests/api/domains/carts/carts_fluxos.robot tests/api/contract/carts/carts_contract.robot`
+- Dry run API (checagem rápida, pasta dedicada): `cd framework-robot-unificado && .venv/bin/python -m robot --dryrun -v ENV:dev -i api -d results/api/_dryrun tests`
+- Products (fluxos): `cd framework-robot-unificado && .venv/bin/python -m robot -v ENV:dev -d results/api/products tests/api/domains/products/products_fluxos.robot`
+- Carts (fluxos): `cd framework-robot-unificado && .venv/bin/python -m robot -v ENV:dev -d results/api/carts tests/api/domains/carts/carts_fluxos.robot`
+- Carts (fluxos + contratos): `cd framework-robot-unificado && .venv/bin/python -m robot -v ENV:dev -d results/api/carts tests/api/domains/carts/carts_fluxos.robot tests/api/contract/carts/carts_contract.robot`
 
 - Lint Robot files (Robocop): `cd framework-robot-unificado && .venv/bin/robocop resources tests`
  - Optional format (Robotidy): `cd framework-robot-unificado && .venv/bin/robotidy resources tests`
-  - Dry run (catch import/path issues): `cd framework-robot-unificado && .venv/bin/robot --dryrun tests`
+  - Dry run (catch import/path issues): `cd framework-robot-unificado && .venv/bin/robot --dryrun -v ENV:dev -d results/api/_dryrun tests`
 
 ## Coding Style & Naming Conventions
 - Robot: BDD in PT-BR (Dado/Quando/Entao) nas suites de domínio; lógica nas camadas de `resources/` (adapters/services/keywords/contracts). Use `RETURN` (Robot ≥ 7). Tags combinam plataforma+domínio+tipo (ex.: `api carts smoke`).

@@ -101,11 +101,13 @@ Principais pilares
 ## Execução (Comece Rápido)
 1) Ambiente
    - `python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt`
-2) Sanidade
-   - `.venv/bin/python -m robot --dryrun tests`
-3) Exemplos
-   - Carts (fluxos): `.venv/bin/python -m robot -d results/api/carts tests/api/domains/carts`
-   - Carts (fluxos+contratos): `.venv/bin/python -m robot -d results/api/carts tests/api/domains/carts/carts_fluxos.robot tests/api/contract/carts/carts_contract.robot`
+2) Sanidade (sempre rodar do diretório `framework-robot-unificado`)
+   - Dry run (parametrizando o ambiente e gerando artefatos dedicados): `.venv/bin/python -m robot --dryrun -v ENV:dev -i api -d results/api/_dryrun tests`
+   - Alternativa (import fixo nas suítes): se a suíte usa `Variables ../../environments/dev.py`, o `-v ENV` é opcional.
+3) Exemplos (com ENV configurado)
+   - Products (fluxos): `.venv/bin/python -m robot -v ENV:dev -d results/api/products tests/api/domains/products/products_fluxos.robot`
+   - Carts (fluxos): `.venv/bin/python -m robot -v ENV:dev -d results/api/carts tests/api/domains/carts`
+   - Carts (fluxos+contratos): `.venv/bin/python -m robot -v ENV:dev -d results/api/carts tests/api/domains/carts/carts_fluxos.robot tests/api/contract/carts/carts_contract.robot`
    - Filtrar por tags: `-i "api AND products AND regression"`
 4) Qualidade de código
    - Lint: `.venv/bin/robocop resources tests`
@@ -115,6 +117,10 @@ Principais pilares
 ```
 results/
   api/
+    _dryrun/
+      log.html
+      report.html
+      output.xml
     products/
       log.html
       report.html
@@ -132,7 +138,7 @@ results/
 ## Contribuição e PRs (resumo)
 - Commits: Conventional Commits (`feat`, `fix`, `docs`, `refactor`, etc.) com scopes como `api/<dominio>`, `resources`, `libs`, `docs`, `tests`.
 - PRs: descreva objetivo, evidências (paths em `results/`), variáveis de ambiente tocadas, schemas/recursos/keywords atualizados.
-- Checklist mínimo: tests verdes (fluxos+contratos), keywords documentadas (feedback003), logs estilizados, Data Provider funcional, schemas via `${CURDIR}`, Robocop/Robotidy aplicados.
+- Checklist mínimo: tests verdes (fluxos+contratos), keywords documentadas (feedback003), logs estilizados, Data Provider funcional, schemas via `${CURDIR}`, Robocop/Robotidy aplicados, comandos de execução com `-v ENV:<env>` documentados quando aplicável.
 
 ## Referências
 - Diretrizes do repositório: `AGENTS.md` (visão operacional detalhada)
