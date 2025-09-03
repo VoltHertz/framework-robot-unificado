@@ -53,7 +53,8 @@ Iniciar Sessao API DummyJSON
     Log Estilizado    Sessão DUMMYJSON criada com headers padrão.
 
 Encerrar Sessao API DummyJSON
-    [Documentation]    Objetivo: Encerrar a sessão HTTP padrão. Atualmente é um no-op, pois o ciclo de vida é gerenciado pela RequestsLibrary; mantido por simetria e clareza nos hooks de suíte.
+    [Documentation]    Objetivo: Encerrar a sessão HTTP padrão. Atualmente é um no-op, pois o ciclo de vida é
+    ...                gerenciado pela RequestsLibrary; mantido por simetria e clareza nos hooks de suíte.
     ...                Pré-requisitos: Opcional — pode ser chamado mesmo sem sessão ativa.
     ...                Dados de teste: N/A
     ...                Resultado esperado: Apenas log informativo; nenhuma exceção quando sessão não existir.
