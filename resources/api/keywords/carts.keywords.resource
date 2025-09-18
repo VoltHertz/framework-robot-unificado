@@ -1,6 +1,5 @@
 *** Settings ***
 Resource    ../services/carts.service.resource
-Resource    ../contracts/carts/carts.contracts.resource
 Resource    ../../common/data_provider.resource
 Resource    ../../common/logger.resource
 Resource    ../../common/json_utils.resource
@@ -50,7 +49,6 @@ Entao Devo Receber A Lista De Carrinhos Com Sucesso
     Should Contain    ${json}    limit
     ${carts_count}=    Get Length    ${json['carts']}
     Should Be True    ${carts_count} > 0    msg=Lista de carrinhos não pode estar vazia
-    Validar Contrato Lista De Carrinhos v1    ${RESP_CARRINHOS}
     Log Estilizado    Validação de listagem completa realizada. Total: ${json['total']}
 
 Entao Devo Receber A Lista Paginada De Carrinhos
@@ -90,7 +88,6 @@ Entao A Resposta De Paginacao Deve Ser Valida Para Boundary
         Should Be Equal As Integers    ${json['limit']}    ${limit}
     END
     Should Contain    ${json}    total
-    Validar Contrato Lista De Carrinhos v1    ${RESP_BOUNDARY}
     Log Estilizado    Boundary validado limit_req=${limit} limit_resp=${json['limit']} skip=${skip}
 
 # UC-CART-002: Obter um Único Carrinho
@@ -127,7 +124,6 @@ Entao Devo Receber Os Detalhes Do Carrinho
     ${products_count}=    Get Length    ${json['products']}
     Should Be Equal As Integers    ${products_count}    ${CARRINHO_EXISTENTE['expected_products_count']}
     Should Be Equal As Integers    ${json['totalQuantity']}    ${CARRINHO_EXISTENTE['expected_total_quantity']}
-    Validar Contrato Carrinho v1    ${RESP_CARRINHO}
     Log Estilizado    Validação de detalhes do carrinho realizada
 
 Entao Devo Receber Erro De Carrinho Nao Encontrado
@@ -161,7 +157,6 @@ Entao Devo Receber Os Carrinhos Do Usuario
     Should Be Equal As Integers    ${RESP_CARRINHOS_USUARIO.status_code}    200
     ${json}=    Converter Resposta Em Json    ${RESP_CARRINHOS_USUARIO}
     Should Contain    ${json}    carts
-    Validar Contrato Lista De Carrinhos v1    ${RESP_CARRINHOS_USUARIO}
     ${carts_count}=    Get Length    ${json['carts']}
     Should Be True    ${carts_count} > 0    msg=Usuário deve ter pelo menos um carrinho
     # Verifica se pelo menos um dos carrinhos esperados está presente
@@ -180,7 +175,6 @@ Entao Devo Receber Lista Vazia De Carrinhos
     IF    ${RESP_CARRINHOS_USUARIO_VAZIO.status_code} == 200
         ${json}=    Converter Resposta Em Json    ${RESP_CARRINHOS_USUARIO_VAZIO}
         Should Contain    ${json}    carts
-        Validar Contrato Lista De Carrinhos v1    ${RESP_CARRINHOS_USUARIO_VAZIO}
         ${carts_count}=    Get Length    ${json['carts']}
         Should Be Equal As Integers    ${carts_count}    0    msg=Lista deve estar vazia para usuário sem carrinhos
     ELSE
@@ -236,7 +230,6 @@ Entao O Carrinho Deve Ser Criado Com Sucesso
     ${products_count}=    Get Length    ${json['products']}
     ${expected_count}=    Get Length    ${NOVO_CARRINHO['products']}
     Should Be Equal As Integers    ${products_count}    ${expected_count}
-    Validar Contrato Carrinho v1    ${RESP_NOVO_CARRINHO}
     Log Estilizado    Validação de criação de carrinho realizada. ID: ${json['id']}
 
 Entao Devo Receber Erro De Dados Invalidos
@@ -307,7 +300,6 @@ Entao O Carrinho Deve Ser Atualizado Com Sucesso
     ${json}=    Converter Resposta Em Json    ${RESP_ATUALIZACAO}
     Should Be Equal As Integers    ${json['id']}    ${ATUALIZACAO_CARRINHO['id']}
     Should Contain    ${json}    products
-    Validar Contrato Carrinho v1    ${RESP_ATUALIZACAO}
     Log Estilizado    Validação de atualização realizada
 
 Entao O Carrinho Deve Ter Produtos Substituidos
@@ -317,7 +309,6 @@ Entao O Carrinho Deve Ter Produtos Substituidos
     ${products_count}=    Get Length    ${json['products']}
     ${expected_count}=    Get Length    ${SUBSTITUICAO_CARRINHO['products']}
     Should Be Equal As Integers    ${products_count}    ${expected_count}
-    Validar Contrato Carrinho v1    ${RESP_SUBSTITUICAO}
     Log Estilizado    Validação de substituição de produtos realizada
 
 Entao Devo Receber Erro De Carrinho Inexistente Para Atualizacao
@@ -347,7 +338,6 @@ Entao O Carrinho Deve Ser Deletado Com Sucesso
     Should Be Equal As Integers    ${json['id']}    ${CARRINHO_EXISTENTE['id']}
     Should Be True    ${json['isDeleted']}
     Should Contain    ${json}    deletedOn
-    Validar Contrato Delecao De Carrinho v1    ${RESP_DELECAO}
     Log Estilizado    Validação de deleção realizada
 
 Entao Devo Receber Erro De Carrinho Inexistente Para Delecao

@@ -219,7 +219,7 @@ libs/
 data/
   json/{auth,users,products,carts}.json
 tests/
-  api/domains/{auth_autenticacao,users_fluxos,products_fluxos,carts_fluxos}.robot
+  api/domains/{auth_autenticacao,users_fluxos,products_suite,carts_fluxos}.robot
 ```
 
 ## (F) JSON de massa (exemplo para “carts.json”)

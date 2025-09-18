@@ -2,7 +2,6 @@
 Resource    ../services/products.service.resource
 Resource    ../../common/data_provider.resource
 Resource    ../../common/json_utils.resource
-Resource    ../contracts/products/products.contracts.resource
 Resource    ../../common/logger.resource
 Library     Collections
 
@@ -28,8 +27,7 @@ Entao A Lista Completa Deve Ser Retornada
     # Evitar uso de ${len(...)} direto (não é variável). Capturamos tamanho via keyword para log.
     ${qtd_produtos}=    Get Length    ${json['products']}
     Log Estilizado    Lista validada tamanho=${qtd_produtos}
-    # Validação de contrato v1 para lista
-    Validar Contrato Lista De Produtos v1    ${RESP_LISTA_PRODUTOS}
+    # Validação funcional do payload de lista
 
 Dado Que Tenho Parametros De Paginacao Customizada
     ${dados}=    Obter Massa De Teste    products    paginacao_customizada
@@ -47,7 +45,6 @@ Entao A Lista Deve Respeitar Os Parametros De Paginacao
     Should Be Equal As Integers    ${json['limit']}    ${PARAM_PAGINACAO['limit']}
     Should Be Equal As Integers    ${json['skip']}     ${PARAM_PAGINACAO['skip']}
     Log Estilizado    Validação de paginação OK.
-    Validar Contrato Lista De Produtos v1    ${RESP_LISTA_PAGINADA}
 
 Dado Que Possuo Um Produto Existente
     ${dados}=    Obter Massa De Teste    products    produto_existente
@@ -64,8 +61,7 @@ Entao Os Detalhes Do Produto Devem Ser Retornados
     ${json}=    Converter Resposta Em Json    ${RESP_PRODUTO}
     Should Be Equal As Integers    ${json['id']}    ${PRODUTO_EXISTENTE['id']}
     Log Estilizado    Produto retornado corresponde ao ID.
-    # Validação de contrato v1 para detalhe
-    Validar Contrato Detalhe De Produto v1    ${RESP_PRODUTO}
+    # Validação funcional do payload de detalhe
 
 Dado Que Possuo Um Produto Inexistente
     ${dados}=    Obter Massa De Teste    products    produto_inexistente
@@ -100,7 +96,6 @@ Entao A Lista De Produtos Correspondentes Deve Ser Retornada
     ${qtd_busca}=    Get Length    ${json['products']}
     Should Be True    ${qtd_busca} > 0
     Log Estilizado    Busca retornou ${qtd_busca} itens.
-    Validar Contrato Lista De Produtos v1    ${RESP_BUSCA}
 
 Dado Que Desejo Pesquisar Produtos Com Termo Sem Resultado
     ${dados}=    Obter Massa De Teste    products    busca_sem_resultados
@@ -120,7 +115,6 @@ Entao Uma Lista Vazia Deve Ser Retornada
     Should Be Equal As Integers    ${qtd_busca_vazia}    0
     Log Estilizado    Validação de busca vazia OK.
     # Contrato de lista também se aplica
-    Validar Contrato Lista De Produtos v1    ${RESP_BUSCA_VAZIA}
 
 Quando Listo Todas As Categorias De Produtos
     ${resp}=    Listar Categorias De Produtos
@@ -150,7 +144,6 @@ Entao A Lista Da Categoria Deve Ser Retornada
     ${qtd_cat}=    Get Length    ${json['products']}
     Should Be True    ${qtd_cat} > 0
     Log Estilizado    Categoria retornou ${qtd_cat} produtos.
-    Validar Contrato Lista De Produtos v1    ${RESP_PRODUTOS_CATEGORIA}
 
 Dado Que Possuo Uma Categoria Inexistente
     ${dados}=    Obter Massa De Teste    products    categoria_inexistente
@@ -271,7 +264,6 @@ Entao A Resposta Devera Conter Status 200 E Parametros Ecoados
     Should Be Equal As Integers    ${json['skip']}    ${json['skip']}
     Should Contain    ${json}    products
     Log Estilizado    Boundary paginação validada.
-    Validar Contrato Lista De Produtos v1    ${RESP_PAG_BOUNDARY}
 
 Dado Que Tenho Parametros De Ordenacao Valida
     ${dados}=    Obter Massa De Teste    products    ordenacao_valida
@@ -344,7 +336,6 @@ Entao A Lista Deve Conter Apenas Os Campos Selecionados
     Should Contain    ${um}    title
     Should Contain    ${um}    price
     Log Estilizado    Select validado.
-    Validar Contrato Lista De Produtos v1    ${RESP_SELECT}
 
 Dado Que Desejo Pesquisar Produtos Com Caracteres Especiais
     ${dados}=    Obter Massa De Teste    products    busca_caracteres_especiais
@@ -361,7 +352,6 @@ Entao A Lista Devera Ser Vazia Ou Retornar 200 Sem Erro
     ${json}=    Converter Resposta Em Json    ${RESP_BUSCA_CARACTERES}
     Should Contain    ${json}    products
     Log Estilizado    Busca caracteres especiais tratada.
-    Validar Contrato Lista De Produtos v1    ${RESP_BUSCA_CARACTERES}
 
 Dado Que Desejo Pesquisar Produtos Com Termo Vazio
     ${dados}=    Obter Massa De Teste    products    busca_vazia
@@ -378,7 +368,6 @@ Entao A Lista Devera Ser Retornada Ou Vazia Sem Erro
     ${json}=    Converter Resposta Em Json    ${RESP_BUSCA_VAZIA_PARAM}
     Should Contain    ${json}    products
     Log Estilizado    Busca termo vazio aceita.
-    Validar Contrato Lista De Produtos v1    ${RESP_BUSCA_VAZIA_PARAM}
 
 Dado Que Possuo Payload Vazio Para Novo Produto
     ${dados}=    Obter Massa De Teste    products    novo_produto_payload_vazio

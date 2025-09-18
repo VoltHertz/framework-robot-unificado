@@ -213,7 +213,7 @@ CLI úteis
    - Dry run (parametrizando o ambiente e gerando artefatos dedicados): `.venv/bin/python -m robot --dryrun -v ENV:dev -i api -d results/api/_dryrun tests`
    - Alternativa (import fixo nas suítes): se a suíte usa `Variables ../../environments/dev.py`, o `-v ENV` é opcional.
 3) Exemplos (com ENV configurado)
-   - Products (fluxos): `.venv/bin/python -m robot -v ENV:dev -d results/api/products tests/api/domains/products/products_fluxos.robot`
+   - Products (fluxos): `.venv/bin/python -m robot -v ENV:dev -d results/api/products tests/api/domains/products/products_suite.robot`
    - Carts (fluxos): `.venv/bin/python -m robot -v ENV:dev -d results/api/carts tests/api/domains/carts`
    - Filtrar por tags: `-i "api AND products AND regression"`
 4) Qualidade de código

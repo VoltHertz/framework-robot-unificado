@@ -1,35 +1,25 @@
-# Modelo de [Documentation] por caso (use nas novas adições)
-# [Documentation]    Descrição breve
-# ...                Objetivo: o que validar
-# ...                Pré-requisitos: condições/ambiente
-# ...                Dados de teste: massa/parametros
-# ...                Resultado esperado: status/corpo/contrato
-# ...                JIRA Issue: PROJ-123
-# ...                Confluence: https://confluence.company.com/display/QA/...
-# ...                Nível de risco: Baixo|Médio|Alto
-
 *** Settings ***
 Documentation    Suíte de testes Products DummyJSON baseada em docs/use_cases/Products_Use_Cases.md
-Resource    ../../../../resources/common/data_provider.resource
 Resource    ../../../../resources/common/hooks.resource
 Resource    ../../../../resources/api/keywords/products.keywords.resource
-Variables   ../../../../environments/dev.py
+Variables        ../../../../environments/${ENV}.py
 Suite Setup    Setup Suite Padrao
 Suite Teardown    Teardown Suite Padrao
+Test Tags       api    products
 
 *** Test Cases ***
 UC-PROD-001 Lista Completa De Produtos
     [Documentation]    Verifica a listagem completa de produtos com paginação padrão.
     ...                
-    ...                Objetivo: validar retorno 200 com lista populada e contrato v1.
+    ...                Objetivo: validar retorno 200 com lista populada e payload esperado.
     ...                Pré-requisitos: ENV configurado; sessão HTTP criada nos hooks.
     ...                Dados de teste: parâmetros default (sem limit/skip).
-    ...                Resultado esperado: campos products/total/limit/skip presentes; contrato ok.
+    ...                Resultado esperado: campos products/total/limit/skip presentes; payload coerente.
     ...                
     ...                JIRA Issue: PROD-201
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+001
     ...                Nível de risco: Médio
-    [Tags]    api    products    regression    smoke    Priority-Medium
+    [Tags]    smoke    positivo
     Dado Que Tenho Parametros Padrao De Lista De Produtos
     Quando Solicito A Lista Completa De Produtos
     Entao A Lista Completa Deve Ser Retornada
@@ -43,77 +33,77 @@ UC-PROD-001-A1 Lista Com Paginacao Customizada
     ...                JIRA Issue: PROD-202
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+001
     ...                Nível de risco: Baixo
-    [Tags]    api    products    regression    Priority-Low
+    [Tags]    positivo
     Dado Que Tenho Parametros De Paginacao Customizada
     Quando Solicito A Lista De Produtos Com Paginacao Customizada
     Entao A Lista Deve Respeitar Os Parametros De Paginacao
 
 UC-PROD-001-B1 Lista Boundary Limit Zero
     [Documentation]    Boundary: limit=0; API pode ajustar para total conhecido.
-    ...                Objetivo: aceitar comportamento do fornecedor e manter contrato válido.
+    ...                Objetivo: aceitar comportamento do fornecedor e manter a consistência da resposta.
     ...                Pré-requisitos: massa boundary carregada.
     ...                Dados de teste: limit=0, skip=0.
-    ...                Resultado esperado: 200; contrato ok; limit=0 ou total.
+    ...                Resultado esperado: 200; payload coerente; limit=0 ou total.
     ...                JIRA Issue: PROD-203
     ...                Confluence: https://confluence.company.com/display/QA/Products+Boundary
     ...                Nível de risco: Baixo
-    [Tags]    api    products    boundary    Priority-Low
+    [Tags]    limite
     Dado Que Tenho Parametros Boundary De Paginacao
     Quando Solicito Lista De Produtos Com Limit E Skip    ${PAG_BOUNDARY['limit_zero']}    ${PAG_BOUNDARY['skip_zero']}
     Entao A Resposta Devera Conter Status 200 E Parametros Ecoados
 
 UC-PROD-001-B2 Lista Boundary Limit Um
     [Documentation]    Boundary: limit=1; retorno mínimo de itens.
-    ...                Objetivo: validar eco de parâmetros e contrato.
+    ...                Objetivo: validar eco de parâmetros e integridade da resposta.
     ...                Pré-requisitos: massa boundary.
     ...                Dados de teste: limit=1, skip=0.
     ...                Resultado esperado: 200; lista com até 1 item.
     ...                JIRA Issue: PROD-204
     ...                Confluence: https://confluence.company.com/display/QA/Products+Boundary
     ...                Nível de risco: Baixo
-    [Tags]    api    products    boundary    Priority-Low
+    [Tags]    limite
     Dado Que Tenho Parametros Boundary De Paginacao
     Quando Solicito Lista De Produtos Com Limit E Skip    ${PAG_BOUNDARY['limit_um']}    ${PAG_BOUNDARY['skip_zero']}
     Entao A Resposta Devera Conter Status 200 E Parametros Ecoados
 
 UC-PROD-001-B3 Lista Boundary Limit Grande
     [Documentation]    Boundary: limit > total; fornecedor pode limitar ao total.
-    ...                Objetivo: validar ajuste do limit e contrato.
+    ...                Objetivo: validar ajuste do limit preservando a resposta.
     ...                Pré-requisitos: massa boundary.
     ...                Dados de teste: limit alto, skip=0.
     ...                Resultado esperado: 200; limit na resposta = total.
     ...                JIRA Issue: PROD-205
     ...                Confluence: https://confluence.company.com/display/QA/Products+Boundary
     ...                Nível de risco: Baixo
-    [Tags]    api    products    boundary    Priority-Low
+    [Tags]    limite
     Dado Que Tenho Parametros Boundary De Paginacao
     Quando Solicito Lista De Produtos Com Limit E Skip    ${PAG_BOUNDARY['limit_grande']}    ${PAG_BOUNDARY['skip_zero']}
     Entao A Resposta Devera Conter Status 200 E Parametros Ecoados
 
 UC-PROD-001-B4 Lista Boundary Skip Alto
     [Documentation]    Boundary: skip alto; pode retornar lista vazia.
-    ...                Objetivo: validar eco de skip e consistência de contrato.
+    ...                Objetivo: validar eco de skip e consistência da resposta.
     ...                Pré-requisitos: massa boundary.
     ...                Dados de teste: skip alto; limit=1.
     ...                Resultado esperado: 200; zero itens possível.
     ...                JIRA Issue: PROD-206
     ...                Confluence: https://confluence.company.com/display/QA/Products+Boundary
     ...                Nível de risco: Baixo
-    [Tags]    api    products    boundary    Priority-Low
+    [Tags]    limite
     Dado Que Tenho Parametros Boundary De Paginacao
     Quando Solicito Lista De Produtos Com Limit E Skip    ${PAG_BOUNDARY['limit_um']}    ${PAG_BOUNDARY['skip_alto']}
     Entao A Resposta Devera Conter Status 200 E Parametros Ecoados
 
 UC-PROD-002 Detalhar Produto Existente
     [Documentation]    Detalhar produto por ID válido.
-    ...                Objetivo: validar 200 e contrato de detalhe.
+    ...                Objetivo: validar 200 e detalhamento retornado.
     ...                Pré-requisitos: produto existente (massa aponta ID).
     ...                Dados de teste: id existente.
-    ...                Resultado esperado: 200; id corresponde ao requisitado; contrato ok.
+    ...                Resultado esperado: 200; id corresponde ao requisitado; payload coerente.
     ...                JIRA Issue: PROD-207
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+002
     ...                Nível de risco: Médio
-    [Tags]    api    products    regression    Priority-Medium
+    [Tags]    smoke    positivo
     Dado Que Possuo Um Produto Existente
     Quando Consulto O Produto Por ID
     Entao Os Detalhes Do Produto Devem Ser Retornados
@@ -127,7 +117,7 @@ UC-PROD-002-E1 Produto Nao Encontrado
     ...                JIRA Issue: PROD-208
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+002
     ...                Nível de risco: Baixo
-    [Tags]    api    products    regression    negative    Priority-Low
+    [Tags]    negativo
     Dado Que Possuo Um Produto Inexistente
     Quando Consulto O Produto Inexistente
     Entao O Sistema Deve Informar Que O Produto Nao Foi Encontrado
@@ -137,11 +127,11 @@ UC-PROD-003 Busca Com Resultados
     ...                Objetivo: validar presença de products e total > 0.
     ...                Pré-requisitos: termo existente na massa.
     ...                Dados de teste: q válido.
-    ...                Resultado esperado: 200; lista não vazia; contrato de lista ok.
+    ...                Resultado esperado: 200; lista não vazia; lista coerente.
     ...                JIRA Issue: PROD-209
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+003
     ...                Nível de risco: Médio
-    [Tags]    api    products    regression    Priority-Medium
+    [Tags]    positivo
     Dado Que Desejo Pesquisar Produtos Com Termo Valido
     Quando Pesquiso Produtos Pelo Termo
     Entao A Lista De Produtos Correspondentes Deve Ser Retornada
@@ -155,7 +145,7 @@ UC-PROD-003-A1 Busca Sem Resultados
     ...                JIRA Issue: PROD-210
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+003
     ...                Nível de risco: Baixo
-    [Tags]    api    products    regression    negative    Priority-Low
+    [Tags]    negativo
     Dado Que Desejo Pesquisar Produtos Com Termo Sem Resultado
     Quando Pesquiso Produtos Pelo Termo Sem Resultado
     Entao Uma Lista Vazia Deve Ser Retornada
@@ -169,7 +159,7 @@ UC-PROD-003-B1 Busca Caracteres Especiais
     ...                JIRA Issue: PROD-211
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+003
     ...                Nível de risco: Baixo
-    [Tags]    api    products    negative    boundary    Priority-Low
+    [Tags]    limite
     Dado Que Desejo Pesquisar Produtos Com Caracteres Especiais
     Quando Pesquiso Produtos Com Caracteres Especiais
     Entao A Lista Devera Ser Vazia Ou Retornar 200 Sem Erro
@@ -183,7 +173,7 @@ UC-PROD-003-B2 Busca Termo Vazio
     ...                JIRA Issue: PROD-212
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+003
     ...                Nível de risco: Baixo
-    [Tags]    api    products    negative    boundary    Priority-Low
+    [Tags]    limite
     Dado Que Desejo Pesquisar Produtos Com Termo Vazio
     Quando Pesquiso Produtos Com Termo Vazio
     Entao A Lista Devera Ser Retornada Ou Vazia Sem Erro
@@ -197,7 +187,7 @@ UC-PROD-004 Listar Categorias
     ...                JIRA Issue: PROD-213
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+004
     ...                Nível de risco: Baixo
-    [Tags]    api    products    regression    Priority-Low
+    [Tags]    positivo
     Quando Listo Todas As Categorias De Produtos
     Entao A Lista De Categorias Deve Ser Retornada
 
@@ -210,7 +200,7 @@ UC-PROD-004-A1 Listar Produtos Select Campos
     ...                JIRA Issue: PROD-214
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+004
     ...                Nível de risco: Baixo
-    [Tags]    api    products    regression    Priority-Low
+    [Tags]    positivo
     Dado Que Possuo Parametros De Select De Campos
     Quando Solicito Lista Selecionando Campos
     Entao A Lista Deve Conter Apenas Os Campos Selecionados
@@ -224,7 +214,7 @@ UC-PROD-004-A2 Lista Ordenada Ascendente
     ...                JIRA Issue: PROD-215
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+004
     ...                Nível de risco: Baixo
-    [Tags]    api    products    regression    Priority-Low
+    [Tags]    positivo
     Dado Que Tenho Parametros De Ordenacao Valida
     Quando Solicito Lista Ordenada Ascendente
     Entao A Lista Deve Estar Ordenada Ascendente
@@ -238,7 +228,7 @@ UC-PROD-004-A3 Lista Ordenada Descendente
     ...                JIRA Issue: PROD-216
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+004
     ...                Nível de risco: Baixo
-    [Tags]    api    products    regression    Priority-Low
+    [Tags]    positivo
     Dado Que Tenho Parametros De Ordenacao Valida
     Quando Solicito Lista Ordenada Descendente
     Entao A Lista Deve Estar Ordenada Descendente
@@ -252,7 +242,7 @@ UC-PROD-004-E1 Ordenacao Invalida
     ...                JIRA Issue: PROD-217
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+004
     ...                Nível de risco: Baixo
-    [Tags]    api    products    negative    Priority-Low
+    [Tags]    negativo
     Dado Que Possuo Parametros De Ordenacao Invalida
     Quando Solicito Lista Com Ordenacao Invalida
     Entao O Sistema Pode Retornar 200 Com Ordenacao Padrao
@@ -266,7 +256,7 @@ UC-PROD-005 Produtos Por Categoria Existente
     ...                JIRA Issue: PROD-218
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+005
     ...                Nível de risco: Médio
-    [Tags]    api    products    regression    Priority-Medium
+    [Tags]    positivo
     Dado Que Possuo Uma Categoria Existente
     Quando Consulto Os Produtos Da Categoria
     Entao A Lista Da Categoria Deve Ser Retornada
@@ -280,7 +270,7 @@ UC-PROD-005-A1 Produtos Por Categoria Inexistente
     ...                JIRA Issue: PROD-219
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+005
     ...                Nível de risco: Baixo
-    [Tags]    api    products    regression    negative    Priority-Low
+    [Tags]    negativo
     Dado Que Possuo Uma Categoria Inexistente
     Quando Consulto Os Produtos Da Categoria Inexistente
     Entao Uma Lista Vazia Devera Ser Retornada Para Categoria
@@ -294,7 +284,7 @@ UC-PROD-006 Adicionar Produto Valido
     ...                JIRA Issue: PROD-220
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+006
     ...                Nível de risco: Médio
-    [Tags]    api    products    regression    Priority-Medium
+    [Tags]    positivo
     Dado Que Possuo Dados Validos Para Novo Produto
     Quando Adiciono Um Novo Produto
     Entao O Produto Deve Ser Criado (Simulado)
@@ -308,7 +298,7 @@ UC-PROD-006-E1 Adicionar Produto Invalido
     ...                JIRA Issue: PROD-221
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+006
     ...                Nível de risco: Baixo
-    [Tags]    api    products    regression    negative    Priority-Low
+    [Tags]    negativo
     Dado Que Possuo Dados Invalidos Para Novo Produto
     Quando Tento Adicionar Um Produto Invalido
     Entao O Sistema Deve Rejeitar A Criacao Do Produto
@@ -322,7 +312,7 @@ UC-PROD-006-E2 Adicionar Produto Payload Vazio
     ...                JIRA Issue: PROD-222
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+006
     ...                Nível de risco: Baixo
-    [Tags]    api    products    negative    Priority-Low
+    [Tags]    negativo
     Dado Que Possuo Payload Vazio Para Novo Produto
     Quando TENTO Criar Produto Com Payload Vazio
     Entao A API Deve Rejeitar Ou Simular Criacao De Produto Vazio
@@ -336,7 +326,7 @@ UC-PROD-006-E3 Adicionar Produto Payload Malformado
     ...                JIRA Issue: PROD-223
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+006
     ...                Nível de risco: Médio
-    [Tags]    api    products    negative    Priority-Medium
+    [Tags]    negativo
     Dado Que Possuo Payload Malformado Para Novo Produto
     Quando TENTO Criar Produto Com Payload Malformado
     Entao A API Deve Rejeitar Payload Malformado
@@ -350,7 +340,7 @@ UC-PROD-007 Atualizar Produto Valido
     ...                JIRA Issue: PROD-224
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+007
     ...                Nível de risco: Médio
-    [Tags]    api    products    regression    Priority-Medium
+    [Tags]    positivo
     Dado Que Possuo Dados Para Atualizacao De Produto
     Quando Atualizo O Produto
     Entao O Produto Deve Ser Atualizado (Simulado)
@@ -364,7 +354,7 @@ UC-PROD-007-E1 Atualizar Produto Inexistente
     ...                JIRA Issue: PROD-225
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+007
     ...                Nível de risco: Baixo
-    [Tags]    api    products    regression    negative    Priority-Low
+    [Tags]    negativo
     Dado Que Possuo Dados Para Atualizacao De Produto Inexistente
     Quando Atualizo Um Produto Inexistente
     Entao O Sistema Deve Informar Produto Nao Encontrado Na Atualizacao
@@ -378,7 +368,7 @@ UC-PROD-007-E2 Atualizar Produto Payload Vazio
     ...                JIRA Issue: PROD-226
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+007
     ...                Nível de risco: Baixo
-    [Tags]    api    products    negative    Priority-Low
+    [Tags]    negativo
     Dado Que Possuo Payload Vazio Para Atualizacao
     Quando Atualizo Produto Com Payload Vazio
     Entao A API Deve Retornar Sucesso Ou Erro Conforme Simulacao
@@ -392,7 +382,7 @@ UC-PROD-008 Deletar Produto Valido
     ...                JIRA Issue: PROD-227
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+008
     ...                Nível de risco: Médio
-    [Tags]    api    products    regression    Priority-Medium
+    [Tags]    positivo
     Dado Que Possuo Um Produto Para Delecao
     Quando Deleto O Produto
     Entao O Produto Deve Ser Deletado (Simulado)
@@ -406,7 +396,7 @@ UC-PROD-008-E1 Deletar Produto Inexistente
     ...                JIRA Issue: PROD-228
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+008
     ...                Nível de risco: Baixo
-    [Tags]    api    products    regression    negative    Priority-Low
+    [Tags]    negativo
     Dado Que Possuo Um Produto Inexistente Para Delecao
     Quando Deleto O Produto Inexistente
     Entao O Sistema Deve Informar Que O Produto Nao Foi Encontrado Na Delecao
@@ -420,7 +410,7 @@ UC-PROD-008-E2 Deletar Produto Id Invalido Tipo
     ...                JIRA Issue: PROD-229
     ...                Confluence: https://confluence.company.com/display/QA/Products+UC+008
     ...                Nível de risco: Baixo
-    [Tags]    api    products    negative    boundary    Priority-Low
+    [Tags]    negativo
     Dado Que Possuo ID Invalido Tipo Para Delecao
     Quando Deleto Produto Com Id Invalido Tipo
     Entao O Sistema Deve Retornar Erro Para Id Invalido Ou Simular

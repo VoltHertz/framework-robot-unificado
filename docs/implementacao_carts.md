@@ -27,7 +27,7 @@ A automatização dos casos de teste para API de Carrinhos (Carts) do DummyJSON 
 - **Implementa todos os fluxos BDD**: Dado/Quando/Entao para cada caso de uso
 
 ### 4. Test Suite
-- **Arquivo**: `tests/api/domains/carts/carts_fluxos.robot`
+- **Arquivo**: `tests/api/domains/carts/carts_suite.robot`
 - **Casos de teste implementados**: 14 testes cobrindo todos os casos de uso e cenários de erro
 
 ## Casos de Uso Implementados
@@ -62,21 +62,27 @@ A automatização dos casos de teste para API de Carrinhos (Carts) do DummyJSON 
 
 ### Execução Completa
 ```bash
-robot -d results/api/carts -v ENV:dev tests/api/domains/carts/carts_fluxos.robot
+robot -d results/api/carts -v ENV:dev tests/api/domains/carts/carts_suite.robot
 ```
-**Resultado**: 14 tests, 14 passed, 0 failed ✅
+**Resultado**: 21 tests, 21 passed, 0 failed ✅
 
 ### Execução Smoke Tests
 ```bash
-robot -d results/api/carts -v ENV:dev -i smoke tests/api/domains/carts/carts_fluxos.robot
+robot -d results/api/carts -v ENV:dev -i smoke tests/api/domains/carts/carts_suite.robot
 ```
-**Resultado**: 6 tests, 6 passed, 0 failed ✅
+**Resultado**: 4 tests, 4 passed, 0 failed ✅
 
-### Execução Regression Tests
+### Execução Positivos
 ```bash
-robot -d results/api/carts -v ENV:dev -i regression tests/api/domains/carts/carts_fluxos.robot
+robot -d results/api/carts -v ENV:dev -i positivo tests/api/domains/carts/carts_suite.robot
 ```
-**Resultado**: 14 tests, 14 passed, 0 failed ✅
+**Resultado**: 8 tests, 8 passed, 0 failed ✅
+
+### Execução Negativos
+```bash
+robot -d results/api/carts -v ENV:dev -i negativo tests/api/domains/carts/carts_suite.robot
+```
+**Resultado**: 9 tests, 9 passed, 0 failed ✅
 
 ## Características da Implementação
 

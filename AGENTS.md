@@ -31,8 +31,8 @@
 
 Exemplos prontos (usar sempre `-d results/api/<dominio>`):
 - Dry run API (checagem rápida, pasta dedicada): `cd framework-robot-unificado && .venv/bin/python -m robot --dryrun -v ENV:dev -i api -d results/api/_dryrun tests`
-- Products (fluxos): `cd framework-robot-unificado && .venv/bin/python -m robot -v ENV:dev -d results/api/products tests/api/domains/products/products_fluxos.robot`
-- Carts (fluxos): `cd framework-robot-unificado && .venv/bin/python -m robot -v ENV:dev -d results/api/carts tests/api/domains/carts/carts_fluxos.robot`
+- Products (fluxos): `cd framework-robot-unificado && .venv/bin/python -m robot -v ENV:dev -d results/api/products tests/api/domains/products/products_suite.robot`
+- Carts (fluxos): `cd framework-robot-unificado && .venv/bin/python -m robot -v ENV:dev -d results/api/carts tests/api/domains/carts/carts_suite.robot`
 - Filtrar por tags: `-i "api AND carts AND smoke"`
 
 - Lint Robot files (Robocop): `cd framework-robot-unificado && .venv/bin/robocop resources tests`

@@ -23,7 +23,7 @@ Execute sempre a partir da raiz `framework-robot-unificado`, usando a venv do pr
   - Exemplo (conceito): `.venv/bin/robocop check resources tests`
 - Lint por domínio (execução mais rápida):
   - `resources/api/keywords/products.keywords.resource`
-  - `tests/api/domains/products/products_fluxos.robot`
+  - `tests/api/domains/products/products_suite.robot`
 - Formatter (dry-run com diff):
   - Conceito: `.venv/bin/robocop format --diff resources tests`
 - Formatter (aplicar mudanças no lugar):

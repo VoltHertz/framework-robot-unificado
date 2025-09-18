@@ -1,13 +1,3 @@
-# Modelo de [Documentation] por caso (use nas novas adições)
-# [Documentation]    Descrição breve
-# ...                Objetivo: o que validar
-# ...                Pré-requisitos: condições/ambiente
-# ...                Dados de teste: massa/parametros
-# ...                Resultado esperado: status/corpo/contrato
-# ...                JIRA Issue: PROJ-123
-# ...                Confluence: https://confluence.company.com/display/QA/...
-# ...                Nível de risco: Baixo|Médio|Alto
-
 *** Settings ***
 Documentation    Suíte de testes para API de Carrinhos DummyJSON
 ...              Cobre cenários de listagem, consulta, criação, atualização e deleção de carrinhos
@@ -15,25 +5,24 @@ Documentation    Suíte de testes para API de Carrinhos DummyJSON
 ...              *JIRA Issues:* HERA-101, HERA-102, HERA-103, HERA-104, HERA-105, APOLLO-103
 ...              *Confluence:* https://confluence.company.com/display/QA/Cart+Tests
 ...                            https://confluence.company.com/display/QA/Cart+Tests/Boundary
-...                            https://confluence.company.com/display/QA/Cart+Tests/Contract
 Resource         ../../../../resources/api/keywords/carts.keywords.resource
 Resource         ../../../../resources/common/hooks.resource
-Variables        ../../../../environments/dev.py
+Variables        ../../../../environments/${ENV}.py
 Suite Setup      Setup Suite Padrao
 Suite Teardown   Teardown Suite Padrao
-Test Tags       api    carts    regression
+Test Tags       api    carts
 
 *** Test Cases ***
 UC-CART-001 - Obter Todos os Carrinhos
     [Documentation]    Lista completa de carrinhos com parâmetros padrão.
-    ...                Objetivo: validar 200 e contrato de lista; lista não vazia.
+    ...                Objetivo: validar status 200 e lista não vazia.
     ...                Pré-requisitos: sessão HTTP iniciada via hooks.
     ...                Dados de teste: N/A.
     ...                Resultado esperado: campos carts/total/limit/skip presentes.
     ...                JIRA Issue: CART-301
     ...                Confluence: https://confluence.company.com/display/QA/Carts+UC+001
     ...                Nível de risco: Médio
-    [Tags]    smoke    listagem    Priority-Medium
+    [Tags]    smoke    positivo
     Dado Que Quero Obter A Lista De Todos Os Carrinhos
     Quando Solicito A Lista De Carrinhos
     Entao Devo Receber A Lista De Carrinhos Com Sucesso
@@ -47,34 +36,34 @@ UC-CART-001-A1 - Obter Carrinhos Com Paginacao
     ...                JIRA Issue: CART-302
     ...                Confluence: https://confluence.company.com/display/QA/Carts+UC+001
     ...                Nível de risco: Baixo
-    [Tags]    paginacao    Priority-Low
+    [Tags]    positivo
     Quando Solicito A Lista De Carrinhos Com Paginacao
     Entao Devo Receber A Lista Paginada De Carrinhos
 
 UC-CART-001-B1 - Boundary Paginacao Limit 0 Skip 0
     [Documentation]    Boundary: limit=0 e skip=0.
-    ...                Objetivo: aceitar ajuste de limit pelo fornecedor; contrato ok.
+    ...                Objetivo: aceitar ajuste de limit pelo fornecedor mantendo integridade da resposta.
     ...                Pré-requisitos: massa boundary.
     ...                Dados de teste: limit=0, skip=0.
     ...                Resultado esperado: 200; limit=0 ou total; lista possivelmente vazia.
     ...                JIRA Issue: CART-303
     ...                Confluence: https://confluence.company.com/display/QA/Carts+Boundary
     ...                Nível de risco: Baixo
-    [Tags]    boundary    paginacao    Priority-Low
+    [Tags]    limite
     Dado Que Possuo Parametros Boundary De Paginacao De Carrinhos
     Quando Solicito Carrinhos Com Limit E Skip    ${BOUNDARY_PAGINACAO['limit_min']}    ${BOUNDARY_PAGINACAO['skip_zero']}
     Entao A Resposta De Paginacao Deve Ser Valida Para Boundary    ${BOUNDARY_PAGINACAO['limit_min']}    ${BOUNDARY_PAGINACAO['skip_zero']}
 
 UC-CART-001-B2 - Boundary Paginacao Limit 1 Skip 1
     [Documentation]    Boundary: limit=1 e skip=1.
-    ...                Objetivo: validar eco e contrato.
+    ...                Objetivo: validar eco e integridade da resposta.
     ...                Pré-requisitos: massa boundary.
     ...                Dados de teste: limit=1, skip=1.
     ...                Resultado esperado: 200; lista com até 1 item.
     ...                JIRA Issue: CART-304
     ...                Confluence: https://confluence.company.com/display/QA/Carts+Boundary
     ...                Nível de risco: Baixo
-    [Tags]    boundary    paginacao    Priority-Low
+    [Tags]    limite
     Dado Que Possuo Parametros Boundary De Paginacao De Carrinhos
     Quando Solicito Carrinhos Com Limit E Skip    ${BOUNDARY_PAGINACAO['limit_um']}    ${BOUNDARY_PAGINACAO['skip_um']}
     Entao A Resposta De Paginacao Deve Ser Valida Para Boundary    ${BOUNDARY_PAGINACAO['limit_um']}    ${BOUNDARY_PAGINACAO['skip_um']}
@@ -88,7 +77,7 @@ UC-CART-001-B3 - Boundary Paginacao Limit Alto
     ...                JIRA Issue: CART-305
     ...                Confluence: https://confluence.company.com/display/QA/Carts+Boundary
     ...                Nível de risco: Baixo
-    [Tags]    boundary    paginacao    Priority-Low
+    [Tags]    limite
     Dado Que Possuo Parametros Boundary De Paginacao De Carrinhos
     Quando Solicito Carrinhos Com Limit E Skip    ${BOUNDARY_PAGINACAO['limit_maior']}    ${BOUNDARY_PAGINACAO['skip_zero']}
     Entao A Resposta De Paginacao Deve Ser Valida Para Boundary    ${BOUNDARY_PAGINACAO['limit_maior']}    ${BOUNDARY_PAGINACAO['skip_zero']}
@@ -98,11 +87,11 @@ UC-CART-001-B4 - Boundary Paginacao Skip Alto
     ...                Objetivo: validar lista possivelmente vazia.
     ...                Pré-requisitos: massa boundary.
     ...                Dados de teste: skip alto, limit pequeno.
-    ...                Resultado esperado: 200; zero itens possível; contrato ok.
+    ...                Resultado esperado: 200; zero itens possível; payload coerente.
     ...                JIRA Issue: CART-306
     ...                Confluence: https://confluence.company.com/display/QA/Carts+Boundary
     ...                Nível de risco: Baixo
-    [Tags]    boundary    paginacao    Priority-Low
+    [Tags]    limite
     Dado Que Possuo Parametros Boundary De Paginacao De Carrinhos
     Quando Solicito Carrinhos Com Limit E Skip    ${BOUNDARY_PAGINACAO['limit_um']}    ${BOUNDARY_PAGINACAO['skip_alto']}
     Entao A Resposta De Paginacao Deve Ser Valida Para Boundary    ${BOUNDARY_PAGINACAO['limit_um']}    ${BOUNDARY_PAGINACAO['skip_alto']}
@@ -112,11 +101,11 @@ UC-CART-002 - Obter Carrinho Por ID Existente
     ...                Objetivo: validar 200 e campos principais.
     ...                Pré-requisitos: ID existente na massa.
     ...                Dados de teste: id válido.
-    ...                Resultado esperado: 200; id/userId/total presentes; contrato ok.
+    ...                Resultado esperado: 200; id/userId/total presentes; payload coerente.
     ...                JIRA Issue: CART-307
     ...                Confluence: https://confluence.company.com/display/QA/Carts+UC+002
     ...                Nível de risco: Médio
-    [Tags]    smoke    consulta    Priority-Medium
+    [Tags]    smoke    positivo
     Dado Que Possuo Um ID De Carrinho Existente
     Quando Consulto O Carrinho Por ID
     Entao Devo Receber Os Detalhes Do Carrinho
@@ -130,7 +119,7 @@ UC-CART-002-E1 - Erro Ao Obter Carrinho Inexistente
     ...                JIRA Issue: CART-308
     ...                Confluence: https://confluence.company.com/display/QA/Carts+UC+002
     ...                Nível de risco: Baixo
-    [Tags]    erro    consulta    Priority-Low
+    [Tags]    negativo
     Dado Que Possuo Um ID De Carrinho Inexistente
     Quando Consulto Um Carrinho Inexistente
     Entao Devo Receber Erro De Carrinho Nao Encontrado
@@ -140,11 +129,11 @@ UC-CART-003 - Obter Carrinhos De Usuario Existente
     ...                Objetivo: validar 200 e lista com itens.
     ...                Pré-requisitos: userId com carrinhos na massa.
     ...                Dados de teste: userId válido.
-    ...                Resultado esperado: 200; lista não vazia; contrato ok.
+    ...                Resultado esperado: 200; lista não vazia.
     ...                JIRA Issue: CART-309
     ...                Confluence: https://confluence.company.com/display/QA/Carts+UC+003
     ...                Nível de risco: Médio
-    [Tags]    smoke    usuario    Priority-Medium
+    [Tags]    positivo
     Dado Que Possuo Um Usuario Com Carrinhos
     Quando Consulto Os Carrinhos Do Usuario
     Entao Devo Receber Os Carrinhos Do Usuario
@@ -158,7 +147,7 @@ UC-CART-003-E1 - Obter Carrinhos De Usuario Sem Carrinhos
     ...                JIRA Issue: CART-310
     ...                Confluence: https://confluence.company.com/display/QA/Carts+UC+003
     ...                Nível de risco: Baixo
-    [Tags]    alternativo    usuario    Priority-Low
+    [Tags]    negativo
     Dado Que Possuo Um Usuario Sem Carrinhos
     Quando Consulto Os Carrinhos De Usuario Sem Carrinhos
     Entao Devo Receber Lista Vazia De Carrinhos
@@ -172,7 +161,7 @@ UC-CART-004 - Adicionar Novo Carrinho Com Sucesso
     ...                JIRA Issue: CART-311
     ...                Confluence: https://confluence.company.com/display/QA/Carts+UC+004
     ...                Nível de risco: Médio
-    [Tags]    smoke    criacao    Priority-Medium
+    [Tags]    smoke    positivo
     Dado Que Possuo Dados Para Criar Um Novo Carrinho
     Quando Crio Um Novo Carrinho
     Entao O Carrinho Deve Ser Criado Com Sucesso
@@ -186,7 +175,7 @@ UC-CART-004-E1 - Erro Ao Criar Carrinho Com Dados Invalidos
     ...                JIRA Issue: CART-312
     ...                Confluence: https://confluence.company.com/display/QA/Carts+UC+004
     ...                Nível de risco: Baixo
-    [Tags]    erro    criacao    Priority-Low
+    [Tags]    negativo
     Dado Que Possuo Dados Invalidos Para Criar Carrinho
     Quando Tento Criar Carrinho Com Dados Invalidos
     Entao Devo Receber Erro De Dados Invalidos
@@ -200,7 +189,7 @@ UC-CART-004-E2 - Erro Ao Criar Carrinho Sem Produtos
     ...                JIRA Issue: CART-313
     ...                Confluence: https://confluence.company.com/display/QA/Carts+UC+004
     ...                Nível de risco: Baixo
-    [Tags]    erro    boundary    criacao    Priority-Low
+    [Tags]    negativo
     Dado Que Possuo Payload Sem Produtos Para Criar Carrinho
     Quando Tentar Criar Carrinho Vazio
     Entao Devo Receber Erro De Carrinho Vazio
@@ -214,7 +203,7 @@ UC-CART-004-E3 - Erro Ao Criar Carrinho Com Corpo Vazio
     ...                JIRA Issue: CART-314
     ...                Confluence: https://confluence.company.com/display/QA/Carts+UC+004
     ...                Nível de risco: Baixo
-    [Tags]    erro    boundary    criacao    Priority-Low
+    [Tags]    negativo
     Quando Tentar Criar Carrinho Com Corpo Vazio
     Entao Devo Receber Erro De Corpo Vazio
 
@@ -227,7 +216,7 @@ UC-CART-004-E4 - Erro Ao Criar Carrinho Com JSON Malformado
     ...                JIRA Issue: CART-315
     ...                Confluence: https://confluence.company.com/display/QA/Carts+UC+004
     ...                Nível de risco: Médio
-    [Tags]    erro    criacao    security    Priority-Medium
+    [Tags]    negativo
     Dado Que Possuo Corpo JSON Malformado Para Carrinho
     Quando Tentar Criar Carrinho Com JSON Malformado
     Entao Devo Receber Erro De JSON Malformado
@@ -241,7 +230,7 @@ UC-CART-005 - Atualizar Carrinho Mesclando Produtos
     ...                JIRA Issue: CART-316
     ...                Confluence: https://confluence.company.com/display/QA/Carts+UC+005
     ...                Nível de risco: Médio
-    [Tags]    smoke    atualizacao    Priority-Medium
+    [Tags]    positivo
     Dado Que Possuo Um ID De Carrinho Existente
     Dado Que Possuo Dados Para Atualizar Um Carrinho
     Quando Atualizo O Carrinho Mesclando Produtos
@@ -256,7 +245,7 @@ UC-CART-005-A1 - Atualizar Carrinho Substituindo Produtos
     ...                JIRA Issue: CART-317
     ...                Confluence: https://confluence.company.com/display/QA/Carts+UC+005
     ...                Nível de risco: Médio
-    [Tags]    atualizacao    substituicao    Priority-Medium
+    [Tags]    positivo
     Dado Que Possuo Um ID De Carrinho Existente
     Dado Que Possuo Dados Para Substituir Produtos Do Carrinho
     Quando Atualizo O Carrinho Substituindo Produtos
@@ -271,7 +260,7 @@ UC-CART-005-E1 - Erro Ao Atualizar Carrinho Inexistente
     ...                JIRA Issue: CART-318
     ...                Confluence: https://confluence.company.com/display/QA/Carts+UC+005
     ...                Nível de risco: Baixo
-    [Tags]    erro    atualizacao    Priority-Low
+    [Tags]    negativo
     Dado Que Possuo Um ID De Carrinho Inexistente
     Dado Que Possuo Dados Para Atualizar Um Carrinho
     Quando Tento Atualizar Carrinho Inexistente
@@ -286,7 +275,7 @@ UC-CART-005-E2 - Erro Ao Atualizar Carrinho Com Dados Invalidos
     ...                JIRA Issue: CART-319
     ...                Confluence: https://confluence.company.com/display/QA/Carts+UC+005
     ...                Nível de risco: Baixo
-    [Tags]    erro    atualizacao    Priority-Low
+    [Tags]    negativo
     Dado Que Possuo Dados Invalidos Para Atualizar Carrinho
     Quando Tento Atualizar Carrinho Com Dados Invalidos
     Entao Devo Receber Erro De Dados Invalidos Para Atualizacao
@@ -296,11 +285,11 @@ UC-CART-006 - Deletar Carrinho Existente
     ...                Objetivo: validar 200 e flags de deleção.
     ...                Pré-requisitos: id existente.
     ...                Dados de teste: id válido.
-    ...                Resultado esperado: 200; contrato delete ok.
+    ...                Resultado esperado: 200; payload indica deleção concluída.
     ...                JIRA Issue: CART-320
     ...                Confluence: https://confluence.company.com/display/QA/Carts+UC+006
     ...                Nível de risco: Médio
-    [Tags]    smoke    delecao    Priority-Medium
+    [Tags]    smoke    positivo
     Dado Que Possuo Um ID De Carrinho Existente
     Quando Deleto O Carrinho
     Entao O Carrinho Deve Ser Deletado Com Sucesso
@@ -314,7 +303,7 @@ UC-CART-006-E1 - Erro Ao Deletar Carrinho Inexistente
     ...                JIRA Issue: CART-321
     ...                Confluence: https://confluence.company.com/display/QA/Carts+UC+006
     ...                Nível de risco: Baixo
-    [Tags]    erro    delecao    Priority-Low
+    [Tags]    negativo
     Dado Que Possuo Um ID De Carrinho Inexistente
     Quando Tento Deletar Carrinho Inexistente
     Entao Devo Receber Erro De Carrinho Inexistente Para Delecao
