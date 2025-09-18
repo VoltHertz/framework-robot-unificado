@@ -143,8 +143,8 @@ Suite Teardown  Teardown Suite Padrao
 
 ## Padrões para Novos Domínios
 - Replicar estrutura de `carts`:
-  - `resources/api/services/<dominio>.service.resource` — endpoints brutos.
-  - `resources/api/keywords/<dominio>.keywords.resource` — orquestração e validações funcionais.
+  - `resources/api/services/<dominio>_service.resource` — endpoints brutos.
+  - `resources/api/keywords/<dominio>_keywords.resource` — orquestração e validações funcionais.
   - `resources/api/contracts/<dominio>/v1/*.schema.json` + `<dominio>.contracts.resource` — validação de contrato.
   - `data/json/<dominio>.json` — massa de teste por cenário.
   - `tests/api/domains/<dominio>/<dominio>_fluxos.robot` — fluxos e boundaries.

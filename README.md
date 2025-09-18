@@ -3,19 +3,18 @@
 Este repositório é um exemplo “de ponta” de como estruturar automação com Robot Framework para escalar em centenas de cenários, plataformas e domínios. O foco é clareza arquitetural, desacoplamento, logs rastreáveis, dados plugáveis e padrões de projeto aplicados ao contexto de testes.
 
 Principais pilares
-- Camadas explícitas: adapters → services/pages/screens → keywords → suites.
-- Dados desacoplados: Data Provider plugável (JSON/CSV/SQL Server).
-- Contratos versionados: JSON Schemas por domínio/versão.
+- Camadas explícitas: adapters → services → keywords → suites.
+- Dados desacoplados: Data Provider plugável (JSON/SQL Server).
 - Logs padronizados: prefixo automático [arquivo:Llinha] em toda a suíte.
 - Tags consistentes: seleção/filtro por plataforma, domínio, natureza e prioridade.
 
 ## Infra de Pastas (Monorepo)
-- tests: apenas suítes (.robot) — sem lógica:
-  - `tests/api/domains/<dominio>/<dominio>_fluxos.robot`: fluxos de negócio (Dado/Quando/Entao) e boundary/negativos.
-  - `tests/api/contract/<dominio>/<dominio>_contract.robot`: testes de contrato (schemas).
-  - Web/Mobile seguem o mesmo padrão em `tests/web` e `tests/mobile`.
+- tests: apenas suítes (.robot) — sem lógica, somente negocial BDD:
+  - `tests/api/domains/<dominio>/api_client_<prefixo_dominio>.robot`: validação de negócio (Dado/Quando/Entao) e boundary/negativos.
+  - `tests/api/integration/<funcionalidade>_fluxos.robot`: fluxos de intergração (Dado/Quando/Entao).
+  - Web seguem o mesmo padrão em `tests/web`.
 - resources: camadas reutilizáveis por plataforma:
-  - `resources/api/adapters`: baixo nível (Requests/gRPC). Ex.: `http_client.resource` (sessão, base URL, retry, timeouts).
+  - `resources/api/adapters`: baixo nível (Requests/gRPC/protocolo kafka). Ex.: `http_client.resource` (sessão, base URL, retry, timeouts).
   - `resources/api/services`: “Service Objects” (uma keyword por endpoint, sem regras/asserções de negócio).
   - `resources/api/keywords`: orquestração de negócios (combina services, validações e massa de dados).
   - `resources/api/contracts/<dominio>/v1`: JSON Schemas versionados e resource com keywords de validação.
