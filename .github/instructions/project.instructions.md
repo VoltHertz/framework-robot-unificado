@@ -20,6 +20,7 @@ applyTo: "**"
 - Implementar boas práticas de codificação, como nomeação clara de variáveis e funções, e documentação adequada.
 - Todas as suites de teste deverão possuir apenas a visão negocial, sendo a questão técnica encapsulada nos arquivos da pasta resources.
 - A documentação das libs utilizadas nesse projeto está detalhada em docs/libs.
+    - Adicionada documentação do Robocop em `docs/libs/robocop.md` (uso no repo, flags úteis, fluxo recomendado, integração VS Code/CI). Manter alinhado a `requirements.txt`.
 - A documentação das APIs REST está descrita em docs/fireCrawl/dummyJson/*.
 - Conforme as atividades de backlog do projeto forem inciadas, este arquivo deve ser atualizado. Conforme elas forem evoluindo esse arquivo deverá ser atualizado, conforme elas forem finalizadas este arquivo deverá ser atualizado. Assim saberemos o que precisa ser feito, o que já foi feito e o que vamos fazer.
 - Neste arquivo não iremos criar novas seçoes, caso haja o desejo de faze-lo para acompanhar algo importante, primeiro é preciso pedir permissão ao desenvolvedor humano.
@@ -46,6 +47,7 @@ pyodbc==5.1.0                            # DB access (docs/libs/pyodbc.md)
 python-dotenv==1.0.1                     # Env loader (docs/libs/python-dotenv.md)
 requests==2.32.3                         # Underlying HTTP client (docs/libs/requests.md)
 robotframework-jsonschemalibrary==1.0    # Validação de respostas via JSON Schema
+robotframework-robocop==6.6.1            # Linter/Formatter Robot (docs/libs/robocop.md)
 
 ## Diretrizes na implementação de testes com robot
 Gerar e evoluir **suítes Robot Framework** para as APIs DummyJSON seguindo BDD em português, com **camadas separadas**, **massa centralizada** e cobertura **positiva, negativa, boundary e security**. Entregas devem respeitar a estrutura e convenções deste repositório.
