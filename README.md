@@ -10,28 +10,23 @@ Principais pilares
 
 ## Infra de Pastas (Monorepo)
 - tests: apenas suítes (.robot) — sem lógica, somente negocial BDD:
-  - `tests/api/domains/<dominio>/api_client_<prefixo_dominio>.robot`: validação de negócio (Dado/Quando/Entao) e boundary/negativos.
+  - `tests/api/domains/<dominio>/<dominio>_suite.robot`: validação de negócio (Dado/Quando/Entao): positivos/alternativos/negativos/limites.
   - `tests/api/integration/<funcionalidade>_fluxos.robot`: fluxos de intergração (Dado/Quando/Entao).
-  - Web seguem o mesmo padrão em `tests/web`.
 - resources: camadas reutilizáveis por plataforma:
   - `resources/api/adapters`: baixo nível (Requests/gRPC/protocolo kafka). Ex.: `http_client.resource` (sessão, base URL, retry, timeouts).
   - `resources/api/services`: “Service Objects” (uma keyword por endpoint, sem regras/asserções de negócio).
   - `resources/api/keywords`: orquestração de negócios (combina services, validações e massa de dados).
-  - `resources/api/contracts/<dominio>/v1`: JSON Schemas versionados e resource com keywords de validação.
-  - `resources/common`: utilidades transversais (hooks de suite, json_utils, data_provider.resource, logger.resource).
-  - `resources/web` e `resources/mobile`: adapters/pages/screens/keywords específicos dessas plataformas.
+  - `resources/common`: utilidades transversais (hooks de suite, json_utils, data_provider.resource).
 - data:
   - `data/json/<dominio>.json`: massa curada por cenário (determinística para regressão).
-  - `data/csv/`: massa em CSV (cenário por linha; coluna “cenario” como chave).
   - `data/full_api_data/`: dump de referência (não usado diretamente nas suítes).
-- environments: variáveis por ambiente (`dev.py`, `qa.py`, ...), incluindo base URLs e timeouts.
-- libs: utilitários Python — ex.: `libs/data/data_provider.py` (backends de massa) e `libs/logging/styled_logger.py` (logger estilizado).
+- environments: variáveis por ambiente (`uat.py`, `qab.py`, ...), incluindo base URLs e timeouts.
+- libs: utilitários Python — ex.: `libs/data/data_provider.py` (backends de massa).
 - results: artefatos por plataforma/domínio (`results/<plataforma>/<dominio>/`), facilitando histórico e coleta em CI.
-- docs, grpc, configs, tools: documentação, contratos gRPC/stubs, arquivos de config e scripts auxiliares.
 
 ## Modelo em Camadas (como os testes se organizam)
 - Adapters (baixo nível):
-  - Isolam bibliotecas (RequestsLibrary/Browser/gRPC). Definem sessões, políticas de timeout/retry, headers e logs básicos.
+  - Isolam bibliotecas (RequestsLibrary/gRPC). Definem sessões, políticas de timeout/retry, headers e logs básicos.
   - Vantagem: trocar de biblioteca não afeta services/keywords/suites.
 - Services (objetos de serviço):
   - Uma keyword por endpoint. Não fazem asserts complexos nem incorporam regra de negócio.
@@ -42,12 +37,9 @@ Principais pilares
 - Suites (BDD e rastreabilidade):
   - Apenas narrativa de negócio (Dado/Quando/Entao), importam hooks comuns e keywords do domínio.
   - Colocam tags, IDs `UC-<DOM>-<SEQ>` e documentação padronizada para rastreabilidade e filtragem.
-- Contracts (schemas):
-  - Schemas versionados em `resources/api/contracts/<dominio>/v1` e carregados via `${CURDIR}/v1`.
-  - Testes de contrato executados separadamente para detectar rupturas cedo.
 - Dados (Data Provider):
   - Keyword única de consumo de massa (`Obter Massa De Teste`) alimentada por backends plugáveis.
-  - Evita acoplamento a formato/fonte, simplificando a adoção de CSV/SQL sem tocar nas suítes.
+  - Evita acoplamento a formato/fonte, simplificando a adoção de JSON/SQL sem tocar nas suítes.
 
 ## Logs Profissionais (rastreamento com [arquivo:Llinha])
 - Biblioteca: `libs/logging/styled_logger.py` com Listener v3 (captura `source`/`lineno`).
