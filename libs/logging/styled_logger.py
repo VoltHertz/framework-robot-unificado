@@ -52,7 +52,7 @@ class StyledLogger:
         ...    Argumentos:
         ...    - ${short}=True: Se True, usa somente o nome do arquivo; caso contrário, caminho completo.
         ...
-        ...    Retorno: String como "[carts.keywords.resource:L123]".
+        ...    Retorno: String como "[carts_keywords.resource:L123]".
         ...    Efeito lateral: Nenhum.
         ...    Exceções: Nenhuma (retorna vazio se não houver contexto).
         ...

@@ -22,7 +22,7 @@ Execute sempre a partir da raiz `framework-robot-unificado`, usando a venv do pr
   - Alvos: `resources` e `tests` (código Robot). A pasta `libs` contém Python e não é alvo do Robocop.
   - Exemplo (conceito): `.venv/bin/robocop check resources tests`
 - Lint por domínio (execução mais rápida):
-  - `resources/api/keywords/products.keywords.resource`
+  - `resources/api/keywords/products_keywords.resource`
   - `tests/api/domains/products/products_suite.robot`
 - Formatter (dry-run com diff):
   - Conceito: `.venv/bin/robocop format --diff resources tests`

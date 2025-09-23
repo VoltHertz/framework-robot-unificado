@@ -22,7 +22,7 @@ A automatização dos casos de teste para API de Carrinhos (Carts) do DummyJSON 
   - `Deletar Carrinho`
 
 ### 3. Keywords Layer
-- **Arquivo**: `resources/api/keywords/carts.keywords.resource`
+- **Arquivo**: `resources/api/keywords/carts_keywords.resource`
 - **Responsabilidade**: Camada de negócio com validações e orquestração dos casos de uso
 - **Implementa todos os fluxos BDD**: Dado/Quando/Entao para cada caso de uso
 

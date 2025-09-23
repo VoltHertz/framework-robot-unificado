@@ -46,18 +46,19 @@ Exemplos prontos (usar sempre `-d results/api/<dominio>`):
  - Casos: prefixe IDs de negócio como `UC-<DOM>-<SEQ>` (ex.: `UC-PROD-001`).
 
 ### Documentação de Test Cases e Keywords
-- Test Cases (modelo recomendado):
-  - Em cada caso, documente: Objetivo/Resumo (sem repetir BDD), Pré‑requisitos, Dados de teste, Resultado esperado, JIRA, Confluence.
-  - Exemplo:
+- Test Cases (obrigatório):
+  - Sempre inclua uma documentação curta (sem repetir o BDD), pré-requisitos, dados usados e rastreabilidade (JIRA/Confluence).
+  - Use exatamente o template abaixo — a linha com `##` reforça que o resumo deve trazer só informações extras ao BDD.
     ```robot
     *** Test Cases ***
     [TC_ID] - [Nome Descritivo]
-        [Documentation]    [Resumo/Comentário]
+        [Documentation]    [Descrição breve ou comentário relevante] ## Não há necessidade de descrever o que já está visivel no BDD, apenas um resumo/comentário ou informações a mais caso existam
+        ...    
         ...    *Pré-requisitos:* [Pré-requisitos]
-        ...    *Dados de teste:* [Dados]
-        ...    *Resultado esperado:* [Resultado]
+        ...    *Dados de teste:* [Dados do teste]
+        ...    
         ...    *JIRA Issue:* [PROJ-XXXX]
-        ...    *Confluence:* [Link]
+        ...    *Confluence:* [Link to documentation]
     ```
 - Keywords (documentação mínima):
   - Simples (adapters/services): uma linha em [Documentation] com propósito.

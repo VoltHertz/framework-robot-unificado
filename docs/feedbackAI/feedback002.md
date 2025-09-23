@@ -193,7 +193,7 @@ As instruções ainda sugerem ter uma pasta `resources/api/contracts/` com schem
 
 2. **Services** – Os services para `carts` e `auth` mapeiam cada endpoint do DummyJSON. Por exemplo, `carts.service.resource` possui keywords para listar carrinhos, obter carrinho por ID, obter carrinhos do usuário e adicionar/atualizar/deletar carrinho, sempre retornando a resposta sem interpretá‑la. `auth.service.resource` tem keywords para login, `/auth/me` e `/auth/refresh`. Essas keywords estão alinhadas com a ideia de service object.
 
-3. **Keywords** – As keywords de negócio orquestram fluxos e fazem validações básicas. O arquivo `carts.keywords.resource` chama os services, popula variáveis e verifica campos de resposta. Por exemplo, para listar carrinhos, a keyword chama `Listar Todos Os Carrinhos`, converte o corpo em JSON e valida campos como `carts`, `total`, `skip` e `limit`. Já no tratamento de limites (boundary), há lógica condicional para verificar que `limit=0` ou `limit>total` é ajustado pela API.
+3. **Keywords** – As keywords de negócio orquestram fluxos e fazem validações básicas. O arquivo `carts_keywords.resource` chama os services, popula variáveis e verifica campos de resposta. Por exemplo, para listar carrinhos, a keyword chama `Listar Todos Os Carrinhos`, converte o corpo em JSON e valida campos como `carts`, `total`, `skip` e `limit`. Já no tratamento de limites (boundary), há lógica condicional para verificar que `limit=0` ou `limit>total` é ajustado pela API.
 
    Contudo, o arquivo `auth.keywords.resource` mistura orquestração com chamadas diretas à biblioteca de requests. A keyword “Quando TENTO Realizar O Login Com Credenciais Invalidas” cria o payload e chama `POST On Session /auth/login` diretamente, em vez de usar `Autenticar Usuario` do service. O mesmo ocorre em diversas keywords negativas (malformados, sem token, header malformado, refresh sem token). Isso viola a separação de camadas porque a keyword passa a conhecer detalhes do adapter. Além disso, não há pasta `contracts/` nem validação de contrato via JSON Schema, então os testes dependem de asserts manuais.
 
@@ -239,7 +239,7 @@ Como Head QA, considero que a arquitetura dos testes é parte fundamental da q
 
 * **Usuários (users)**: não há testes no repositório, mas o DummyJSON expõe `/users` para listar, obter usuário por ID e CRUD fictício. É recomendável aplicar a mesma estrutura: listar, filtragem, criação/atualização, exclusão, cenários de boundary (ID inválido) e testes de contrato.
 
-Esses casos de uso devem ser transformados em keywords de negócio (`auth.keywords.resource`, `carts.keywords.resource`, etc.) que utilizem apenas services e contratos, sem chamar diretamente a camada de adapter.
+Esses casos de uso devem ser transformados em keywords de negócio (`auth.keywords.resource`, `carts_keywords.resource`, etc.) que utilizem apenas services e contratos, sem chamar diretamente a camada de adapter.
 
 ---
 
