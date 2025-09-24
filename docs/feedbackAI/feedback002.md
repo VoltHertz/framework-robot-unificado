@@ -191,7 +191,7 @@ As instruções ainda sugerem ter uma pasta `resources/api/contracts/` com schem
 
 1. **Adapter** – O arquivo `resources/api/adapters/http_client.resource` cria uma sessão HTTP com base‑URL configurável e cabeçalhos JSON. Essa camada está bem delimitada.
 
-2. **Services** – Os services para `carts` e `auth` mapeiam cada endpoint do DummyJSON. Por exemplo, `carts.service.resource` possui keywords para listar carrinhos, obter carrinho por ID, obter carrinhos do usuário e adicionar/atualizar/deletar carrinho, sempre retornando a resposta sem interpretá‑la. `auth.service.resource` tem keywords para login, `/auth/me` e `/auth/refresh`. Essas keywords estão alinhadas com a ideia de service object.
+2. **Services** – Os services para `carts` e `auth` mapeiam cada endpoint do DummyJSON. Por exemplo, `carts_service.resource` possui keywords para listar carrinhos, obter carrinho por ID, obter carrinhos do usuário e adicionar/atualizar/deletar carrinho, sempre retornando a resposta sem interpretá-la. `auth.service.resource` tem keywords para login, `/auth/me` e `/auth/refresh`. Essas keywords estão alinhadas com a ideia de service object.
 
 3. **Keywords** – As keywords de negócio orquestram fluxos e fazem validações básicas. O arquivo `carts_keywords.resource` chama os services, popula variáveis e verifica campos de resposta. Por exemplo, para listar carrinhos, a keyword chama `Listar Todos Os Carrinhos`, converte o corpo em JSON e valida campos como `carts`, `total`, `skip` e `limit`. Já no tratamento de limites (boundary), há lógica condicional para verificar que `limit=0` ou `limit>total` é ajustado pela API.
 

@@ -1,5 +1,5 @@
 *** Settings ***
-Resource    ../services/carts.service.resource
+Resource    ../services/carts_service.resource
 Resource    ../../common/data_provider.resource
 Resource    ../../common/logger.resource
 Resource    ../../common/json_utils.resource

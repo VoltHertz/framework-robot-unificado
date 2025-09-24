@@ -9,25 +9,7 @@ Variables  ../../../environments/_placeholders.py
 # Mantém a criação de sessão isolada para permitir futura troca de lib ou inclusão de retries/timeout padrão.
 
 Iniciar Sessao API DummyJSON
-    [Documentation]    Objetivo: Criar e configurar a sessão HTTP (RequestsLibrary) para a API DummyJSON usando base URL e parâmetros de timeout/retry vindos do arquivo de ambiente (`environments/<env>.py`) ou via argumento explícito.
-    ...                Pré-requisitos: Suíte deve importar `Variables   ../../environments/\${ENV}.py` (ou um arquivo fixo, ex.: `dev.py`) contendo `BASE_URL_API_DUMMYJSON`, `HTTP_TIMEOUT`, `HTTP_MAX_RETRIES`, `HTTP_RETRY_BACKOFF`. `RequestsLibrary` deve estar disponível (requirements instalados). Robot ≥ 7.x recomendado.
-    ...                Dados de teste: N/A. Opcionalmente definir `HTTP_TIMEOUT`, `HTTP_MAX_RETRIES`, `HTTP_RETRY_BACKOFF` para validar política de robustez.
-    ...                Resultado esperado: Sessão `DUMMYJSON` criada com base URL resolvida e headers básicos (`Content-Type=application/json`). Logs informam base, timeout e retries. Em falta da base URL (e sem argumento), a keyword falha com mensagem orientativa.
-    ...                JIRA Issue: INFRA-HTTP-001
-    ...                Confluence: https://confluence.company.com/display/QA/HTTP+Adapter+DummyJSON
-    ...                Nível de risco: Baixo
-    ...
-    ...                Argumentos:
-    ...                - base_url (opcional): sobrepõe `BASE_URL_API_DUMMYJSON` do ambiente quando fornecida.
-    ...
-    ...                Retorno: nenhum.
-    ...                Efeito lateral: cria/atualiza a sessão `DUMMYJSON` no RequestsLibrary; emite logs estilizados.
-    ...                Exceções: `Fail` quando base URL não está definida (nem via ambiente nem via argumento).
-    ...
-    ...                Exemplo:
-    ...                | Suite Setup | Iniciar Sessao API DummyJSON |
-    ...                | # ou |
-    ...                | Iniciar Sessao API DummyJSON | ${BASE_URL_API_DUMMYJSON} |
+    [Documentation]    Cria e configura a sessão HTTP `DUMMYJSON` usando base URL e parâmetros de robustez do ambiente.
     [Arguments]    ${base_url}=${None}
     # Resolução de base URL vinda de environments/<env>.py (sem default local)
     # Preferimos sempre a variável do arquivo de ambiente importado na suíte: Variables    ../../environments/\${ENV}.py
@@ -53,21 +35,6 @@ Iniciar Sessao API DummyJSON
     Log Estilizado    Sessão DUMMYJSON criada com headers padrão.
 
 Encerrar Sessao API DummyJSON
-    [Documentation]    Objetivo: Encerrar a sessão HTTP padrão. Atualmente é um no-op, pois o ciclo de vida é
-    ...                gerenciado pela RequestsLibrary; mantido por simetria e clareza nos hooks de suíte.
-    ...                Pré-requisitos: Opcional — pode ser chamado mesmo sem sessão ativa.
-    ...                Dados de teste: N/A
-    ...                Resultado esperado: Apenas log informativo; nenhuma exceção quando sessão não existir.
-    ...                JIRA Issue: INFRA-HTTP-002
-    ...                Confluence: https://confluence.company.com/display/QA/HTTP+Adapter+DummyJSON
-    ...                Nível de risco: Baixo
-    ...
-    ...                Argumentos: nenhum.
-    ...                Retorno: nenhum.
-    ...                Efeito lateral: nenhum (no-op).
-    ...                Exceções: nenhuma.
-    ...
-    ...                Exemplo:
-    ...                | Suite Teardown | Encerrar Sessao API DummyJSON |
+    [Documentation]    Registra encerramento da sessão HTTP `DUMMYJSON`, mantendo simetria nos hooks de suíte.
     Log Estilizado    Encerrando sessão DUMMYJSON (noop - RequestsLibrary gerencia automaticamente).
     No Operation

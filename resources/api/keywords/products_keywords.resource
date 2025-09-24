@@ -1,5 +1,5 @@
 *** Settings ***
-Resource    ../services/products.service.resource
+Resource    ../services/products_service.resource
 Resource    ../../common/data_provider.resource
 Resource    ../../common/json_utils.resource
 Resource    ../../common/logger.resource

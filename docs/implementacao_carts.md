@@ -11,7 +11,7 @@ A automatização dos casos de teste para API de Carrinhos (Carts) do DummyJSON 
 - **Conteúdo**: Dados curados para todos os cenários de teste, incluindo dados válidos e inválidos
 
 ### 2. Services Layer
-- **Arquivo**: `resources/api/services/carts.service.resource`
+- **Arquivo**: `resources/api/services/carts_service.resource`
 - **Responsabilidade**: Camada de abstração para chamadas diretas aos endpoints da API
 - **Keywords implementadas**:
   - `Listar Todos Os Carrinhos`

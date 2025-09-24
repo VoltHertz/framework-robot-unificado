@@ -4,11 +4,12 @@ Resource    ../../common/logger.resource
 Library     Collections
 
 *** Keywords ***
-# Arquivo: resources/api/services/carts.service.resource
+# Arquivo: resources/api/services/carts_service.resource
 # Service Object para endpoints de carrinhos DummyJSON.
 # Cada keyword representa uma chamada direta de endpoint (sem regra de negócio adicional).
 
 Listar Todos Os Carrinhos
+    [Documentation]    Executa GET /carts com filtros opcionais de paginação e retorna a resposta bruta.
     [Arguments]    ${limit}=${EMPTY}    ${skip}=${EMPTY}
     Log Estilizado    Iniciando chamada GET /carts
     ${params}=    Create Dictionary
@@ -19,6 +20,7 @@ Listar Todos Os Carrinhos
     RETURN    ${resp}
 
 Obter Carrinho Por ID
+    [Documentation]    Executa GET /carts/${cart_id} e retorna a resposta conforme recebida do DummyJSON.
     [Arguments]    ${cart_id}
     Log Estilizado    Iniciando chamada GET /carts/${cart_id}
     ${resp}=    GET On Session    DUMMYJSON    /carts/${cart_id}    expected_status=any
@@ -26,6 +28,7 @@ Obter Carrinho Por ID
     RETURN    ${resp}
 
 Obter Carrinhos Por Usuario
+    [Documentation]    Executa GET /carts/user/${user_id} e entrega a resposta sem pós-processamento.
     [Arguments]    ${user_id}
     Log Estilizado    Iniciando chamada GET /carts/user/${user_id}
     ${resp}=    GET On Session    DUMMYJSON    /carts/user/${user_id}    expected_status=any
@@ -33,6 +36,7 @@ Obter Carrinhos Por Usuario
     RETURN    ${resp}
 
 Adicionar Novo Carrinho
+    [Documentation]    Executa POST /carts/add com payload básico montado a partir de argumentos.
     [Arguments]    ${user_id}    ${products}
     Log Estilizado    Iniciando chamada POST /carts/add
     ${payload}=    Create Dictionary    userId=${user_id}    products=${products}
@@ -42,6 +46,7 @@ Adicionar Novo Carrinho
     RETURN    ${resp}
 
 Atualizar Carrinho
+    [Documentation]    Executa PUT /carts/${cart_id} atualizando produtos com merge configurável.
     [Arguments]    ${cart_id}    ${products}    ${merge}=${True}
     Log Estilizado    Iniciando chamada PUT /carts/${cart_id}
     ${payload}=    Create Dictionary    products=${products}    merge=${merge}
@@ -51,6 +56,7 @@ Atualizar Carrinho
     RETURN    ${resp}
 
 Deletar Carrinho
+    [Documentation]    Executa DELETE /carts/${cart_id} e retorna a resposta para validação externa.
     [Arguments]    ${cart_id}
     Log Estilizado    Iniciando chamada DELETE /carts/${cart_id}
     ${resp}=    DELETE On Session    DUMMYJSON    /carts/${cart_id}    expected_status=any
@@ -59,6 +65,7 @@ Deletar Carrinho
 
 # Operações com payload bruto para cenários negativos/boundary
 Adicionar Novo Carrinho Com Payload
+    [Documentation]    Executa POST /carts/add utilizando payload customizado para cenários específicos.
     [Arguments]    ${payload}
     Log Estilizado    Iniciando chamada POST /carts/add (payload bruto)
     ${headers}=    Create Dictionary    Content-Type=application/json
@@ -67,6 +74,7 @@ Adicionar Novo Carrinho Com Payload
     RETURN    ${resp}
 
 Atualizar Carrinho Com Payload
+    [Documentation]    Executa PUT /carts/${cart_id} com payload customizado para testes negativos ou limites.
     [Arguments]    ${cart_id}    ${payload}
     Log Estilizado    Iniciando chamada PUT /carts/${cart_id} (payload bruto)
     ${headers}=    Create Dictionary    Content-Type=application/json
@@ -76,6 +84,7 @@ Atualizar Carrinho Com Payload
 
 # Envia corpo RAW (string) para simular JSON malformado ou payloads não serializáveis
 Adicionar Novo Carrinho Com Corpo Raw
+    [Documentation]    Executa POST /carts/add enviando corpo RAW para validar tratamento de conteúdo inválido.
     [Arguments]    ${raw_body}
     Log Estilizado    Iniciando chamada POST /carts/add (corpo RAW)
     ${headers}=    Create Dictionary    Content-Type=application/json
