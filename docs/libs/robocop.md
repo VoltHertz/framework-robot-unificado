@@ -86,6 +86,12 @@ Mantenha o comentário explicando o motivo da exceção.
 - Após formatação, rode `--dryrun` do Robot para verificar imports/paths.
 - Em domínios DummyJSON, mantenha documentação das keywords de negócio conforme `docs/feedbackAI/feedback003.md` e aplique Robocop para garantir consistência de estilo.
 
+### Aprendizados recentes (atualização 2025)
+- **LEN03**: keywords que excedem 10 comandos devem ser decompostas em helpers dedicados. Consolide helpers em arquivos separados (ex.: `carts_products_core_helpers.resource`) para permitir reuso sem poluir as keywords BDD principais.
+- **VAR06/VAR02**: substitua `Set Test Variable`, `Create Dictionary` e `Create List` por `VAR`/`Evaluate` ou retornos de helpers. Isso reduz avisos de variável sem uso e mantém o código alinhado ao Robot 7.
+- **DEPR02**: comandos legados como `Run Keyword If` e `Return From Keyword` devem ser migrados para `IF/ELSE` e `RETURN`. Robocop sinaliza rapidamente esse tipo de ocorrência.
+- **LenTooLong (LEN08)**: quebre chamadas extensas com o operador de continuação `...` ou mova trechos para helpers nomeados. Logs podem ser divididos em duas linhas para reduzir largura.
+
 ## Troubleshooting rápido
 - “Robocop não encontra arquivos”: garanta que está rodando a partir da raiz e aponto os diretórios corretos (`resources tests`).
 - “Conflito com BDD em PT-BR”: ajuste `ignore/select` e/ou parâmetros de regras de nomenclatura (naming/keywords) para acomodar `Dado/Quando/Entao`.

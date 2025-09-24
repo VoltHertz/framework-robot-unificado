@@ -1,0 +1,84 @@
+{
+  "uc_cartprod_001_categoria_add": {
+    "cenario": "UC-CARTPROD-001",
+    "user_id": 21,
+    "category": "smartphones",
+    "product_index": 0,
+    "quantity": 1,
+    "expected_min_total_products": 1,
+    "expected_min_total_quantity": 1
+  },
+  "uc_cartprod_001_categoria_sem_itens": {
+    "cenario": "UC-CARTPROD-001-A1",
+    "user_id": 21,
+    "category": "categoria_que_nao_existe_xyz"
+  },
+  "uc_cartprod_002_busca_merge": {
+    "cenario": "UC-CARTPROD-002",
+    "user_id": 22,
+    "search_term": "phone",
+    "product_index": 0,
+    "initial_quantity": 1,
+    "updated_quantity": 2,
+    "update_cart_id": 1,
+    "expected_min_total_quantity": 2
+  },
+  "uc_cartprod_002_busca_sem_resultados": {
+    "cenario": "UC-CARTPROD-002-A1",
+    "user_id": 22,
+    "search_term": "zzzinexistentezzz"
+  },
+  "uc_cartprod_003_categorias_multiplas": {
+    "cenario": "UC-CARTPROD-003",
+    "user_id": 23,
+    "category_a": "smartphones",
+    "category_b": "laptops",
+    "product_index_a": 0,
+    "product_index_b": 1,
+    "quantity_a": 1,
+    "quantity_b": 1,
+    "expected_min_total_products": 2,
+    "expected_min_total_quantity": 2
+  },
+  "uc_cartprod_003_categoria_indisponivel": {
+    "cenario": "UC-CARTPROD-003-A1",
+    "user_id": 23,
+    "category_a": "smartphones",
+    "category_b": "categoria_que_nao_existe_xyz",
+    "product_index_a": 0,
+    "quantity_a": 1,
+    "expected_min_total_products": 1
+  },
+  "uc_cartprod_004_merge_false": {
+    "cenario": "UC-CARTPROD-004",
+    "user_id": 24,
+    "category_initial": "smartphones",
+    "product_index_initial": 0,
+    "quantity_initial": 1,
+    "replacement_products": [
+      {
+        "category": "laptops",
+        "product_index": 0,
+        "quantity": 1
+      }
+    ],
+    "update_cart_id": 1,
+    "expected_max_total_products": 1,
+    "expected_max_total_quantity": 1
+  },
+  "uc_cartprod_004_produto_inexistente": {
+    "cenario": "UC-CARTPROD-004-E1",
+    "user_id": 24,
+    "invalid_product_id": 99999999,
+    "quantity": 1
+  },
+  "uc_cartprod_005_deletar_carrinho": {
+    "cenario": "UC-CARTPROD-005",
+    "user_id": 25,
+    "category": "smartphones",
+    "product_index": 0,
+    "quantity": 1,
+    "delete_cart_id": 1,
+    "expected_delete_status": [200, 404]
+  }
+}

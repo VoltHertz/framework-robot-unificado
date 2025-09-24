@@ -1,7 +1,8 @@
 *** Settings ***
+Documentation    Service object com chamadas brutas para endpoints de carrinhos DummyJSON.
 Resource    ../adapters/http_client.resource
 Resource    ../../common/logger.resource
-Library     Collections
+
 
 *** Keywords ***
 # Arquivo: resources/api/services/carts_service.resource
@@ -12,9 +13,7 @@ Listar Todos Os Carrinhos
     [Documentation]    Executa GET /carts com filtros opcionais de paginação e retorna a resposta bruta.
     [Arguments]    ${limit}=${EMPTY}    ${skip}=${EMPTY}
     Log Estilizado    Iniciando chamada GET /carts
-    ${params}=    Create Dictionary
-    Run Keyword If    '${limit}' != '${EMPTY}'    Set To Dictionary    ${params}    limit=${limit}
-    Run Keyword If    '${skip}' != '${EMPTY}'    Set To Dictionary    ${params}    skip=${skip}
+    ${params}=    Evaluate    {k: v for k, v in {'limit': $limit, 'skip': $skip}.items() if v not in ('', None)}
     ${resp}=    GET On Session    DUMMYJSON    /carts    params=${params}
     Log Estilizado    Resposta listar carrinhos status=${resp.status_code}
     RETURN    ${resp}
@@ -39,9 +38,10 @@ Adicionar Novo Carrinho
     [Documentation]    Executa POST /carts/add com payload básico montado a partir de argumentos.
     [Arguments]    ${user_id}    ${products}
     Log Estilizado    Iniciando chamada POST /carts/add
-    ${payload}=    Create Dictionary    userId=${user_id}    products=${products}
-    ${headers}=    Create Dictionary    Content-Type=application/json
-    ${resp}=    POST On Session    DUMMYJSON    /carts/add    json=${payload}    headers=${headers}    expected_status=any
+    ${payload}=    Evaluate    {'userId': $user_id, 'products': $products}
+    ${headers}=    Evaluate    {'Content-Type': 'application/json'}
+    ${resp}=    POST On Session    DUMMYJSON    /carts/add    json=${payload}
+    ...    headers=${headers}    expected_status=any
     Log Estilizado    Resposta adicionar carrinho status=${resp.status_code}
     RETURN    ${resp}
 
@@ -49,9 +49,10 @@ Atualizar Carrinho
     [Documentation]    Executa PUT /carts/${cart_id} atualizando produtos com merge configurável.
     [Arguments]    ${cart_id}    ${products}    ${merge}=${True}
     Log Estilizado    Iniciando chamada PUT /carts/${cart_id}
-    ${payload}=    Create Dictionary    products=${products}    merge=${merge}
-    ${headers}=    Create Dictionary    Content-Type=application/json
-    ${resp}=    PUT On Session    DUMMYJSON    /carts/${cart_id}    json=${payload}    headers=${headers}    expected_status=any
+    ${payload}=    Evaluate    {'products': $products, 'merge': $merge}
+    ${headers}=    Evaluate    {'Content-Type': 'application/json'}
+    ${resp}=    PUT On Session    DUMMYJSON    /carts/${cart_id}    json=${payload}
+    ...    headers=${headers}    expected_status=any
     Log Estilizado    Resposta atualizar carrinho status=${resp.status_code}
     RETURN    ${resp}
 
@@ -64,12 +65,14 @@ Deletar Carrinho
     RETURN    ${resp}
 
 # Operações com payload bruto para cenários negativos/boundary
+
 Adicionar Novo Carrinho Com Payload
     [Documentation]    Executa POST /carts/add utilizando payload customizado para cenários específicos.
     [Arguments]    ${payload}
     Log Estilizado    Iniciando chamada POST /carts/add (payload bruto)
-    ${headers}=    Create Dictionary    Content-Type=application/json
-    ${resp}=    POST On Session    DUMMYJSON    /carts/add    json=${payload}    headers=${headers}    expected_status=any
+    ${headers}=    Evaluate    {'Content-Type': 'application/json'}
+    ${resp}=    POST On Session    DUMMYJSON    /carts/add    json=${payload}
+    ...    headers=${headers}    expected_status=any
     Log Estilizado    Resposta adicionar carrinho (payload bruto) status=${resp.status_code}
     RETURN    ${resp}
 
@@ -77,17 +80,20 @@ Atualizar Carrinho Com Payload
     [Documentation]    Executa PUT /carts/${cart_id} com payload customizado para testes negativos ou limites.
     [Arguments]    ${cart_id}    ${payload}
     Log Estilizado    Iniciando chamada PUT /carts/${cart_id} (payload bruto)
-    ${headers}=    Create Dictionary    Content-Type=application/json
-    ${resp}=    PUT On Session    DUMMYJSON    /carts/${cart_id}    json=${payload}    headers=${headers}    expected_status=any
+    ${headers}=    Evaluate    {'Content-Type': 'application/json'}
+    ${resp}=    PUT On Session    DUMMYJSON    /carts/${cart_id}    json=${payload}
+    ...    headers=${headers}    expected_status=any
     Log Estilizado    Resposta atualizar carrinho (payload bruto) status=${resp.status_code}
     RETURN    ${resp}
 
 # Envia corpo RAW (string) para simular JSON malformado ou payloads não serializáveis
+
 Adicionar Novo Carrinho Com Corpo Raw
     [Documentation]    Executa POST /carts/add enviando corpo RAW para validar tratamento de conteúdo inválido.
     [Arguments]    ${raw_body}
     Log Estilizado    Iniciando chamada POST /carts/add (corpo RAW)
-    ${headers}=    Create Dictionary    Content-Type=application/json
-    ${resp}=    POST On Session    DUMMYJSON    /carts/add    data=${raw_body}    headers=${headers}    expected_status=any
+    ${headers}=    Evaluate    {'Content-Type': 'application/json'}
+    ${resp}=    POST On Session    DUMMYJSON    /carts/add    data=${raw_body}
+    ...    headers=${headers}    expected_status=any
     Log Estilizado    Resposta adicionar carrinho (corpo RAW) status=${resp.status_code}
     RETURN    ${resp}

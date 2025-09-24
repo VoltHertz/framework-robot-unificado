@@ -197,6 +197,17 @@ Setup do Teste
 Teardown do Teste
     [Documentation]    Limpeza final de cada teste  
     Log    Finalizando teste
+
+## Padrões adotados neste repositório (2025)
+
+- **Contexto de integração**: estados compartilhados entre passos BDD são persistidos com `resources/common/context.resource`, que expõe as keywords `Definir/Obter Contexto De Integracao`. Isso substitui `Set Test Variable`/`Set Suite Variable` em suites e mantém o escopo no nível de teste.
+- **Camada de helpers**: keywords extensas (LEN03) devem ser fatiadas em helpers específicos localizados em `resources/api/keywords/*_helpers.resource`. Os arquivos principais focam em orquestrar passos BDD enquanto helpers encapsulam buscas, validações e montagem de payloads.
+- **Sintaxe moderna VAR/Evaluate**: dicionários ou listas temporárias devem ser criados com `Evaluate`/`VAR` ao invés de `Create Dictionary/List` quando não há necessidade de interação tabular. Exemplo:
+  ```robot
+  ${params}=    Evaluate    dict((k, v) for k, v in [('limit', $limit), ('skip', $skip)] if v not in (None, 'None'))
+  ```
+- **Reuso de keywords**: utilize o novo arquivo `resources/api/keywords/carts_products_core_helpers.resource` para operações comuns (buscar produto por categoria, gerar payloads, validar resposta de deleção etc.). Isso evita duplicação de lógica entre integrações.
+- **Limite de linhas**: mantenha keywords com até 10 comandos diretos; extraia os blocos excedentes para helpers reutilizáveis. Essa prática mantém Robocop limpo e melhora o reuso entre cenários.
 ```
 
 ### 2. Arquivo de Resource (.resource)

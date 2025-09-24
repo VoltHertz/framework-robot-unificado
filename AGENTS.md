@@ -230,6 +230,12 @@ Pasta de resultados: `results/api/integration/carts_products`
 - Validar hooks: `resources/common/hooks.resource` com `Suite Setup/Teardown` chamando o adapter HTTP.
 - Dry run base (sanidade): `.venv/bin/robot --dryrun -v ENV:dev -i api -d results/api/_dryrun tests`.
 
+#### Progresso Fase 0 (executado)
+- 2024-09-24: Ambiente confirmado (`pwd` → `framework-robot-unificado`) e dependências presentes (`.venv` ativa).
+- Services `carts_service.resource` e `products_service.resource` revisados: mantêm apenas lógica de chamada, com documentação atualizada e retorno bruto (`expected_status=any` onde necessário).
+- Hooks (`resources/common/hooks.resource`) prontos para reaproveitamento: `Setup/Teardown Suite Padrao` já delegam ao adapter HTTP.
+- Dry run geral executado: `.venv/bin/robot --dryrun -v ENV:dev -i api -d results/api/_dryrun tests` → 50 testes (carts + products) passaram, confirmando saúde do baseline antes de iniciar cenários integrados.
+
 ### Fase 1 — Massa de Dados (Data Provider)
 - Arquivo novo: `data/json/integration_carts_products.json`.
 - Convenção de cenários (chave `cenario`): usar os IDs ou aliases estáveis por UC.
@@ -240,12 +246,24 @@ Pasta de resultados: `results/api/integration/carts_products`
   - `Obter Massa De Teste | integration_carts_products | <cenario>`
 - Boas práticas: sem hardcode nas suítes; permitir override por env vars quando fizer sentido.
 
+#### Progresso Fase 1 (executado)
+- Criado `data/json/integration_carts_products.json` com cenários nomeados por UC (incluindo variantes A1/E1).
+- Cada entrada contém chave `cenario` e metadados relevantes: `user_id`, categorias, índices de produto (`product_index`) para seleção determinística da lista retornada pela API e quantidades iniciais/atualizadas.
+- Incluídos cenários alternativos para categoria inexistente, busca sem resultados e update com produto inválido, viabilizando cobertura dos fluxos alternativos descritos nos casos de uso.
+- Campos como `expected_min_total_products`, `expected_min_total_quantity` e `expected_delete_status` guiam asserts inclusivos sem depender de valores absolutos do DummyJSON (dados voláteis).
+- Valores de `user_id` distintos por cenário evitam colisão entre execuções concorrentes e facilitam rastreabilidade nos logs.
+
 ### Fase 2 — Adapter/Services (reuso)
 - Adapter: `resources/api/adapters/http_client.resource` — já provê `Iniciar/Encerrar Sessao API DummyJSON` com timeout e retries.
 - Services (reuso):
   - `products_service.resource` — listagem, busca, por categoria, add/put/delete simulados.
   - `carts_service.resource` — add, update (merge opcional), delete e consultas.
 - Não criar serviços duplicados. Apenas documentar se necessário.
+
+#### Progresso Fase 2 (executado)
+- Adapter HTTP revisado: mantém criação de sessão centralizada com timeout/retry configuráveis e logs estilizados; nenhuma alteração necessária.
+- Services de `products` e `carts` confirmados como dependentes apenas do adapter (sem uso direto de `RequestsLibrary`). Keywords já retornam respostas brutas e utilizam `expected_status=any` onde variações de status são esperadas, permitindo asserts inclusivos nas próximas camadas.
+- Documentação em `[Documentation]` dos services permanece adequada, facilitando a orquestração futura nas keywords integradas.
 
 ### Fase 3 — Keywords de Integração (Orquestração)
 - Arquivo novo: `resources/api/keywords/carts_products_keywords.resource`.
@@ -265,8 +283,14 @@ Pasta de resultados: `results/api/integration/carts_products`
   - `Quando Atualizo Carrinho Mantendo Apenas Um Produto (merge=false) (UC-CARTPROD-004)`
     - Orquestra: `PUT /carts/{id}` com `merge=false` e uma lista de `products`.
     - Validar redução de agregados e presença do item remanescente.
-  - `Entao Deleto O Carrinho E Valido Indicadores (UC-CARTPROD-005)`
+- `Entao Deleto O Carrinho E Valido Indicadores (UC-CARTPROD-005)`
     - Orquestra: `DELETE /carts/{id}` e valida `isDeleted=true` e `deletedOn`.
+
+#### Progresso Fase 3 (executado)
+- Criado `resources/api/keywords/carts_products_keywords.resource` com keywords BDD para todos os cenários UC-CARTPROD-001..005 (incluindo variantes A1/E1) e helper interno para seleção determinística de produtos por categoria.
+- Cada keyword documentada com `[Documentation]` e logs via `Log Estilizado`, seguindo layout de carts/products; variáveis de massa acessadas somente via Data Provider (`integration_carts_products`).
+- Regras inclusivas aplicadas: criação aceita `200/201`, deleção valida lista de status esperados, buscas vazias retornam `total=0`, updates inválidos aceitam `400/404`.
+- Respostas dos services permanecem brutas (services já usam `expected_status=any`), permitindo que as validações de negócio sejam centralizadas na camada de keywords.
 - Regras inclusivas do fornecedor:
   - Criação: aceitar `200|201`.
   - `/carts/user/{id}`: considerar `200` (lista vazia) ou `404` — usar asserts inclusivos quando aplicável.
@@ -299,11 +323,63 @@ Pasta de resultados: `results/api/integration/carts_products`
   - `UC-CARTPROD-004 - Remover via merge=false`
   - `UC-CARTPROD-005 - Deletar carrinho`
 
+#### Progresso Fase 4 (executado)
+- Criada `tests/api/integration/carts_products_fluxos.robot` seguindo layout BDD PT-BR (Dado/Quando/Então/E) com documentação padrão — inclui pré-requisitos, dados e rastreabilidade (JIRA/Confluence) para cada teste.
+- Suite importa hooks, data provider, logger e keywords de integração; utiliza `Suite Setup/Teardown` padrão e parametrização via `Variables ../../../../environments/${ENV}.py`.
+- Tags de suíte: `api integration carts products`; por teste foram definidas combinações `smoke/positivo/negativo` conforme cenário.
+- Casos cobrem UC-CARTPROD-001..005 (mais variantes A1/E1) chamando apenas keywords de negócio; nenhuma lógica implementada diretamente na suíte.
+- Ajuste adicional: hook comum passou a garantir a importação de `environments/${ENV}.py` quando necessário, permitindo executar a suíte apenas com `-v ENV:dev`. Execução real: `.venv/bin/robot -v ENV:dev -d results/api/integration/carts_products tests/api/integration/carts_products_fluxos.robot` → 9/9 testes aprovados (artefatos gerados em `results/api/integration/carts_products`).
+
 ### Fase 5 — Validações, Lint e Execução
 - Lint Robot (Robocop) e format (Robotidy) nos arquivos de `resources/` e `tests/` alterados.
 - Dry run de integração: `.venv/bin/robot --dryrun -v ENV:dev -d results/api/_dryrun tests/api/integration/carts_products_fluxos.robot`.
 - Execução local: `.venv/bin/robot -v ENV:dev -d results/api/integration/carts_products tests/api/integration/carts_products_fluxos.robot`.
 - Logs: usar sempre `Log Estilizado` nas keywords, sem hardcode de prefixo.
+
+#### Progresso Fase 5 (executado)
+- Execução real concluída: `.venv/bin/robot -v ENV:dev -d results/api/integration/carts_products tests/api/integration/carts_products_fluxos.robot` → 9/9 testes aprovados (evidência em `results/api/integration/carts_products`).
+- Robocop (v6+) agora expõe subcomando `check`; execução: `.venv/bin/robocop check resources/api/keywords/carts_products_keywords.resource tests/api/integration/carts_products_fluxos.robot resources/common/hooks.resource`.
+- Achados de lint: requer documentação de resource (`DOC04`), ajuste de espaçamento (`SPC03/05`), preferir sintaxe `VAR`/`IF` nativa em vez de `Set Test Variable`, `Create List/Dictionary`, e divisão de keywords longas (`LEN03`). Boas práticas atualizadas estão documentadas na 6.x (ver exemplos em `docs/libs/` para padrão esperado).
+- Próximos ajustes: refatorar keywords para usar blocos `IF/ELSE` e `VAR`, modularizar keywords extensas (>10 passos) e adicionar cabeçalho `*** Documentation ***` aos resources comuns. Até lá, manter awareness de que o lint falha sem esses refinamentos.
+- Ações concluídas nesta rodada: integração refatorada com helpers dedicados (`carts_products_helpers` + `carts_products_core_helpers`), services/adapters migrados para IF/RETURN/`Evaluate`, robocop executado limpo nos arquivos alterados e documentação atualizada em `docs/libs/*` com os aprendizados (IntegrationContext, uso de VAR/Evaluate, fracionamento de keywords).
+
+##### Fase 5-2 — Linting com Robocop (planejamento detalhado)
+Principais referências de estilo para código Robot atualizado: `docs/libs/robotframework.md`, `docs/libs/robocop.md` e `docs/libs/requestslibrary.md`. Contudo, lembre-se de que essas referências são genéricas. As definições finais para este repositório (tags, documentação, nomenclatura BDD em PT-BR, etc.) estão em `AGENTS.md`, `README.md` e `docs/feedbackAI/feedback004.md` e prevalecem sobre qualquer sugestão genérica — ou seja, as regras locais não podem ser alteradas para acomodar exemplos das libs.
+
+Se alguma regra moderna do Robot Framework ainda não estiver clara ou aplicável via referências existentes:
+- Pesquisar a documentação oficial ou atualizada na Internet (Robot Framework ≥7, Robocop ≥6, RequestsLibrary ≥2025).
+- Reaplicar o aprendizado no código até que o linting passe sem violações.
+- Assim que um padrão atualizado for validado na prática, ajustar os arquivos de referência em `docs/libs/*.md` para refletir o conhecimento consolidado (mantendo o contexto de que `/docs/libs` são guias genéricos, enquanto os padrões do repositório continuam definidos em `AGENTS`, `README` e `feedback004`).
+
+Plano de ação focado em código (sem alterar TAGS/DOCUMENTATION):
+1. **Adequar seções e espaçamento:**
+   - Garantir apenas o espaçamento exigido pelas regras locais (ex.: linhas em branco corretas entre `*** Settings ***`/`*** Keywords ***`).
+   - Adicionar uma breve seção `*** Documentation ***` em resources que ainda não possuam (apenas se não conflitar com o padrão local; conteúdo sucinto explicando propósito e dependências).
+
+2. **Migrar variáveis para sintaxe VAR mantendo semântica existente:**
+   - Substituir `Set Test Variable`, `Create List`, `Create Dictionary` por `VAR` ou listas/dicionários inline, sem alterar os nomes/escopos esperados pelos testes.
+   - Respeitar o fluxo BDD atual (não renomear variáveis de massa ou estruturas que impactem keywords de negócio).
+
+3. **Fatiar keywords muito extensas sem mudar comportamento BDD:**
+   - Identificar keywords sinalizadas por `LEN03` e extrair partes complexas para helpers internos. Esses helpers devem manter o mesmo estilo de documentação (em português) e reaproveitar nomes coerentes com o domínio.
+   - Exemplos típicos: preparação de payload, seleção de produtos, tratamento de respostas.
+
+4. **Atualizar comandos de controle para sintaxe moderna:**
+   - Trocar `Run Keyword If` por blocos `IF/ELSE` mantendo condições atuais.
+   - Evitar alterações em mensagens/`Log Estilizado` ou na ordem de validações.
+
+5. **Tratar linhas longas apenas no corpo das keywords/suites:**
+   - Quebrar linhas >120 caracteres nos trechos de código ou comentários adicionais. Não alterar a estrutura de tags ou documentação padronizada imposta pelo repositório.
+
+6. **Formatter e lint:**
+   - Após refatorar, executar `.venv/bin/robocop format` (ou Robotidy equivalente) apenas nos arquivos alterados.
+   - Rodar `.venv/bin/robocop check ...` para validar que as pendências foram resolvidas.
+
+7. **Revalidação funcional:**
+   - Reexecutar a suíte `tests/api/integration/carts_products_fluxos.robot` com `-v ENV:dev` assegurando que não houve regressões.
+
+8. **Atualizar documentação deste plano:**
+   - Registrar quaisquer exceções necessárias (ex.: inline disable justificado) e relacionar aos achados originais do lint.
 
 ### Fase 6 — Documentação e Evidências
 - Atualizar `docs/use_cases/Carts_Products_Use_Cases.md` se necessário (apenas para refinamentos de entendimento — sem alterar escopo funcional).

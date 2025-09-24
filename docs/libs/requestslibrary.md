@@ -97,6 +97,8 @@ Encerrar Sessões
     [Documentation]    Encerra todas as sessões
     Delete All Sessions
 
+> **Dica:** ao configurar sessões reutilizáveis, prefira passar `headers` e `timeout` diretamente como argumentos nomeados (ex.: `Create Session    alias    ${BASE_URL}    headers=${headers}    timeout=30`). Use `Evaluate` para gerar dicionários rapidamente sem `Create Dictionary`.
+
 *** Test Cases ***
 Teste GET Com Sessão
     [Documentation]    GET usando sessão existente
@@ -108,22 +110,20 @@ Teste GET Com Sessão
 
 Teste POST Com Sessão
     [Documentation]    POST usando sessão existente
-    &{data}=    Create Dictionary    
-    ...    title=Post via Sessão
-    ...    body=Teste com sessão ativa
-    ...    userId=1
+    ${payload}=    Evaluate    {'title': 'Post via Sessão', 'body': 'Teste com sessão ativa', 'userId': 1}
     
     ${response}=    POST On Session    ${API_ALIAS}    /posts
-    ...    json=${data}    expected_status=201
+    ...    json=${payload}    expected_status=201
     
     Should Be Equal As Numbers    ${response.json()}[userId]    1
 
 Teste GET Com Headers Customizados
     [Documentation]    GET com headers específicos
-    &{headers}=    Create Dictionary
-    ...    Content-Type=application/json
-    ...    Accept=application/json
-    ...    User-Agent=Robot Framework Tests
+    ${headers}=    Evaluate    {
+    ...    'Content-Type': 'application/json',
+    ...    'Accept': 'application/json',
+    ...    'User-Agent': 'Robot Framework Tests'
+    ...    }
     
     ${response}=    GET On Session    ${API_ALIAS}    /posts/1
     ...    headers=${headers}    expected_status=200
@@ -140,25 +140,25 @@ Keywords Sessionless Avançadas
     ...    expected_status=200
     
     # POST com dados JSON
-    &{json_data}=    Create Dictionary    nome=João    idade=30
+    ${json_data}=    Evaluate    {'nome': 'João', 'idade': 30}
     ${response}=    POST    https://httpbin.org/post
     ...    json=${json_data}
     ...    expected_status=200
     
     # PUT com dados form
-    &{form_data}=    Create Dictionary    campo1=valor1    campo2=valor2
+    ${form_data}=    Evaluate    {'campo1': 'valor1', 'campo2': 'valor2'}
     ${response}=    PUT    https://httpbin.org/put
     ...    data=${form_data}
     ...    expected_status=200
     
     # DELETE com headers
-    &{headers}=    Create Dictionary    Authorization=Bearer token123
+    ${headers}=    Evaluate    {'Authorization': 'Bearer token123'}
     ${response}=    DELETE    https://httpbin.org/delete
     ...    headers=${headers}
     ...    expected_status=200
     
     # PATCH para atualizações parciais
-    &{patch_data}=    Create Dictionary    campo_alterado=novo_valor
+    ${patch_data}=    Evaluate    {'campo_alterado': 'novo_valor'}
     ${response}=    PATCH    https://httpbin.org/patch
     ...    json=${patch_data}
     ...    expected_status=200
