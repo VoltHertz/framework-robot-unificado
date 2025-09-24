@@ -126,6 +126,12 @@ Suite Teardown  Teardown Suite Padrao
 - Commits: siga Conventional Commits (ex.: `feat(api/carts): adicionar lista paginada`, `fix(resources): ajustar validação`). Scopes comuns: `api/<dominio>`, `resources`, `libs`, `docs`, `configs`, `tests`.
 - PRs: descrição objetiva, link a issues, evidências (paths de `results/`), checklist: dry run ok, Robocop sem erros, variáveis de ambiente documentadas, recursos atualizados.
 
+### Git Remoto e Autenticação (Nota Operacional)
+- No diretório raiz `framework-robot-unificado`, o Git já está configurado e conectado ao repositório remoto (`origin`) no GitHub.
+- Utilize normalmente `git status`, `git add .`, `git commit` e `git push` sem necessidade de informar usuário/senha; não é necessário solicitar credenciais ao usuário.
+- O branch padrão é `main` e já rastreia `origin/main`. Para novos branches, use `git push --set-upstream origin <branch>` na primeira publicação.
+- Siga os padrões de Conventional Commits nas mensagens e evite incluir segredos em commits.
+
 ### Commit Checklist (para o agente)
 - [ ] Suites passam localmente (fluxos e limites) com `results_*/` anexados.
 - [ ] Test cases e keywords documentados conforme padrão desta seção e IDs UC aplicados.
