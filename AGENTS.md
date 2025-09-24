@@ -210,3 +210,115 @@ Diretrizes de uso
 - Falta de keyword `Styled Log`: verifique import do resource `resources/common/logger.resource` e a versão do Robot (7.x).
 - Massa não encontrada: confirme `DATA_*` envs e a existência de `data/json/<dominio>.json` ou `data/csv/<dominio>.csv`.
 - Tempo e flakiness: defina timeouts/retries no adapter HTTP; prefira asserts inclusivos quando fornecedor variar (ex.: 200/201 em criação).
+
+## Plano de Implementação – Integração Carts + Products (API)
+
+Objetivo: Implementar testes automatizados em camadas (adapters → services → keywords → suites) cobrindo os casos de uso de integração definidos em `docs/use_cases/Carts_Products_Use_Cases.md`, reutilizando padrões e boas práticas já aplicados aos domínios `carts` e `products`.
+
+Escopo dos casos (IDs):
+- UC-CARTPROD-001: Selecionar produto por categoria e adicionar ao carrinho
+- UC-CARTPROD-002: Buscar por termo, adicionar ao carrinho e atualizar com merge
+- UC-CARTPROD-003: Carrinho com múltiplos produtos de categorias diferentes
+- UC-CARTPROD-004: Atualizar carrinho com merge=false para simular remoção
+- UC-CARTPROD-005: Deletar carrinho após operações
+
+Pasta de resultados: `results/api/integration/carts_products`
+
+### Fase 0 — Preparação e Alinhamento
+- Confirmar ambiente: executar a partir de `framework-robot-unificado` e parametrizar `-v ENV:<env>`.
+- Revisar os services existentes: `resources/api/services/{carts_service.resource, products_service.resource}` — sem acessar `RequestsLibrary` diretamente fora do adapter.
+- Validar hooks: `resources/common/hooks.resource` com `Suite Setup/Teardown` chamando o adapter HTTP.
+- Dry run base (sanidade): `.venv/bin/robot --dryrun -v ENV:dev -i api -d results/api/_dryrun tests`.
+
+### Fase 1 — Massa de Dados (Data Provider)
+- Arquivo novo: `data/json/integration_carts_products.json`.
+- Convenção de cenários (chave `cenario`): usar os IDs ou aliases estáveis por UC.
+- Campos por cenário (exemplos):
+  - `userId`, `categoryA`, `categoryB`, `search_term`, `quantity_add`, `quantity_update`, `merge` (bool), `product_index` (quando não fixar ID), `expect_delete_status`.
+- Acesso via keywords do resource `resources/common/data_provider.resource`:
+  - `Definir Backend De Dados` (default json)
+  - `Obter Massa De Teste | integration_carts_products | <cenario>`
+- Boas práticas: sem hardcode nas suítes; permitir override por env vars quando fizer sentido.
+
+### Fase 2 — Adapter/Services (reuso)
+- Adapter: `resources/api/adapters/http_client.resource` — já provê `Iniciar/Encerrar Sessao API DummyJSON` com timeout e retries.
+- Services (reuso):
+  - `products_service.resource` — listagem, busca, por categoria, add/put/delete simulados.
+  - `carts_service.resource` — add, update (merge opcional), delete e consultas.
+- Não criar serviços duplicados. Apenas documentar se necessário.
+
+### Fase 3 — Keywords de Integração (Orquestração)
+- Arquivo novo: `resources/api/keywords/carts_products_keywords.resource`.
+- Imports padrão: `http_client.resource`, `products_service.resource`, `carts_service.resource`, `resources/common/{data_provider,logger,json_utils}.resource` e `Collections` quando necessário.
+- Logging: usar sempre `Log Estilizado` com mensagens curtas e claras; prefixo automático do listener.
+- Documentação: keywords de negócio com [Documentation] listando Argumentos/Retorno/Efeito lateral/Exceções/Exemplo (pipe table).
+- Keywords propostas (mínimo):
+  - `Quando Seleciono Um Produto Da Categoria E Adiciono Ao Carrinho (UC-CARTPROD-001)`
+    - Orquestra: `GET /products/categories` → `GET /products/category/{slug}` → `POST /carts/add`.
+    - Aceitar `200/201` na criação; validar agregados (`total`, `discountedTotal`, `totalProducts`, `totalQuantity`).
+  - `Quando Pesquiso Produto Adiciono Ao Carrinho E Atualizo Quantidade Com Merge (UC-CARTPROD-002)`
+    - Orquestra: `GET /products/search?q={q}` → `POST /carts/add` → `PUT /carts/{id}` com `merge=true`.
+    - Validar atualização de agregados.
+  - `Quando Crio Carrinho Com Produtos De Duas Categorias (UC-CARTPROD-003)`
+    - Orquestra: duas chamadas `GET /products/category/{slug}` → `POST /carts/add` com 2 produtos.
+    - Validar `totalProducts >= 2` e consistência básica.
+  - `Quando Atualizo Carrinho Mantendo Apenas Um Produto (merge=false) (UC-CARTPROD-004)`
+    - Orquestra: `PUT /carts/{id}` com `merge=false` e uma lista de `products`.
+    - Validar redução de agregados e presença do item remanescente.
+  - `Entao Deleto O Carrinho E Valido Indicadores (UC-CARTPROD-005)`
+    - Orquestra: `DELETE /carts/{id}` e valida `isDeleted=true` e `deletedOn`.
+- Regras inclusivas do fornecedor:
+  - Criação: aceitar `200|201`.
+  - `/carts/user/{id}`: considerar `200` (lista vazia) ou `404` — usar asserts inclusivos quando aplicável.
+
+### Fase 4 — Suites de Integração (BDD PT‑BR)
+- Arquivo novo: `tests/api/integration/carts_products_fluxos.robot`.
+- Settings padrão nas suítes:
+  - `Resource    ../../resources/common/hooks.resource`
+  - `Resource    ../../resources/common/data_provider.resource`
+  - `Resource    ../../resources/common/logger.resource`
+  - `Resource    ../../resources/api/keywords/carts_products_keywords.resource`
+  - `Variables  ../../environments/${ENV}.py`
+  - `Suite Setup     Setup Suite Padrao`
+  - `Suite Teardown  Teardown Suite Padrao`
+- BDD em PT‑BR: Dado/Quando/Então; sem lógica na suíte (somente chamadas às keywords de negócio e asserts simples).
+- IDs e Tags:
+  - IDs: `UC-CARTPROD-00x` no nome do teste.
+  - Tags por teste: `api integration carts products` + tipo (`smoke|positivo|negativo|limite`).
+- Estrutura dos testes (exemplos):
+  - `UC-CARTPROD-001 - Adicionar produto por categoria`
+    - [Documentation]: resumo, pré‑requisitos, dados e rastreabilidade.
+    - Dado que possuo categoria válida e userId da massa
+    - Quando seleciono um produto por categoria e adiciono ao carrinho
+    - Então devo ver agregados coerentes no carrinho retornado
+  - `UC-CARTPROD-002 - Buscar termo, adicionar e atualizar com merge`
+    - Dado que possuo termo de busca válido
+    - Quando pesquiso, adiciono e atualizo quantidade com merge
+    - Então os agregados devem refletir a atualização
+  - `UC-CARTPROD-003 - Carrinho com múltiplos itens de categorias distintas`
+  - `UC-CARTPROD-004 - Remover via merge=false`
+  - `UC-CARTPROD-005 - Deletar carrinho`
+
+### Fase 5 — Validações, Lint e Execução
+- Lint Robot (Robocop) e format (Robotidy) nos arquivos de `resources/` e `tests/` alterados.
+- Dry run de integração: `.venv/bin/robot --dryrun -v ENV:dev -d results/api/_dryrun tests/api/integration/carts_products_fluxos.robot`.
+- Execução local: `.venv/bin/robot -v ENV:dev -d results/api/integration/carts_products tests/api/integration/carts_products_fluxos.robot`.
+- Logs: usar sempre `Log Estilizado` nas keywords, sem hardcode de prefixo.
+
+### Fase 6 — Documentação e Evidências
+- Atualizar `docs/use_cases/Carts_Products_Use_Cases.md` se necessário (apenas para refinamentos de entendimento — sem alterar escopo funcional).
+- Opcional: adicionar referência no `README.md` para o novo arquivo de use cases e para a suíte de integração.
+- Incluir paths de `results/api/integration/carts_products` no PR.
+
+### Fase 7 — Checklist e DoD (Integração)
+- [ ] Suites verdes localmente (incluindo limites/negativos onde aplicável).
+- [ ] Test cases com documentação padrão (pré‑requisitos, dados e rastreabilidade).
+- [ ] Massa centralizada no Data Provider sem hardcode.
+- [ ] Layering respeitado: suites → keywords (negócio) → services → adapter.
+- [ ] Robocop/Robotidy aplicados.
+- [ ] Asserts inclusivos para variações conhecidas do DummyJSON (`200/201`, `200/404` em user carts).
+
+### Observações de Projeto
+- Não utilizar JSON Schema/contratos nas validações (padrão descontinuado no projeto).
+- Evitar dependências entre testes (endpoints de escrita são simulados); cada teste deve ser autossuficiente.
+- Aproveitar variáveis de ambiente para timeouts e políticas de retry via adapter.
