@@ -197,7 +197,10 @@ Suite Teardown  Teardown Suite Padrao
   - `Definir Conexao SQLServer | <conn_string> | <ativar>` e `Definir Schema SQLServer | <schema>`.
 - Variáveis de ambiente:
   - `DATA_BACKEND`, `DATA_BASE_DIR`, `DATA_JSON_DIR`, `DATA_SQLSERVER_CONN`, `DATA_SQLSERVER_SCHEMA`, `DATA_SQLSERVER_TIMEOUT`, `DATA_SQLSERVER_DRIVER`.
-  - Service Principal (quando não usar connection string completa): `AZR_SQL_SERVER_HOST`, `AZR_SQL_SERVER_DB`, `AZR_SQL_SERVER_PORT`, `AZR_SQL_SERVER_CLIENT_ID`, `AZR_SQL_SERVER_CLIENT_SECRET` (ou os aliases `AZR_SDBS_PF_TDNP_T_SP_CLIENT_ID/_SECRET`).
+  - Service Principal (quando não usar connection string completa):
+    - Credenciais (canônicas do pipeline): `AZR_SDBS_PF_TDNP_T_SP_CLIENT_ID`, `AZR_SDBS_PF_TDNP_T_SP_CLIENT_SECRET`.
+    - Alternativas suportadas: `AZR_SQL_SERVER_CLIENT_ID`, `AZR_SQL_SERVER_CLIENT_SECRET`.
+    - Endpoint: `AZR_SQL_SERVER_HOST` (ex.: `azr-sdbs-pf-td-nova-transacional-dev-n.database.windows.net`), `AZR_SQL_SERVER_PORT` (ex.: `1433`), `AZR_SQL_SERVER_DB` (ex.: `azr-sdb-pf-td-nova-transacional-dev-n`).
 - Benefício: alterna a estratégia de massa sem refatorar suites/keywords — forte desacoplamento e reuso.
 
 Diretrizes de uso:
@@ -215,8 +218,9 @@ Diretrizes de uso:
   - `Testar Conexao SQLServer` (SELECT 1 — sanidade de credenciais/timeouts)
 
 ### Quick start (2 passos) — usar SQL Server
-- Pré‑requisito: defina os envs de conexão (recomendado usar Service Principal):
-  - `DATA_SQLSERVER_CONN` OU `AZR_SQL_SERVER_HOST/DB/PORT/CLIENT_ID/CLIENT_SECRET` (ou aliases legados `AZR_SDBS_PF_TDNP_T_SP_*`).
+- Pré‑requisito: defina os envs de conexão (recomendado Service Principal do pipeline):
+  - `DATA_SQLSERVER_CONN` OU `AZR_SQL_SERVER_HOST/DB/PORT` + `AZR_SDBS_PF_TDNP_T_SP_CLIENT_ID` e `AZR_SDBS_PF_TDNP_T_SP_CLIENT_SECRET`.
+  - Alternativamente (suportado): `AZR_SQL_SERVER_CLIENT_ID` e `AZR_SQL_SERVER_CLIENT_SECRET` no lugar dos nomes canônicos acima.
   - Opcional: `DATA_SQLSERVER_SCHEMA` (se definido, pode pular o Passo 1).
 
 - Passos mínimos dentro da suíte (após importar `resources/common/data_provider.resource`):

@@ -193,9 +193,11 @@ Design proposto (inspirado em `dbConnection.py`):
   - Reaproveitar logs amigáveis do script base (ex.: listar drivers encontrados quando em modo diagnóstico) sem imprimir segredo (`***`).
   - Não logar segredos; exibir somente o prefixo do connection string (host/DB) e o client id mascarado.
 
-Configuração de conexão (camadas):
-- Envs obrigatórios sugeridos (adequar conforme infra):
-  - `AZR_SQL_SERVER_HOST`, `AZR_SQL_SERVER_DB`, `AZR_SQL_SERVER_CLIENT_ID`, `AZR_SQL_SERVER_CLIENT_SECRET` (nomes alinhados ao script base).
+- Configuração de conexão (camadas):
+  - Envs obrigatórios sugeridos (adequar conforme infra):
+    - Credenciais (canônicas, já existentes no pipeline piloto): `AZR_SDBS_PF_TDNP_T_SP_CLIENT_ID`, `AZR_SDBS_PF_TDNP_T_SP_CLIENT_SECRET`.
+    - Alternativas suportadas (fallback): `AZR_SQL_SERVER_CLIENT_ID`, `AZR_SQL_SERVER_CLIENT_SECRET`.
+    - Endpoint: `AZR_SQL_SERVER_HOST`, `AZR_SQL_SERVER_DB`, `AZR_SQL_SERVER_PORT` (default `1433`).
   - `DATA_SQLSERVER_CONN` pode aceitar uma connection string pronta (caso o time prefira); se ausente, construir dinamicamente a partir dos envs acima.
   - `DATA_SQLSERVER_TIMEOUT` opcional (default 180s) para `Connection Timeout`/`Login Timeout`.
 - Keywords Python expostas no backend devem mascarar valores sensíveis em logs (`***`).
