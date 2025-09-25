@@ -10,7 +10,7 @@ Principais pilares
 - Tags consistentes: domínio, tipo e estado (fáceis de filtrar no CI).
 - Documentação padronizada para testes e keywords (feedback003).
 - Variáveis de ambiente centralizadas em `environments/` (dev/uat/prod).
-- Logs padronizados com prefixo automático [arquivo:linha] em toda a suíte.
+- Logs padronizados com prefixo automático [arquivo:Lnn] em toda a suíte.
 
 ## Infra de Pastas (Monorepo)
 - tests: apenas suítes (.robot) — sem lógica, somente negocial BDD:
@@ -116,7 +116,7 @@ framework-robot-unificado/
   - `Log Estilizado    <mensagem>    <NIVEL=INFO>    <curto=True>    <console=False>`.
   - `Prefixo De Log Atual` para compor mensagens customizadas.
 - Diretrizes:
-  - Nunca hardcode `[arquivo:linha]`; o listener injeta automaticamente o contexto correto.
+- Nunca hardcode `[arquivo:Lnn]`; o listener injeta automaticamente o contexto correto.
   - Logue eventos de negócio (parâmetros carregados, chamadas a services, resultados de validação).
   - Use níveis quando fizer sentido (DEBUG para payloads, INFO para milestones, WARN/ERROR para anomalias).
 
@@ -158,9 +158,9 @@ Diretrizes de uso:
 ## Tags — Taxonomia e Utilidade
 Resumo (feedback004)
 - Domínio (1 por suíte, obrigatório): `products`, `carts`, `pagamentos`, `operacoes`, ...
-- API (1 por suite, obrigatório): `cliente`, `monitor`, `calculadora`, ...
-- Tipos (por teste; 1 ou mais): `smoke`, `positivo`, `negativo`, `limite`
-- Estado de exceção (por teste; no máximo 1): `quarentena`, `experimental`, `bloqueado`
+- Plataforma (opcional, quando fizer sentido): `api`, `web`, `mobile`.
+- Tipos (por teste; 1 ou mais): `smoke`, `positivo`, `negativo`, `limite`.
+- Estado de exceção (por teste; no máximo 1): `quarentena`, `experimental`, `bloqueado`.
 
 Regras
 - Exatamente 1 tag de domínio declarada em nível de suíte via `Test Tags`.
@@ -170,7 +170,7 @@ Regras
 Suite: tag de domínio (e opcionalmente plataforma)
 ```robot
 *** Settings ***
-Test Tags       carts     cliente
+Test Tags       api    carts
 ```
 
 Exemplos por teste (tipos e estado)
@@ -240,6 +240,7 @@ results/
 
 ## Glossário rápido (para quem está começando)
 - Suite: arquivo `.robot` que descreve cenários de negócio em BDD (Dado/Quando/Então). Não contém lógica.
+- BDD: abordagem que usa linguagem natural (Dado/Quando/Então) para descrever comportamento esperado de um sistema.
 - Resource: arquivo reutilizável com keywords/infra que outras suites/recursos importam.
 - Adapter: camada mais baixa que conversa com bibliotecas externas (ex.: RequestsLibrary). Gerencia sessão, timeouts, retries.
 - Service: encapsula um endpoint (uma keyword por endpoint). Sem regra de negócio. Retorna resposta crua.
@@ -249,6 +250,7 @@ results/
 - ENV: variável que aponta para `environments/<env>.py` (ex.: `-v ENV:dev`). Centraliza URLs/flags.
 - Logger estilizado: logs padronizados com prefixo automático `[arquivo:Lnn]`.
 - Asserts inclusivos: validações que aceitam variações previstas do fornecedor (ex.: 200 ou 201 em criação).
+- Tag: rótulo usado para classificar/filtrar testes (ex.: `api`, `carts`, `smoke`).
 
 ## Convenções de Casos e Documentação
 - IDs de caso: `UC-<DOM>-<SEQ>` (ex.: UC-CART-001) no nome do teste e no corpo de log principal.
@@ -262,7 +264,7 @@ results/
     ...    *Pré-requisitos:* [Pré-requisitos] *se necessário
     ...    *Dados de teste:* [Dados do teste] *se necessário
     ...    *Resultado esperado:* [Resultado] *se necessário
-    ...    *JIRA Issue:* [PROJ-XXXX] *obgiratório
+    ...    *JIRA Issue:* [PROJ-XXXX] *obrigatório
     ...    *Confluence:* [Link] 
 ```
 
@@ -381,7 +383,7 @@ Suite Teardown  Teardown Suite Padrao
 - Robotidy (opcional): `.venv/bin/robotidy resources tests`.
 - Preferências (Robot ≥ 7): use `VAR` em vez de `Set Test Variable`, listas/dicts inline; prefira blocos `IF/ELSE` a `Run Keyword If`; divida keywords longas em helpers.
 
-### Logger estilizado (arquivo:linha)
+### Logger estilizado (arquivo:Lnn)
 - Use `Resource    resources/common/logger.resource` e a keyword `Log Estilizado`. Não hardcode prefixos.
 - O listener (`libs/logging/styled_logger.py`) injeta `[arquivo:Lnn]` automaticamente.
 
