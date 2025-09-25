@@ -87,7 +87,7 @@ framework-robot-unificado/
 │  ├─ context/
 │  │  └─ integration_context.py        # Contexto para cenários de integração
 │  ├─ data/
-│  │  └─ data_provider.py              # Backends: json/csv/sqlserver
+│  │  └─ data_provider.py              # Backends: json/sqlserver
 │  └─ logging/
 │     └─ styled_logger.py              # Listener v3: injeta [arquivo:Lnn]
 │
