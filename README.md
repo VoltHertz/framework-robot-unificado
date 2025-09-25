@@ -231,6 +231,13 @@ Diretrizes de uso:
   - O Passo 2 monta a connection string a partir dos envs (ou usa `DATA_SQLSERVER_CONN`) e já ativa o backend SQL (`ativar=True`).
   - Se o schema vier de `DATA_SQLSERVER_SCHEMA`, você pode executar apenas: `Definir Conexao SQLServer    ${NONE}    True`.
 
+Opcional (com environments/<env>.py):
+- Defina variáveis no arquivo de ambiente (sem segredos), por exemplo:
+  - `SQL_SERVER_HOST`, `SQL_SERVER_DB`, `SQL_SERVER_PORT=1433`, `SQL_SERVER_SCHEMA=dbo`.
+- No início da suíte, aplique essas variáveis aos envs do processo e ative o backend:
+  - `Aplicar Configuracoes SQLServer Do Ambiente    ${SQL_SERVER_HOST}    ${SQL_SERVER_DB}    ${SQL_SERVER_PORT}    ${SQL_SERVER_SCHEMA}`
+  - `Definir Conexao SQLServer    ${NONE}    True`
+
 ## Padrões de Projeto Aplicados (onde e por quê)
 - Service Object: `resources/api/services/*` encapsula endpoints sem regra de negócio.
 - Strategy: Data Provider alterna backends (JSON/SQL) via env/keyword.

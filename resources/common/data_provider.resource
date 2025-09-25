@@ -1,5 +1,6 @@
 *** Settings ***
 Library    ../../libs/data/data_provider.py
+Library    OperatingSystem
 
 *** Keywords ***
 Obter Massa De Teste
@@ -26,3 +27,26 @@ Definir Schema SQLServer
 Testar Conexao SQLServer
     [Documentation]    Executa um SELECT 1 para validar credenciais e conectividade com o SQL Server.
     Test Sql Connection
+
+Aplicar Configuracoes SQLServer Do Ambiente
+    [Documentation]    Define variáveis de ambiente de endpoint/ajustes a partir de variáveis da suíte (environments/<env>.py).
+    ...    Preenche apenas os valores informados; não grava segredos.
+    [Arguments]    ${host}=${EMPTY}    ${db}=${EMPTY}    ${port}=1433    ${schema}=${EMPTY}    ${driver}=${EMPTY}    ${timeout}=${EMPTY}
+    IF    '${host}' != ''
+        Set Environment Variable    AZR_SQL_SERVER_HOST    ${host}
+    END
+    IF    '${db}' != ''
+        Set Environment Variable    AZR_SQL_SERVER_DB    ${db}
+    END
+    IF    '${port}' != ''
+        Set Environment Variable    AZR_SQL_SERVER_PORT    ${port}
+    END
+    IF    '${schema}' != ''
+        Set Environment Variable    DATA_SQLSERVER_SCHEMA    ${schema}
+    END
+    IF    '${driver}' != ''
+        Set Environment Variable    DATA_SQLSERVER_DRIVER    ${driver}
+    END
+    IF    '${timeout}' != ''
+        Set Environment Variable    DATA_SQLSERVER_TIMEOUT    ${timeout}
+    END
