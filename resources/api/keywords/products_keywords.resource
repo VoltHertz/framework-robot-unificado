@@ -7,7 +7,6 @@ Resource    ../../common/data_provider.resource
 Resource    ../../common/json_utils.resource
 Resource    ../../common/logger.resource
 Resource    ../../common/context.resource
-Library     Collections
 
 
 *** Keywords ***

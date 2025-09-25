@@ -398,3 +398,9 @@ Plano de ação focado em código (sem alterar TAGS/DOCUMENTATION):
 - Não utilizar JSON Schema/contratos nas validações (padrão descontinuado no projeto).
 - Evitar dependências entre testes (endpoints de escrita são simulados); cada teste deve ser autossuficiente.
 - Aproveitar variáveis de ambiente para timeouts e políticas de retry via adapter.
+- Organização de imports:
+  - `tests/*` e `resources/api/keywords/*` são o ponto de orquestração da camada — aqui ficam os `Resource` e `Library` de uso comum (logger, data provider, context etc.). Respeite a ordem: services → common → helpers específicos → libraries pontuais.
+  - Helpers (`resources/api/keywords/*_helpers.resource`, `_core_helpers.resource`) deixam de importar `resources/common/logger.resource`; eles assumem que o arquivo principal do domínio já expôs `Log Estilizado`, evitando alertas como `ResourceAlreadyImported` nos IDEs.
+  - Só adicione `Library     Collections` (ou outras libs) quando houver uso direto de keywords desse pacote. Exemplos: `carts_helpers` utiliza `Dictionary Should Contain Key`; já `products_keywords` não precisa mais da biblioteca e mantém o arquivo enxuto.
+  - Serviços continuam responsáveis por importar apenas o adapter HTTP + `Collections` (quando necessário para montar payload/params). Qualquer regra de negócio adicional deve permanecer na camada de keywords.
+  - Em caso de dúvida, priorize atualizar esta seção antes de replicar importações — ela é a fonte de verdade para o padrão aceito pela squad.

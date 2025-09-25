@@ -4,7 +4,6 @@ Documentation    Helpers reutilizáveis para keywords de integração Carts + Pr
 Resource    ../services/products_service.resource
 Resource    ../services/carts_service.resource
 Resource    ../../common/json_utils.resource
-Resource    ../../common/logger.resource
 Resource    ../../common/context.resource
 Resource    ./carts_products_core_helpers.resource
 Library     Collections

@@ -1,7 +1,6 @@
 *** Settings ***
 Documentation    Keywords auxiliares do domínio Carts para validações técnicas.
 Resource    ../../common/json_utils.resource
-Resource    ../../common/logger.resource
 Resource    ../../common/context.resource
 Library     Collections
 

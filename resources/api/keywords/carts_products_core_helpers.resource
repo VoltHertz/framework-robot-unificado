@@ -3,7 +3,6 @@ Documentation    Helpers utilit√°rios compartilhados entre os fluxos de integra√
 Resource    ../services/products_service.resource
 Resource    ../services/carts_service.resource
 Resource    ../../common/json_utils.resource
-Resource    ../../common/logger.resource
 Resource    ../../common/context.resource
 Library     Collections
 
