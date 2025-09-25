@@ -3,7 +3,7 @@
 ## Princípios e Regras Atuais
 - Camadas explícitas e sem atalhos: adapters → services → keywords → suites. Tests nunca chamam services/adapters direto; keywords não pulam services para falar com adapters.
 - BDD em PT‑BR nas suítes (Dado/Quando/Então) com foco no negócio.
-- Dados desacoplados por Data Provider (JSON/CSV/SQL Server). Proibido hardcode nas suítes.
+- Dados desacoplados por Data Provider (JSON/SQL Server). Proibido hardcode nas suítes.
 - Contratos/JSON Schema: descontinuado. Não criar nem usar `resources/api/contracts/*`, `tests/api/contract/*` ou `JSONSchemaLibrary`. Artefatos legados podem existir, mas não devem ser executados nem evoluídos.
 
 
@@ -118,7 +118,7 @@ Suite Teardown  Teardown Suite Padrao
 
 ### Definition of Done por domínio (resumo)
 - Fluxos: positivo happy-path; negativos relevantes; limites (p.ex. paginação 0/1/alto).
-- Massa: centralizada (JSON/CSV/SQL) por cenário; sem dependência de massa “full dump”.
+- Massa: centralizada (JSON/SQL) por cenário; sem dependência de massa “full dump”.
 - Logs: mensagens chave com `Log Estilizado` e referência de UC no texto.
 - Execução: suites `domains/*` verdes localmente.
 
@@ -136,7 +136,7 @@ Suite Teardown  Teardown Suite Padrao
 - [ ] Suites passam localmente (fluxos e limites) com `results_*/` anexados.
 - [ ] Test cases e keywords documentados conforme padrão desta seção e IDs UC aplicados.
 - [ ] Logs migrados para `Log Estilizado` (sem prefixos hardcoded).
-- [ ] Data provider funciona para o domínio (JSON no mínimo; CSV/SQL quando aplicável).
+- [ ] Data provider funciona para o domínio (JSON no mínimo; SQL quando aplicável).
 - [ ] Variáveis de ambiente necessárias documentadas no PR.
 - [ ] Robocop/Robotidy aplicados quando alteradas resources.
 
@@ -144,18 +144,17 @@ Suite Teardown  Teardown Suite Padrao
 - Não commit secrets; use `environments/secrets.template.yaml`. Configure endpoints e flags (ex.: `BASE_URL_API_DUMMYJSON`, `BROWSER_HEADLESS`) em `environments/<env>.py` e selecione via `-v ENV:<env>`.
 
 ## Data Provider Unificado (Pluggable)
-- Biblioteca: `libs/data/data_provider.py` com backends `json`, `csv`, `sqlserver` (stub via `pyodbc`).
-- Resource: `resources/common/data_provider.resource` com keywords para configurar e usar.
+- Biblioteca: `libs/data/data_provider.py` deve oferecer dois backends plugáveis (`json`, `sqlserver`).
+- Resource: `resources/common/data_provider.resource` expõe keywords para configurar backend, conexão e schema, além de buscar massa.
 - Keywords principais:
-  - `Definir Backend De Dados | json|csv|sqlserver` — alterna a fonte em runtime.
-  - `Obter Massa De Teste | <dominio> | <cenario>` — retorna dicionário do cenário.
-  - `Configurar Diretórios De Dados | <json_dir> | <csv_dir> | <coluna>` — ajusta pastas e coluna chave.
-  - `Definir Conexao SQLServer | <conn_string> | <ativar>` e `Definir Schema SQLServer | <schema>`.
+  - `Definir Backend De Dados | json|sqlserver` — alterna a fonte em runtime (podendo mudar várias vezes na mesma execução).
+  - `Definir Conexao SQLServer | <conn_string> | <ativar>` e `Definir Schema SQLServer | <schema>` — configuram o backend SQL Server.
+  - `Obter Massa De Teste | <dominio> | <cenario>` — retorna dicionário do cenário usando o backend ativo.
 - Variáveis de ambiente suportadas:
-  - `DATA_BACKEND` (default `json`), `DATA_BASE_DIR`, `DATA_JSON_DIR`, `DATA_CSV_DIR`, `DATA_CSV_KEY`.
+  - `DATA_BACKEND` (default `json`), `DATA_BASE_DIR`, `DATA_JSON_DIR`.
   - `DATA_SQLSERVER_CONN`, `DATA_SQLSERVER_SCHEMA`.
 - Convenções:
-  - JSON/CSV: arquivo por domínio (`<dominio>.json|csv`) com chave `cenario` (CSV) e objetos por cenário (JSON).
+  - JSON: arquivo por domínio (`data/json/<dominio>.json`) com objetos por cenário.
   - SQL Server: tabela por domínio com coluna `cenario` (linha representa um cenário). Retorno remove a chave `cenario` para uniformidade.
 - Massa “full”: `data/full_api_data/*` guarda referência completa da fonte; não usar diretamente nas suites — derive subconjuntos para `data/json`.
 
@@ -163,22 +162,22 @@ Diretrizes de uso
 - Proibido hardcode de dados nas suítes — sempre use `Obter Massa De Teste`.
 - Use SQL Server para registros reais/pré‑condições e validação final dos efeitos.
 - Use JSON para negativos/limites/payloads sintéticos quando não houver dado real disponível.
-- Combine quando fizer sentido: JSON como base + campos preenchidos com dados reais vindos do SQL.
+- Combine quando fizer sentido: JSON como base + campos preenchidos com dados reais vindos do SQL (alternando backend durante o teste).
 - SQL: consultas read‑only e parametrizadas; criação de massa via SP apenas como exceção.
 
 ### Plano de Implementação — Backend SQL Server no Data Provider
-Objetivo: habilitar obtenção de massa de teste diretamente do SQL Server, de forma plugável (Strategy), mantendo JSON como default e sem referenciar arquivos em `docs/feedbackAI/feedback005`.
+Objetivo: habilitar obtenção de massa de teste diretamente do SQL Server, de forma plugável (Strategy), mantendo JSON como default e permitindo alternar entre as duas fontes ao longo da execução. Não referenciar arquivos em `docs/feedbackAI/feedback005`.
 
 Escopo (mínimo viável):
 - Python: `libs/data/data_provider.py` implementa backend `sqlserver` via `pyodbc` e Strategy interna.
-- Robot: `resources/common/data_provider.resource` expõe keywords para definir backend, conexão e schema, além de `Obter Massa De Teste` único.
+- Robot: `resources/common/data_provider.resource` expõe keywords para definir backend, conexão e schema, além de `Obter Massa De Teste` único (capaz de alternar entre JSON e SQL a qualquer momento).
 - Convenção de dados: tabela por domínio `[schema].[dominio]` com coluna `cenario` (chave). Linhas representam cenários; retorno remove `cenario` e normaliza tipos.
 
 Design proposto:
 - Strategy interna (sem criar novos módulos agora):
   - Classe `SqlServerBackend` com métodos: `configure(conn_string: str, schema: str)`, `get(dominio: str, cenario: str) -> dict`.
   - Classe `JsonBackend` atual permanece.
-  - `DataProvider` escolhe backend por env `DATA_BACKEND` ou por keyword em runtime (estado interno).
+  - `DataProvider` escolhe backend por env `DATA_BACKEND` ou por keyword em runtime (estado interno), permitindo scripts alternarem entre JSON e SQL dentro da mesma execução.
 - Conexão e pooling:
   - Manter um único handle `pyodbc.Connection` por processo (cache simples no backend). Reabrir se desconectar.
   - Read‑only por padrão; transações não são necessárias para consulta de massa.
@@ -189,13 +188,13 @@ Design proposto:
   - Tentar desserializar campos JSON válidos (ex.: payloads armazenados como texto) mantendo strings originais quando falhar.
 - Erros e mensagens (troubleshooting):
   - Mensagens claras para: driver ausente, DNS/host inacessível, credenciais inválidas, tabela/esquema inexistente, cenário não encontrado.
-  - Não logar segredos; exibir somente o prefixo do connection string (host/DB). 
+  - Não logar segredos; exibir somente o prefixo do connection string (host/DB).
 
 Keywords (Robot) a adicionar/ajustar em `resources/common/data_provider.resource`:
-- `Definir Backend De Dados    json|csv|sqlserver` — altera backend em runtime (default permanece `json`).
-- `Definir Conexao SQLServer    <conn_string>    <ativar=${True}>` — salva a connection string no backend e, opcionalmente, já ativa o backend `sqlserver`.
-- `Definir Schema SQLServer     <schema>` — salva o schema padrão das tabelas.
-- `Obter Massa De Teste         <dominio>    <cenario>` — encaminha para o backend atual (sem mudar assinatura atual).
+- `Definir Backend De Dados    json|sqlserver` — altera backend em runtime (default permanece `json`).
+- `Definir Conexao SQLServer   <conn_string>    <ativar=${True}>` — salva a connection string no backend e, opcionalmente, já ativa o backend `sqlserver`.
+- `Definir Schema SQLServer    <schema>` — salva o schema padrão das tabelas.
+- `Obter Massa De Teste        <dominio>    <cenario>` — encaminha para o backend atual (sem mudar assinatura atual).
 
 Variáveis de ambiente (reforço):
 - `DATA_BACKEND=json|sqlserver` — seleciona backend default (json por padrão).
@@ -215,7 +214,7 @@ Passos (roadmap incremental):
 6) Documentação: atualizar README (Data Provider) e `docs/libs/robotframework.md`/`docs/libs/robocop.md` quando aplicável.
 
 Não metas (nesta fase):
-- CSV backend (fora do escopo imediato; manter notas, mas não implementar agora).
+- Suporte a outras fontes além de JSON e SQL Server.
 - Escrita em banco (inserção/atualização). Apenas consultas read‑only.
 
 Definition of Done (SQL Backend):
@@ -266,7 +265,7 @@ Definition of Done (SQL Backend):
 
 ## Troubleshooting Comum
 - Falta de keyword `Styled Log`: verifique import do resource `resources/common/logger.resource` e a versão do Robot (7.x).
-- Massa não encontrada: confirme `DATA_*` envs e a existência de `data/json/<dominio>.json` ou `data/csv/<dominio>.csv`.
+- Massa não encontrada: confirme `DATA_*` envs, a existência de `data/json/<dominio>.json` (quando backend for JSON) ou a tabela `[schema].[dominio]` no SQL Server.
 - Tempo e flakiness: defina timeouts/retries no adapter HTTP; prefira asserts inclusivos quando fornecedor variar (ex.: 200/201 em criação).
 
 ## Plano de Implementação – Integração Carts + Products (API)
