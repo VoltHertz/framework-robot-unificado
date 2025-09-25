@@ -166,6 +166,64 @@ Diretrizes de uso
 - Combine quando fizer sentido: JSON como base + campos preenchidos com dados reais vindos do SQL.
 - SQL: consultas read‑only e parametrizadas; criação de massa via SP apenas como exceção.
 
+### Plano de Implementação — Backend SQL Server no Data Provider
+Objetivo: habilitar obtenção de massa de teste diretamente do SQL Server, de forma plugável (Strategy), mantendo JSON como default e sem referenciar arquivos em `docs/feedbackAI/feedback005`.
+
+Escopo (mínimo viável):
+- Python: `libs/data/data_provider.py` implementa backend `sqlserver` via `pyodbc` e Strategy interna.
+- Robot: `resources/common/data_provider.resource` expõe keywords para definir backend, conexão e schema, além de `Obter Massa De Teste` único.
+- Convenção de dados: tabela por domínio `[schema].[dominio]` com coluna `cenario` (chave). Linhas representam cenários; retorno remove `cenario` e normaliza tipos.
+
+Design proposto:
+- Strategy interna (sem criar novos módulos agora):
+  - Classe `SqlServerBackend` com métodos: `configure(conn_string: str, schema: str)`, `get(dominio: str, cenario: str) -> dict`.
+  - Classe `JsonBackend` atual permanece.
+  - `DataProvider` escolhe backend por env `DATA_BACKEND` ou por keyword em runtime (estado interno).
+- Conexão e pooling:
+  - Manter um único handle `pyodbc.Connection` por processo (cache simples no backend). Reabrir se desconectar.
+  - Read‑only por padrão; transações não são necessárias para consulta de massa.
+- Query parametrizada:
+  - `SELECT * FROM [{schema}].[{dominio}] WHERE cenario = ?` usando parâmetros `pyodbc`.
+- Normalização:
+  - Remover a coluna `cenario` do resultado.
+  - Tentar desserializar campos JSON válidos (ex.: payloads armazenados como texto) mantendo strings originais quando falhar.
+- Erros e mensagens (troubleshooting):
+  - Mensagens claras para: driver ausente, DNS/host inacessível, credenciais inválidas, tabela/esquema inexistente, cenário não encontrado.
+  - Não logar segredos; exibir somente o prefixo do connection string (host/DB). 
+
+Keywords (Robot) a adicionar/ajustar em `resources/common/data_provider.resource`:
+- `Definir Backend De Dados    json|csv|sqlserver` — altera backend em runtime (default permanece `json`).
+- `Definir Conexao SQLServer    <conn_string>    <ativar=${True}>` — salva a connection string no backend e, opcionalmente, já ativa o backend `sqlserver`.
+- `Definir Schema SQLServer     <schema>` — salva o schema padrão das tabelas.
+- `Obter Massa De Teste         <dominio>    <cenario>` — encaminha para o backend atual (sem mudar assinatura atual).
+
+Variáveis de ambiente (reforço):
+- `DATA_BACKEND=json|sqlserver` — seleciona backend default (json por padrão).
+- `DATA_SQLSERVER_CONN` — connection string ODBC (sem segredos no repositório); exemplos em `environments/_placeholders.py`.
+- `DATA_SQLSERVER_SCHEMA` — schema default para leitura (ex.: `qa`, `dbo`).
+
+Exemplos de connection string (não commitar valores reais):
+- Autenticação SQL: `DRIVER={ODBC Driver 18 for SQL Server};SERVER=<host>,<port>;DATABASE=<db>;UID=<user>;PWD=<pass>;Encrypt=yes;TrustServerCertificate=yes`
+- Autenticação integrada (Windows): `DRIVER={ODBC Driver 18 for SQL Server};SERVER=<host>;DATABASE=<db>;Trusted_Connection=yes;Encrypt=yes;TrustServerCertificate=yes`
+
+Passos (roadmap incremental):
+1) Python: extrair Strategy interna em `libs/data/data_provider.py` e implementar `SqlServerBackend` (conexão, query parametrizada, normalização, cache de conexão).
+2) Robot: estender `resources/common/data_provider.resource` com as keywords de configuração/uso do SQL Server.
+3) Environments: adicionar placeholders em `environments/_placeholders.py` e documentar uso no README (sem segredos).
+4) Troubleshooting: enriquecer mensagens de erro (mapear `pyodbc.Error`/`InterfaceError`/`OperationalError`).
+5) Testes manuais: simular indisponibilidades (driver ausente, host errado), validar fallback para JSON e mensagens amigáveis.
+6) Documentação: atualizar README (Data Provider) e `docs/libs/robotframework.md`/`docs/libs/robocop.md` quando aplicável.
+
+Não metas (nesta fase):
+- CSV backend (fora do escopo imediato; manter notas, mas não implementar agora).
+- Escrita em banco (inserção/atualização). Apenas consultas read‑only.
+
+Definition of Done (SQL Backend):
+- Keywords de Data Provider expostas e documentadas; default `json` mantido.
+- Backend `sqlserver` funcional com query parametrizada e tratamento de erros; retorno sem a chave `cenario` e com normalização básica.
+- Placeholders/ENVs atualizados; nenhuma referência a `docs/feedbackAI/feedback005` no código.
+- README atualizado com exemplos de uso e troubleshooting.
+
 ## Logger Estilizado (Arquivo:Linha)
 - Biblioteca: `libs/logging/styled_logger.py` (Listener v3) + resource `resources/common/logger.resource`.
 - Use `Log Estilizado    <mensagem>    <NIVEL=INFO>    <curto=True>    <console=False>`.
