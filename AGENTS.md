@@ -223,7 +223,8 @@ Passos (roadmap incremental):
 3) Environments: adicionar placeholders em `environments/_placeholders.py` e documentar uso no README (sem segredos), incluindo nomes das variáveis de service principal.
 4) Troubleshooting: enriquecer mensagens de erro (mapear `pyodbc.Error`/`InterfaceError`/`OperationalError`), expondo mensagens semelhantes às do script base.
 5) Testes manuais: simular indisponibilidades (driver ausente, host errado, credenciais vazias) e validar fallback para JSON e mensagens amigáveis.
-6) Documentação: atualizar README (Data Provider) e `docs/libs/robotframework.md`/`docs/libs/robocop.md` quando aplicável, incluindo checklist de envs obrigatórios.
+6) Automação de sanidade: adaptar o script `docs/feedbackAI/feedback005/Tests/testes_pipeline.robot` para `tests/common/validacao_sql_server.robot` (ou similar), permitindo checar drivers, variáveis e conectividade via Robot antes de rodar suites.
+7) Documentação: atualizar README (Data Provider) e `docs/libs/robotframework.md`/`docs/libs/robocop.md` quando aplicável, incluindo checklist de envs obrigatórios e referência ao teste de sanidade.
 
 Não metas (nesta fase):
 - Suporte a outras fontes além de JSON e SQL Server.
