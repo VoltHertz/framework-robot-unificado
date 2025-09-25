@@ -110,7 +110,7 @@ framework-robot-unificado/
   - Keyword única de consumo de massa (`Obter Massa De Teste`) alimentada por backends plugáveis.
   - Evita acoplamento a formato/fonte, simplificando a adoção de CSV/SQL sem tocar nas suítes.
 
-## Logs Profissionais (rastreamento com [arquivo:Llinha])
+## Logs Profissionais (rastreamento com [arquivo:Lnn])
 - Biblioteca: `libs/logging/styled_logger.py` com Listener v3 (captura `source`/`lineno`).
 - Resource: `resources/common/logger.resource` com:
   - `Log Estilizado    <mensagem>    <NIVEL=INFO>    <curto=True>    <console=False>`.
@@ -238,6 +238,18 @@ results/
       output.xml
 ```
 
+## Glossário rápido (para quem está começando)
+- Suite: arquivo `.robot` que descreve cenários de negócio em BDD (Dado/Quando/Então). Não contém lógica.
+- Resource: arquivo reutilizável com keywords/infra que outras suites/recursos importam.
+- Adapter: camada mais baixa que conversa com bibliotecas externas (ex.: RequestsLibrary). Gerencia sessão, timeouts, retries.
+- Service: encapsula um endpoint (uma keyword por endpoint). Sem regra de negócio. Retorna resposta crua.
+- Keyword (de negócio): orquestra services, valida regras e prepara dados. É onde ficam as regras do domínio.
+- Data Provider: biblioteca/keywords que buscam massa de teste dos backends (JSON/CSV/SQL).
+- Hooks: setup/teardown padrão da suite (ex.: iniciar/encerrar sessão HTTP) em `resources/common/hooks.resource`.
+- ENV: variável que aponta para `environments/<env>.py` (ex.: `-v ENV:dev`). Centraliza URLs/flags.
+- Logger estilizado: logs padronizados com prefixo automático `[arquivo:Lnn]`.
+- Asserts inclusivos: validações que aceitam variações previstas do fornecedor (ex.: 200 ou 201 em criação).
+
 ## Convenções de Casos e Documentação
 - IDs de caso: `UC-<DOM>-<SEQ>` (ex.: UC-CART-001) no nome do teste e no corpo de log principal.
 - Documentação de testes/keywords: siga `docs/feedbackAI/feedback003.md` (Objetivo, Pré‑requisitos, Dados de teste, Resultado esperado, JIRA, Confluence, Nível de risco, Argumentos, Retorno, Exceções, Exemplo).
@@ -318,17 +330,12 @@ Boas práticas:
 
 ## Guia prático consolidado (AGENTS.md em linguagem humana)
 
-Esta seção sintetiza as regras operacionais do repositório de forma prática, para acelerar onboarding e evitar armadilhas comuns.
+Esta seção sintetiza as regras operacionais do repositório de forma prática, para acelerar onboarding e evitar armadilhas comuns. Para comandos de execução, veja a seção "Execução (Comece Rápido)".
 
 ### Execução correta das suítes
-- Execute sempre a partir do diretório `framework-robot-unificado` para garantir que imports relativos funcionem.
+- Sempre execute a partir do diretório `framework-robot-unificado`.
 - Parametrize o ambiente com `-v ENV:<env>` e nas suítes importe `Variables   ../../environments/${ENV}.py`.
-- Use `-d results/api/<dominio>` para organizar artefatos por domínio.
-- Exemplos:
-  - Dry run: `.venv/bin/python -m robot --dryrun -v ENV:dev -i api -d results/api/_dryrun tests`
-  - Products: `.venv/bin/python -m robot -v ENV:dev -d results/api/products tests/api/domains/products/products_suite.robot`
-  - Carts: `.venv/bin/python -m robot -v ENV:dev -d results/api/carts tests/api/domains/carts/carts_suite.robot`
-  - Integração Carts+Products: `.venv/bin/python -m robot -v ENV:dev -d results/api/integration/carts_products tests/api/integration/carts_products_fluxos.robot`
+- Gere artefatos com `-d results/api/<dominio>` para facilitar histórico e coleta.
 
 ### Imports típicos nas suítes
 ```robot
@@ -348,6 +355,20 @@ Suite Teardown  Teardown Suite Padrao
 - Services importam somente o adapter HTTP + `Collections` quando necessário. Nunca `RequestsLibrary` direto.
 - Keywords orquestram regra de negócio e usam utilitários de `resources/common/*`. Só adicione `Library     Collections` se houver uso real.
 - Helpers (`*_helpers.resource`, `_core_helpers.resource`) não importam o logger comum; o arquivo principal do domínio já o expõe.
+
+### Passo a passo: seu primeiro teste
+1) Crie (ou revise) a massa em `data/json/<dominio>.json`, adicionando um objeto por cenário com a chave `"cenario"`.
+2) Verifique se já existe a keyword de negócio no arquivo do domínio em `resources/api/keywords/<dominio>_keywords.resource` que atenda ao fluxo; se não, crie uma nova keyword orquestrando os services necessários.
+3) Na suíte `tests/api/domains/<dominio>/<dominio>_fluxos.robot`, adicione um caso com BDD PT‑BR chamando somente keywords de negócio.
+4) Importe os resources comuns (hooks, data provider, logger) e o arquivo de keywords do domínio. Use `Suite Setup/Teardown` padrão.
+5) Execute um dry run para checar imports, depois rode o caso filtrando por tag/ID. Gere artefatos em `results/api/<dominio>` e valide no `log.html`.
+
+### Como criar uma nova keyword de negócio (resumo)
+- Entrada: defina argumentos claros (ex.: `${user_id}`, `${payload}`) e documente com [Documentation], incluindo Argumentos/Retorno quando aplicável.
+- Orquestração: chame apenas services do domínio; monte payloads nos services quando necessário (via `Collections`) e mantenha a regra de negócio na keyword.
+- Dados: obtenha massa via `Obter Massa De Teste` (nunca hardcode na suíte).
+- Logs: use `Log Estilizado` nas etapas principais (entrada, chamada de service, validações).
+- Saída: retorne valores úteis com `RETURN` (Robot ≥ 7) quando a suite precisar encadear passos.
 
 ### Nomenclatura e estilo
 - Suites de domínio em BDD PT‑BR (Dado/Quando/Então) e sem lógica — apenas chamadas a keywords de negócio.
@@ -390,6 +411,10 @@ Suite Teardown  Teardown Suite Padrao
   - Criação: aceite status `200` ou `201`.
   - `/carts/user/{id}`: considere `200` (lista vazia) ou `404`.
 
+### Artefatos e paralelização
+- Estruture resultados por plataforma/domínio: `results/<plataforma>/<dominio>/<timestamp|rerun>` quando executar em paralelo.
+- Itens principais: `log.html`, `report.html`, `output.xml`. Abra o `log.html` para depurar keywords executadas e mensagens de log.
+
 ### Definition of Done (por domínio)
 - Fluxos: positivo (happy‑path), negativos relevantes e limites (ex.: paginação 0/1/alto).
 - Massa: centralizada por cenário (JSON/CSV/SQL), sem depender de “full dump”.
@@ -401,3 +426,8 @@ Suite Teardown  Teardown Suite Padrao
 - Massa não encontrada: verifique `DATA_*` e arquivos em `data/json/<dominio>.json` ou `data/csv/<dominio>.csv`.
 - Flakiness/tempo: ajuste timeouts/retries no adapter HTTP; prefira asserts inclusivos (ex.: 200/201).
 - Caminhos/Imports: rode `--dryrun` em `tests` para capturar erros de import rapidamente.
+
+### Segurança e configuração
+- Nunca commit segredos. Use `environments/secrets.template.yaml` como modelo.
+- Centralize endpoints, timeouts e flags de execução nos arquivos `environments/<env>.py`.
+- Ajuste comportamento via ENV/variáveis; evite alterar suites/keywords para configuração.
