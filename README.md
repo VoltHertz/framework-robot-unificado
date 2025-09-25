@@ -214,6 +214,19 @@ Diretrizes de uso:
   - `Definir Schema SQLServer | <schema>`
   - `Testar Conexao SQLServer` (SELECT 1 — sanidade de credenciais/timeouts)
 
+### Quick start (2 passos) — usar SQL Server
+- Pré‑requisito: defina os envs de conexão (recomendado usar Service Principal):
+  - `DATA_SQLSERVER_CONN` OU `AZR_SQL_SERVER_HOST/DB/PORT/CLIENT_ID/CLIENT_SECRET` (ou aliases legados `AZR_SDBS_PF_TDNP_T_SP_*`).
+  - Opcional: `DATA_SQLSERVER_SCHEMA` (se definido, pode pular o Passo 1).
+
+- Passos mínimos dentro da suíte (após importar `resources/common/data_provider.resource`):
+  1) `Definir Schema SQLServer    <schema>`
+  2) `Definir Conexao SQLServer   ${NONE}    True`
+
+- Observações rápidas:
+  - O Passo 2 monta a connection string a partir dos envs (ou usa `DATA_SQLSERVER_CONN`) e já ativa o backend SQL (`ativar=True`).
+  - Se o schema vier de `DATA_SQLSERVER_SCHEMA`, você pode executar apenas: `Definir Conexao SQLServer    ${NONE}    True`.
+
 ## Padrões de Projeto Aplicados (onde e por quê)
 - Service Object: `resources/api/services/*` encapsula endpoints sem regra de negócio.
 - Strategy: Data Provider alterna backends (JSON/SQL) via env/keyword.
