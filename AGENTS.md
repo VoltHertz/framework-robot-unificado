@@ -166,20 +166,22 @@ Diretrizes de uso
 - SQL: consultas read‑only e parametrizadas; criação de massa via SP apenas como exceção.
 
 ### Plano de Implementação — Backend SQL Server no Data Provider
-Objetivo: habilitar obtenção de massa de teste diretamente do SQL Server, de forma plugável (Strategy), mantendo JSON como default e permitindo alternar entre as duas fontes ao longo da execução. Não referenciar arquivos em `docs/feedbackAI/feedback005`.
+Objetivo: habilitar obtenção de massa de teste diretamente do SQL Server, de forma plugável (Strategy), mantendo JSON como default e permitindo alternar entre as duas fontes ao longo da execução. Reaproveitar os padrões já validados em `docs/feedbackAI/feedback005/Scripts/dbConnection.py` (service principal Azure, timeouts estendidos, troubleshooting), mas adaptar o código para `libs/data/data_provider.py`/`resources/common/data_provider.resource` sem importar diretamente arquivos da pasta `docs/feedbackAI/feedback005`.
 
 Escopo (mínimo viável):
 - Python: `libs/data/data_provider.py` implementa backend `sqlserver` via `pyodbc` e Strategy interna.
 - Robot: `resources/common/data_provider.resource` expõe keywords para definir backend, conexão e schema, além de `Obter Massa De Teste` único (capaz de alternar entre JSON e SQL a qualquer momento).
 - Convenção de dados: tabela por domínio `[schema].[dominio]` com coluna `cenario` (chave). Linhas representam cenários; retorno remove `cenario` e normaliza tipos.
 
-Design proposto:
+Design proposto (inspirado em `dbConnection.py`):
 - Strategy interna (sem criar novos módulos agora):
   - Classe `SqlServerBackend` com métodos: `configure(conn_string: str, schema: str)`, `get(dominio: str, cenario: str) -> dict`.
   - Classe `JsonBackend` atual permanece.
   - `DataProvider` escolhe backend por env `DATA_BACKEND` ou por keyword em runtime (estado interno), permitindo scripts alternarem entre JSON e SQL dentro da mesma execução.
 - Conexão e pooling:
   - Manter um único handle `pyodbc.Connection` por processo (cache simples no backend). Reabrir se desconectar.
+  - Implementar builder de connection string com base nos envs de service principal (ex.: `AZR_SDBS_PF_TDNP_T_SP_CLIENT_ID`, `AZR_SDBS_PF_TDNP_T_SP_CLIENT_SECRET`, host, database), replicando o formato testado: `Driver={ODBC Driver 17 for SQL Server};Server=tcp:<host>,1433;Database=<db>;UID=<client_id>;PWD=<client_secret>;Authentication=ActiveDirectoryServicePrincipal;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=180;Login Timeout=180`.
+  - Validar que variáveis obrigatórias (client id/secret/host/db) estão preenchidas; lançar erro amigável quando ausentes (sem expor segredos).
   - Read‑only por padrão; transações não são necessárias para consulta de massa.
 - Query parametrizada:
   - `SELECT * FROM [{schema}].[{dominio}] WHERE cenario = ?` usando parâmetros `pyodbc`.
@@ -187,12 +189,22 @@ Design proposto:
   - Remover a coluna `cenario` do resultado.
   - Tentar desserializar campos JSON válidos (ex.: payloads armazenados como texto) mantendo strings originais quando falhar.
 - Erros e mensagens (troubleshooting):
-  - Mensagens claras para: driver ausente, DNS/host inacessível, credenciais inválidas, tabela/esquema inexistente, cenário não encontrado.
-  - Não logar segredos; exibir somente o prefixo do connection string (host/DB).
+  - Mensagens claras para: driver ausente (`pyodbc.InterfaceError`), DNS/host inacessível (usar tentativa de socket/dns opcional), credenciais inválidas, timeout de login (180s), tabela/esquema inexistente, cenário não encontrado.
+  - Reaproveitar logs amigáveis do script base (ex.: listar drivers encontrados quando em modo diagnóstico) sem imprimir segredo (`***`).
+  - Não logar segredos; exibir somente o prefixo do connection string (host/DB) e o client id mascarado.
+
+Configuração de conexão (camadas):
+- Envs obrigatórios sugeridos (adequar conforme infra):
+  - `AZR_SQL_SERVER_HOST`, `AZR_SQL_SERVER_DB`, `AZR_SQL_SERVER_CLIENT_ID`, `AZR_SQL_SERVER_CLIENT_SECRET` (nomes alinhados ao script base).
+  - `DATA_SQLSERVER_CONN` pode aceitar uma connection string pronta (caso o time prefira); se ausente, construir dinamicamente a partir dos envs acima.
+  - `DATA_SQLSERVER_TIMEOUT` opcional (default 180s) para `Connection Timeout`/`Login Timeout`.
+- Keywords Python expostas no backend devem mascarar valores sensíveis em logs (`***`).
 
 Keywords (Robot) a adicionar/ajustar em `resources/common/data_provider.resource`:
 - `Definir Backend De Dados    json|sqlserver` — altera backend em runtime (default permanece `json`).
-- `Definir Conexao SQLServer   <conn_string>    <ativar=${True}>` — salva a connection string no backend e, opcionalmente, já ativa o backend `sqlserver`.
+- `Definir Conexao SQLServer   <conn_string>=None    <ativar=${True}>` —
+  - Permite informar connection string pronta ou gatilha para que o backend monte a string usando variáveis de ambiente (service principal).
+  - Opcionalmente já ativa o backend `sqlserver`.
 - `Definir Schema SQLServer    <schema>` — salva o schema padrão das tabelas.
 - `Obter Massa De Teste        <dominio>    <cenario>` — encaminha para o backend atual (sem mudar assinatura atual).
 
@@ -208,10 +220,10 @@ Exemplos de connection string (não commitar valores reais):
 Passos (roadmap incremental):
 1) Python: extrair Strategy interna em `libs/data/data_provider.py` e implementar `SqlServerBackend` (conexão, query parametrizada, normalização, cache de conexão).
 2) Robot: estender `resources/common/data_provider.resource` com as keywords de configuração/uso do SQL Server.
-3) Environments: adicionar placeholders em `environments/_placeholders.py` e documentar uso no README (sem segredos).
-4) Troubleshooting: enriquecer mensagens de erro (mapear `pyodbc.Error`/`InterfaceError`/`OperationalError`).
-5) Testes manuais: simular indisponibilidades (driver ausente, host errado), validar fallback para JSON e mensagens amigáveis.
-6) Documentação: atualizar README (Data Provider) e `docs/libs/robotframework.md`/`docs/libs/robocop.md` quando aplicável.
+3) Environments: adicionar placeholders em `environments/_placeholders.py` e documentar uso no README (sem segredos), incluindo nomes das variáveis de service principal.
+4) Troubleshooting: enriquecer mensagens de erro (mapear `pyodbc.Error`/`InterfaceError`/`OperationalError`), expondo mensagens semelhantes às do script base.
+5) Testes manuais: simular indisponibilidades (driver ausente, host errado, credenciais vazias) e validar fallback para JSON e mensagens amigáveis.
+6) Documentação: atualizar README (Data Provider) e `docs/libs/robotframework.md`/`docs/libs/robocop.md` quando aplicável, incluindo checklist de envs obrigatórios.
 
 Não metas (nesta fase):
 - Suporte a outras fontes além de JSON e SQL Server.
