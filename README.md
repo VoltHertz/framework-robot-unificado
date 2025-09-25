@@ -61,10 +61,10 @@ framework-robot-unificado/
 │     └─ keywords/                     # Orquestração/regra de negócio do domínio
 │        ├─ carts_keywords.resource
 │        ├─ carts_helpers.resource     # Helpers técnicos para Carts
-│        ├─ carts_products_keywords.resource        # Keywords de integração Carts + Products
-│        ├─ carts_products_helpers.resource         # Helpers de integração (reuso)
-│        ├─ carts_products_core_helpers.resource    # Helpers core (seleções/payloads)
-│        └─ products_keywords.resource
+│        ├─ carts_products_keywords.resource        # Keywords de integração Carts + Products (entry point BDD)
+│        ├─ carts_products_helpers.resource         # Helpers de integração (passos compostos/reuso)
+│        ├─ carts_products_core_helpers.resource    # Helpers core (utilitários atômicos: seleção/payload/validações)
+│        └─ products_keywords.resource # Mantido monolítico para comparação (sem fatiamento interno)
 │
 ├─ data/                               # Massa de teste e referência
 │  ├─ json/
@@ -146,6 +146,34 @@ Variables   ../../environments/${ENV}.py
 Suite Setup     Setup Suite Padrao
 Suite Teardown  Teardown Suite Padrao
 ```
+
+### Organização interna de keywords (fatiamento por complexidade)
+- Objetivo: manter arquivos e keywords fáceis de ler/testar, reduzir duplicação e atender linting (Robocop LEN03).
+- Princípio: o fatiamento acontece dentro da camada de keywords (não cria camada nova). Services/adapters permanecem inalterados.
+
+- Integração Carts+Products (3 arquivos):
+  - `resources/api/keywords/carts_products_keywords.resource` (entry point BDD):
+    - Guarda apenas as keywords BDD dos casos UC‑CARTPROD‑001..005.
+    - Cada Dado/Quando/Então chama helpers nomeados, mantendo poucos comandos por keyword.
+  - `resources/api/keywords/carts_products_helpers.resource` (helpers de alto nível):
+    - Concentra passos compostos dos fluxos (preparar carrinho, executar buscas, merges, validações de estado, deleção).
+    - Conhece o “contexto de integração” e orquestra utilitários core.
+  - `resources/api/keywords/carts_products_core_helpers.resource` (utilitários atômicos):
+    - Seleção determinística de produtos (por categoria/busca), montagem de payloads, validações de agregados, resolução de cartId, etc.
+    - Pensado para reuso amplo, com acoplamento mínimo ao cenário específico.
+
+- Domínio Carts (1 arquivo de helpers):
+  - `resources/api/keywords/carts_helpers.resource` consolida validações e transformações técnicas usadas em vários testes do domínio.
+  - O volume/heterogeneidade não justificou separar em “core + helpers”; podemos evoluir se a complexidade crescer.
+
+- Domínio Products (baseline monolítico):
+  - `resources/api/keywords/products_keywords.resource` permanece em um único arquivo como referência de comparação.
+  - Útil para avaliar benefícios do fatiamento quando o domínio evoluir.
+
+- Observações:
+  - Mesmo os “core helpers” ainda pertencem ao domínio (conhecem regras/validações do DummyJSON). O nível realmente baixo (sem regra de negócio) continua nos services/adapters.
+  - Helpers não importam `resources/common/logger.resource`; o arquivo principal do domínio já expõe o logger (conforme AGENTS.md).
+  - Preferir sintaxe moderna (Robot ≥7): `IF/ELSE`, `RETURN`, `VAR` e estruturas inline, reduzindo `Create Dictionary`/`Set Test Variable`.
 
 ## Logs Profissionais (rastreamento com [arquivo:Lnn])
 - Biblioteca: `libs/logging/styled_logger.py` com Listener v3 (captura `source`/`lineno`).
