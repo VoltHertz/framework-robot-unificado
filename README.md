@@ -313,3 +313,91 @@ Boas práticas:
 - Somente configuração nos `.py` (sem lógica complexa), sem segredos.
 - Timeouts/retries/URLs padronizados e centralizados.
 - Ajustar valores no ambiente, não nas suítes.
+
+---
+
+## Guia prático consolidado (AGENTS.md em linguagem humana)
+
+Esta seção sintetiza as regras operacionais do repositório de forma prática, para acelerar onboarding e evitar armadilhas comuns.
+
+### Execução correta das suítes
+- Execute sempre a partir do diretório `framework-robot-unificado` para garantir que imports relativos funcionem.
+- Parametrize o ambiente com `-v ENV:<env>` e nas suítes importe `Variables   ../../environments/${ENV}.py`.
+- Use `-d results/api/<dominio>` para organizar artefatos por domínio.
+- Exemplos:
+  - Dry run: `.venv/bin/python -m robot --dryrun -v ENV:dev -i api -d results/api/_dryrun tests`
+  - Products: `.venv/bin/python -m robot -v ENV:dev -d results/api/products tests/api/domains/products/products_suite.robot`
+  - Carts: `.venv/bin/python -m robot -v ENV:dev -d results/api/carts tests/api/domains/carts/carts_suite.robot`
+  - Integração Carts+Products: `.venv/bin/python -m robot -v ENV:dev -d results/api/integration/carts_products tests/api/integration/carts_products_fluxos.robot`
+
+### Imports típicos nas suítes
+```robot
+*** Settings ***
+Resource    ../../resources/common/hooks.resource
+Resource    ../../resources/common/data_provider.resource
+Resource    ../../resources/common/logger.resource
+Resource    ../../resources/api/keywords/<dominio>.keywords.resource
+Variables   ../../environments/${ENV}.py
+Suite Setup     Setup Suite Padrao
+Suite Teardown  Teardown Suite Padrao
+```
+
+### Layering e organização de imports
+- Camadas sem atalhos: adapters → services → keywords → suites.
+- Tests nunca chamam services/adapters direto; keywords não pulam services.
+- Services importam somente o adapter HTTP + `Collections` quando necessário. Nunca `RequestsLibrary` direto.
+- Keywords orquestram regra de negócio e usam utilitários de `resources/common/*`. Só adicione `Library     Collections` se houver uso real.
+- Helpers (`*_helpers.resource`, `_core_helpers.resource`) não importam o logger comum; o arquivo principal do domínio já o expõe.
+
+### Nomenclatura e estilo
+- Suites de domínio em BDD PT‑BR (Dado/Quando/Então) e sem lógica — apenas chamadas a keywords de negócio.
+- Arquivos: prefira `*_fluxos.robot` ou `<dominio>_suite.robot`.
+- IDs de casos: `UC-<DOM>-<SEQ>` (ex.: `UC-CART-001`).
+- Python libs: 4 espaços, `snake_case`, type hints, funções pequenas e testáveis.
+
+### Lint e formatação
+- Robocop: `.venv/bin/robocop resources tests` (v6+ possui subcomando `check`).
+- Robotidy (opcional): `.venv/bin/robotidy resources tests`.
+- Preferências (Robot ≥ 7): use `VAR` em vez de `Set Test Variable`, listas/dicts inline; prefira blocos `IF/ELSE` a `Run Keyword If`; divida keywords longas em helpers.
+
+### Logger estilizado (arquivo:linha)
+- Use `Resource    resources/common/logger.resource` e a keyword `Log Estilizado`. Não hardcode prefixos.
+- O listener (`libs/logging/styled_logger.py`) injeta `[arquivo:Lnn]` automaticamente.
+
+### Data Provider unificado (pluggable)
+- Use as keywords do resource `resources/common/data_provider.resource`:
+  - `Definir Backend De Dados | json|csv|sqlserver`
+  - `Obter Massa De Teste | <dominio> | <cenario>`
+  - `Configurar Diretórios De Dados | <json_dir> | <csv_dir> | <coluna>`
+  - `Definir Conexao SQLServer | <conn_string> | <ativar>` e `Definir Schema SQLServer | <schema>`
+- Variáveis de ambiente suportadas: `DATA_BACKEND`, `DATA_BASE_DIR`, `DATA_JSON_DIR`, `DATA_CSV_DIR`, `DATA_CSV_KEY`, `DATA_SQLSERVER_CONN`, `DATA_SQLSERVER_SCHEMA`.
+- Proibido hardcode de dados em suítes. Combine JSON (negativos/limites) e SQL (dados reais) quando fizer sentido.
+
+### Padrões para novos domínios
+- Crie os quatro artefatos por domínio:
+  - `resources/api/services/<dominio>_service.resource`
+  - `resources/api/keywords/<dominio>_keywords.resource`
+  - `data/json/<dominio>.json`
+  - `tests/api/domains/<dominio>/<dominio>_fluxos.robot`
+- Mantenha logs via `Log Estilizado`, massa via Data Provider e respeite o layering.
+
+### Contratos (JSON Schema)
+- Descontinuado. Não usar `JSONSchemaLibrary` nem criar/atualizar schemas.
+
+### Execução em rede e asserts inclusivos
+- As APIs acessam DummyJSON (internet). Em ambientes restritos, rode apenas suítes que não exigem rede ou simule via mock/local.
+- Regras inclusivas para o fornecedor:
+  - Criação: aceite status `200` ou `201`.
+  - `/carts/user/{id}`: considere `200` (lista vazia) ou `404`.
+
+### Definition of Done (por domínio)
+- Fluxos: positivo (happy‑path), negativos relevantes e limites (ex.: paginação 0/1/alto).
+- Massa: centralizada por cenário (JSON/CSV/SQL), sem depender de “full dump”.
+- Logs: mensagens chave com `Log Estilizado` e referência de UC.
+- Execução: suítes `domains/*` verdes localmente e artefatos em `results/<plataforma>/<dominio>`.
+
+### Troubleshooting comum
+- Keyword `Log Estilizado` não encontrada: importe `resources/common/logger.resource` e confirme Robot 7.x.
+- Massa não encontrada: verifique `DATA_*` e arquivos em `data/json/<dominio>.json` ou `data/csv/<dominio>.csv`.
+- Flakiness/tempo: ajuste timeouts/retries no adapter HTTP; prefira asserts inclusivos (ex.: 200/201).
+- Caminhos/Imports: rode `--dryrun` em `tests` para capturar erros de import rapidamente.
