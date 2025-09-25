@@ -25,7 +25,6 @@ Principais pilares
   - `resources/web` e `resources/mobile`: adapters/pages/screens/keywords específicos dessas plataformas.
 - data:
   - `data/json/<dominio>.json`: massa curada por cenário (determinística para regressão).
-  - `data/csv/`: massa em CSV (cenário por linha; coluna “cenario” como chave).
   - `data/full_api_data/`: dump de referência (não usado diretamente nas suítes).
 - environments: variáveis por ambiente (`dev.py`, `qa.py`, ...), incluindo base URLs e timeouts.
 - libs: utilitários Python — ex.: `libs/data/data_provider.py` (backends de massa) e `libs/logging/styled_logger.py` (logger estilizado).
@@ -35,7 +34,9 @@ Principais pilares
 ### Estrutura de pastas (visualização)
 ```text
 framework-robot-unificado/
-├─ tests/                              # Somente suítes (.robot) com BDD de negócio (sem lógica)
+├─ tests/                              # Somente suítes (.robot); negócio ou utilitários de sanidade
+│  ├─ common/
+│  │  └─ validacao_sql_server.robot    # Sanidade de drivers, envs e conexão SQL Server (SELECT 1)
 │  └─ api/
 │     ├─ domains/                      # Suítes por domínio de API
 │     │  ├─ carts/
@@ -47,7 +48,7 @@ framework-robot-unificado/
 │
 ├─ resources/                          # Camadas reutilizáveis (.resource/.robot)
 │  ├─ common/                          # Transversal às plataformas
-│  │  ├─ data_provider.resource        # Keywords para backends de massa (JSON/CSV/SQL Server)
+│  │  ├─ data_provider.resource        # Keywords para backends de massa (JSON/SQL Server)
 │  │  ├─ hooks.resource                # Suite Setup/Teardown padrão (sessão HTTP, etc.)
 │  │  ├─ logger.resource               # Logger estilizado (prefixo [arquivo:Lnn])
 │  │  ├─ json_utils.resource           # Utilidades de validação/conversão JSON
@@ -127,7 +128,7 @@ framework-robot-unificado/
   - Colocam tags, IDs `UC-<DOM>-<SEQ>` e documentação padronizada para rastreabilidade e filtragem.
 - Dados (Data Provider):
   - Keyword única de consumo de massa (`Obter Massa De Teste`) alimentada por backends plugáveis.
-  - Evita acoplamento a formato/fonte, simplificando a adoção de CSV/SQL sem tocar nas suítes.
+  - Evita acoplamento a formato/fonte, simplificando a adoção do SQL Server sem tocar nas suítes.
 
 ## Layering e Imports (na prática)
 - Camadas sem atalhos: adapters → services → keywords → suites. Tests nunca chamam services/adapters direto; keywords não pulam services.
@@ -185,18 +186,18 @@ Suite Teardown  Teardown Suite Padrao
   - Logue eventos de negócio (parâmetros carregados, chamadas a services, resultados de validação).
   - Use níveis quando fizer sentido (DEBUG para payloads, INFO para milestones, WARN/ERROR para anomalias).
 
-## Dados Plugáveis (Strategy) — JSON, CSV e SQL Server
+## Dados Plugáveis (Strategy) — JSON e SQL Server
 - Biblioteca: `libs/data/data_provider.py` implementa backends:
   - JSON: `data/json/<dominio>.json` com objetos por cenário.
-  - CSV: `data/csv/<dominio>.csv` com coluna-chave `cenario` e parsing leve de números/JSON em células.
-  - SQL Server (exemplo): consulta `[schema].[dominio]` por `cenario` via `pyodbc`.
+  - SQL Server: consulta `[schema].[dominio]` por `cenario` via `pyodbc`.
 - Resource: `resources/common/data_provider.resource` expõe:
   - `Definir Backend De Dados | json|csv|sqlserver`.
   - `Obter Massa De Teste | <dominio> | <cenario>`.
   - `Configurar Diretórios De Dados | <json_dir> | <csv_dir> | <coluna>`.
   - `Definir Conexao SQLServer | <conn_string> | <ativar>` e `Definir Schema SQLServer | <schema>`.
 - Variáveis de ambiente:
-  - `DATA_BACKEND`, `DATA_JSON_DIR`, `DATA_CSV_DIR`, `DATA_CSV_KEY`, `DATA_SQLSERVER_CONN`, `DATA_SQLSERVER_SCHEMA`.
+  - `DATA_BACKEND`, `DATA_BASE_DIR`, `DATA_JSON_DIR`, `DATA_SQLSERVER_CONN`, `DATA_SQLSERVER_SCHEMA`, `DATA_SQLSERVER_TIMEOUT`, `DATA_SQLSERVER_DRIVER`.
+  - Service Principal (quando não usar connection string completa): `AZR_SQL_SERVER_HOST`, `AZR_SQL_SERVER_DB`, `AZR_SQL_SERVER_PORT`, `AZR_SQL_SERVER_CLIENT_ID`, `AZR_SQL_SERVER_CLIENT_SECRET` (ou os aliases `AZR_SDBS_PF_TDNP_T_SP_CLIENT_ID/_SECRET`).
 - Benefício: alterna a estratégia de massa sem refatorar suites/keywords — forte desacoplamento e reuso.
 
 Diretrizes de uso:
@@ -206,10 +207,16 @@ Diretrizes de uso:
 - Combine: JSON como base do payload + campos preenchidos com dados reais vindos do SQL quando fizer sentido.
 - SQL sempre com consultas read‑only e parametrizadas; criação de massa via SP apenas como exceção.
 - Data Provider deve retornar dicionários com chaves estáveis, independente da fonte.
+- Keywords principais:
+  - `Obter Massa De Teste | <dominio> | <cenario>`
+  - `Definir Backend De Dados | json|sqlserver`
+  - `Definir Conexao SQLServer | <conn_string>=None | <ativar=True>` (monta via env quando omitido)
+  - `Definir Schema SQLServer | <schema>`
+  - `Testar Conexao SQLServer` (SELECT 1 — sanidade de credenciais/timeouts)
 
 ## Padrões de Projeto Aplicados (onde e por quê)
 - Service Object: `resources/api/services/*` encapsula endpoints sem regra de negócio.
-- Strategy: Data Provider alterna backends (JSON/CSV/SQL) via env/keyword.
+- Strategy: Data Provider alterna backends (JSON/SQL) via env/keyword.
 - Facade: `resources/common/*` expõe interfaces simples (logger, data, json utils) sobre complexidade interna.
 - Factory (futuro): `data/factories/` para geração de massa sob demanda e IDs artificiais.
 - Page Object Model (Web): `resources/web/pages/*.page.resource` encapsula ações/estados da UI.
@@ -281,6 +288,7 @@ CLI úteis
    - Products (fluxos): `.venv/bin/python -m robot -v ENV:dev -d results/api/products tests/api/domains/products/products_suite.robot`
    - Carts (fluxos): `.venv/bin/python -m robot -v ENV:dev -d results/api/carts tests/api/domains/carts`
    - Filtrar por tags: `-i "api AND products AND regression"`
+   - Sanidade SQL Server: `.venv/bin/python -m robot -d results/common/sql tests/common/validacao_sql_server.robot`
 4) Qualidade de código
    - Lint: `.venv/bin/robocop resources tests`
    - Format (opcional): `.venv/bin/robotidy resources tests`
@@ -320,7 +328,7 @@ results/
 - Adapter: camada mais baixa que conversa com bibliotecas externas (ex.: RequestsLibrary). Gerencia sessão, timeouts, retries.
 - Service: encapsula um endpoint (uma keyword por endpoint). Sem regra de negócio. Retorna resposta crua.
 - Keyword (de negócio): orquestra services, valida regras e prepara dados. É onde ficam as regras do domínio.
-- Data Provider: biblioteca/keywords que buscam massa de teste dos backends (JSON/CSV/SQL).
+- Data Provider: biblioteca/keywords que buscam massa de teste dos backends (JSON/SQL Server).
 - Hooks: setup/teardown padrão da suite (ex.: iniciar/encerrar sessão HTTP) em `resources/common/hooks.resource`.
 - ENV: variável que aponta para `environments/<env>.py` (ex.: `-v ENV:dev`). Centraliza URLs/flags.
 - Logger estilizado: logs padronizados com prefixo automático `[arquivo:Lnn]`.
@@ -400,7 +408,7 @@ Dictionary Should Contain Key   ${resp.json()}    carts
 
 ## Definition of Done (por domínio)
 - Fluxos: positivo (happy‑path), negativos relevantes e limites (ex.: paginação 0/1/alto).
-- Massa: centralizada por cenário (JSON/CSV/SQL), sem depender de dumps completos.
+- Massa: centralizada por cenário (JSON/SQL), sem depender de dumps completos.
 - Logs: mensagens chave com `Log Estilizado` e referência de UC.
 - Execução: suítes `domains/*` verdes localmente e artefatos em `results/<plataforma>/<dominio>`.
 
@@ -432,11 +440,13 @@ Boas práticas:
 - Somente configuração nos `.py` (sem lógica complexa), sem segredos.
 - Timeouts/retries/URLs padronizados e centralizados.
 - Ajustar valores no ambiente, não nas suítes.
+- Registre placeholders para variáveis do SQL Server (host, database, port, client id/secret) e mantenha os valores reais em cofre/CI secrets.
 
 ### Segurança e configuração
 - Nunca commit segredos. Use `environments/secrets.template.yaml` como modelo.
 - Centralize endpoints, timeouts e flags de execução nos arquivos `environments/<env>.py`.
 - Ajuste comportamento via variáveis de ambiente/ENVs; evite alterar suites/keywords para configuração.
+- Para SQL Server, use Service Principal (`AZR_SQL_SERVER_*` ou aliases legados) ou `DATA_SQLSERVER_CONN` em cofre seguro; nunca exponha credenciais no repositório.
 
 ## Troubleshooting Comum
 - Keyword `Log Estilizado` não encontrada: importe `resources/common/logger.resource` e confirme Robot 7.x.
