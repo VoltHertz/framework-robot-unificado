@@ -1,5 +1,0 @@
-# Requisitos opcionais para acesso a banco de dados via ODBC
-# Necessário toolchain C/C++ (gcc/g++) e headers/driver ODBC instalados no sistema.
-# Instale com: .venv/bin/python -m pip install -r requirements-optional-db.txt
-
-pyodbc==5.1.0

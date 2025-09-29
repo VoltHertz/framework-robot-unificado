@@ -1,5 +1,7 @@
 *** Settings ***
+Documentation    Utilitários JSON usados em suites/resources para parse seguro de respostas.
 Library    BuiltIn
+
 
 *** Keywords ***
 # Arquivo: resources/common/json_utils.resource
@@ -8,21 +10,21 @@ Library    BuiltIn
 
 Converter Resposta Em Json
     [Documentation]    Converte o corpo textual de uma resposta HTTP em JSON (dict).
-    ...    
+    ...
     ...    Objetivo: Centralizar o parse JSON de respostas sem duplicar Evaluate nas suites.
     ...    Pré-requisitos: Objeto compatível com RequestsLibrary (atributo `${response.text}`).
     ...    Dados de teste: N/A
-    ...    
+    ...
     ...    Argumentos:
     ...    - ${response}: Response | objeto com `.text` contendo JSON válido.
-    ...    
+    ...
     ...    Retorno: dict | objeto JSON carregado.
     ...    Efeito lateral: Nenhum.
     ...    Exceções: JSONDecodeError (propagada) quando o corpo não for JSON válido.
-    ...    
+    ...
     ...    Exemplo de uso:
     ...    | ${json}= | Converter Resposta Em Json | ${resp} |
     [Arguments]    ${response}
-    ${body}=    Set Variable    ${response.text}
+    VAR    ${body}    ${response.text}
     ${json}=    Evaluate    __import__('json').loads(r'''${body}''')
     RETURN    ${json}

@@ -1,5 +1,7 @@
 *** Settings ***
+Documentation    Logger estilizado para padronizar mensagens com prefixo [arquivo:Lnn].
 Library    ../../libs/logging/styled_logger.py
+
 
 *** Keywords ***
 Prefixo De Log Atual

@@ -29,30 +29,29 @@ Principais pilares
 - environments: variáveis por ambiente (`dev.py`, `qa.py`, ...), incluindo base URLs e timeouts.
 - libs: utilitários Python — ex.: `libs/data/data_provider.py` (backends de massa) e `libs/logging/styled_logger.py` (logger estilizado).
 - results: artefatos por plataforma/domínio (`results/<plataforma>/<dominio>/`), facilitando histórico e coleta em CI.
-- docs, grpc, configs, tools: documentação, contratos gRPC/stubs, arquivos de config e scripts auxiliares.
 
 ### Estrutura de pastas (visualização)
 ```text
 framework-robot-unificado/
-├─ tests/                              # Somente suítes (.robot); negócio ou utilitários de sanidade
+├─ tests/                              # Somente suítes (.robot) com logica BDD, nada de códgio e lógica aqui, apenas negócio.
 │  ├─ common/
 │  │  └─ validacao_sql_server.robot    # Sanidade de drivers, envs e conexão SQL Server (SELECT 1)
-│  └─ api/
-│     ├─ domains/                      # Suítes por domínio de API
-│     │  ├─ carts/
-│     │  │  └─ carts_suite.robot       # Fluxos do domínio Carts (positivos/negativos/limites)
-│     │  └─ products/
+│  └─ api/                             # Todoas as suites de APIs
+│     ├─ domains/                      # Suites separas por dominio
+│     │  ├─ carts/                     # Dominio de uma API
+│     │  │  └─ carts_suite.robot       # Suite de um endpoint do domínio Carts (positivos/negativos/limites)
+│     │  └─ products/                  # Dominio de uma API
 │     │     └─ products_suite.robot    # Fluxos do domínio Products
-│     └─ integration/                  # Suítes de integração entre domínios/serviços
-│        └─ carts_products_fluxos.robot# Integração Carts + Products (UC-CARTPROD-001..005)
+│     └─ integration/                  # Suítes de integração entre domínios/endpoints
+│        └─ carts_products_fluxos.robot             # Integração Carts + Products
 │
-├─ resources/                          # Camadas reutilizáveis (.resource/.robot)
+├─ resources/                          # Keywords reutilizáveis (.resource) por camada
 │  ├─ common/                          # Transversal às plataformas
 │  │  ├─ data_provider.resource        # Keywords para backends de massa (JSON/SQL Server)
 │  │  ├─ hooks.resource                # Suite Setup/Teardown padrão (sessão HTTP, etc.)
 │  │  ├─ logger.resource               # Logger estilizado (prefixo [arquivo:Lnn])
 │  │  ├─ json_utils.resource           # Utilidades de validação/conversão JSON
-│  │  └─ context.resource              # Contexto/variáveis compartilhadas em execução
+│  │  └─ context.resource              # Contexto/variáveis compartilhadas em execução de integraçao
 │  └─ api/
 │     ├─ adapters/                     # Baixo nível: gerenciamento de sessão/timeout/retry
 │     │  └─ http_client.resource       # Adapter HTTP (RequestsLibrary encapsulado)
@@ -68,20 +67,16 @@ framework-robot-unificado/
 │        └─ products_keywords.resource # Mantido monolítico para comparação (sem fatiamento interno)
 │
 ├─ data/                               # Massa de teste e referência
-│  ├─ json/
-│  │  ├─ carts.json
-│  │  ├─ products.json
-│  │  └─ integration_carts_products.json  # Cenários UC-CARTPROD-001..005
-│  └─ full_api_data/
-│     └─ DummyJson/                    # Dump de referência (não usar direto nas suítes)
-│        ├─ carts.json
-│        └─ products.json
+│  └─ json/
+│     ├─ carts.json                    # massa utilizada no Dominio carts
+│     ├─ products.json                 # massa utilizada no Dominio products
+│     └─ integration_carts_products.json            # Massa utilizada no teste integrado
 │
 ├─ environments/                       # Variáveis por ambiente (importadas via Variables)
 │  ├─ dev.py
 │  ├─ uat.py
 │  ├─ _placeholders.py                 # Espaço para valores padrão/dicas (sem segredos)
-│  └─ secrets.template.yaml            # Modelo de segredos (não commitar valores reais)
+│  └─ secrets.template.yaml            # Modelo de segredos (não commitar valores reais) - Para colocar em testes locais
 │
 ├─ libs/                               # Bibliotecas Python auxiliares
 │  ├─ context/
@@ -92,12 +87,11 @@ framework-robot-unificado/
 │     └─ styled_logger.py              # Listener v3: injeta [arquivo:Lnn]
 │
 ├─ docs/                               # Documentação e referências
-│  ├─ feedbackAI/feedback004.md        # Exemplo de estilo explicativo (referência)
 │  ├─ use_cases/                       # Casos de uso por domínio/integração
 │  │  ├─ Carts_Use_Cases.md
 │  │  ├─ Products_Use_Cases.md
 │  │  └─ Carts_Products_Use_Cases.md
-│  └─ libs/*.md, aplicacoes_testadas.md, fireCrawl/*  # Outras referências
+│  └─ libs/*.md, fireCrawl/*           # Outras referências usadas para contexto com IA.
 │
 ├─ results/                            # Artefatos gerados em runtime por domínio/plataforma
 │  └─ api/
@@ -105,12 +99,12 @@ framework-robot-unificado/
 │     ├─ carts/
 │     └─ integration/
 │        └─ carts_products/
+├─ .github/                      # Pipelines                                    
+│  └─ workflows/
 │
 ├─ AGENTS.md                           # Diretrizes operacionais (padrões, camadas, execução)
 ├─ README.md                           # Este guia
-├─ requirements.txt                    # Dependências principais (Robot, Requests, etc.)
-├─ requirements-optional-db.txt        # Opcionais (SQL Server)
-└─ requirements-optional-grpc.txt      # Opcionais (gRPC)
+└─ requirements.txt                    # Dependências principais (Robot, Requests, etc.)
 ```
 
 ## Modelo em Camadas (como os testes se organizam)
@@ -185,6 +179,63 @@ Suite Teardown  Teardown Suite Padrao
 - Nunca hardcode `[arquivo:Lnn]`; o listener injeta automaticamente o contexto correto.
   - Logue eventos de negócio (parâmetros carregados, chamadas a services, resultados de validação).
   - Use níveis quando fizer sentido (DEBUG para payloads, INFO para milestones, WARN/ERROR para anomalias).
+
+## Contexto de Integração (mochila por teste)
+- O que é: um lugar seguro para guardar informações entre os passos Dado/Quando/Então do mesmo teste. Pense como uma “mochila” que o teste carrega.
+- Por que usar: evita ficar passando variáveis entre keywords e impede que dados de um teste “vazem” para outro.
+- Onde fica: `resources/common/context.resource` (usa a biblioteca Python `libs/context/integration_context.py`).
+
+Quando usar
+- Sempre que um passo precisar reutilizar algo obtido em um passo anterior (ex.: `cart_id`, resposta HTTP, parâmetros de paginação, massa carregada).
+- Em keywords de negócio (camada `resources/api/keywords`), mantendo as suítes simples (só BDD).
+
+Como usar (3 comandos)
+- Limpar a mochila (opcional, durante o teste): `Resetar Contexto De Integracao`
+- Guardar: `Definir Contexto De Integracao    CHAVE    VALOR`
+- Pegar: `${valor}=    Obter Contexto De Integracao    CHAVE`
+
+Exemplo mínimo (ajuste o caminho relativo conforme a sua suíte)
+```robot
+*** Settings ***
+Resource    resources/common/context.resource
+
+*** Test Cases ***
+UC-EXEMPLO-001 - Guardar e recuperar valor
+    [Documentation]    Demonstra guardar e depois recuperar um valor no mesmo teste
+    # Guardar algo que será usado depois
+    Definir Contexto De Integracao    CARRINHO_ID    42
+
+    # ... outros passos no meio ...
+
+    # Recuperar mais tarde
+    ${id}=    Obter Contexto De Integracao    CARRINHO_ID
+    Should Be Equal As Integers    ${id}    42
+```
+
+Exemplo típico em keywords de negócio
+```robot
+*** Settings ***
+Resource    resources/common/context.resource
+Resource    resources/api/services/carts_service.resource
+Resource    resources/common/json_utils.resource
+
+*** Keywords ***
+Quando Crio Um Carrinho Basico
+    ${resp}=    Adicionar Novo Carrinho    ${user_id}    ${payload}
+    Definir Contexto De Integracao    RESP_CARRINHO_ATUAL    ${resp}
+
+Entao O Carrinho Deve Estar Consistente
+    ${resp}=    Obter Contexto De Integracao    RESP_CARRINHO_ATUAL
+    Should Be True    ${resp.status_code} in [200, 201]
+    ${json}=    Converter Resposta Em Json    ${resp}
+    Should Contain    ${json}    id
+```
+
+Notas rápidas
+- Escopo por teste: cada teste tem sua própria “mochila”; valores não se misturam entre testes.
+- Erro comum: buscar uma chave que nunca foi guardada. O teste falha com mensagem do tipo “Valor 'X' não registrado no contexto do teste atual”.
+- O reset é opcional: use `Resetar Contexto De Integracao` apenas se precisar “zerar” a mochila durante o próprio teste. Não é necessário entre testes.
+- Boas práticas de nomes: use chaves claras e estáveis como `CARRINHO_ATUAL_ID`, `RESP_LISTAGEM`, `PARAMS_PAGINACAO`.
 
 ## Dados Plugáveis (Strategy) — JSON e SQL Server
 - Biblioteca: `libs/data/data_provider.py` implementa backends:

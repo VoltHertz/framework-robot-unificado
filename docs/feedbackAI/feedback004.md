@@ -4,7 +4,7 @@ Este é um projeto de monorepositório utilizado na automação de testes funcio
 
 
 ## Pilares principais
-Para a manutenabilidade do monorepo será adotado alguns pilares fundamentais: BDD em portugues-br, desenvolvimento de script em camadas com desacoplamento tecnico do negocial, seguindo principio DRY(dont repeat yourself), tags consistentes, documentação padronizada(no formato robot) e associada ao Jira/confluence, massa de dados descoplados provenientes de banco de dados via conexão com SQL server e da .json.
+Para a manutenabilidade do monorepo será adotado alguns pilares fundamentais: BDD em PT‑BR nas suítes (Dado/Quando/Então) com foco no negócio, desenvolvimento de script em camadas com desacoplamento tecnico do negocial, seguindo principio DRY(dont repeat yourself), tags consistentes, documentação padronizada(no formato robot) e associada ao Jira/confluence, massa de dados descoplados provenientes de banco de dados via conexão com SQL server e da .json.
 
 - Dependencias:
     `tests`  ──►  `resources/api/keywords`  ──►  `resources/api/services`  ──►  `resources/api/adapters`
@@ -16,7 +16,7 @@ Para a manutenabilidade do monorepo será adotado alguns pilares fundamentais: B
 
 - Dados desacoplados: Data Provider plugável (JSON/SQL Server).
 
-- Tags consistentes: domínio, api tipo e estado.
+- Tags consistentes: domínio, endpoint, tipo e estado.
 
 - Documentação padrão para teste cases e keywords.
 
@@ -42,102 +42,129 @@ Para a manutenabilidade do monorepo será adotado alguns pilares fundamentais: B
   - Keyword única de consumo de massa (`Obter Massa De Teste`) alimentada por backends plugáveis.
   - Evita acoplamento a formato/fonte, simplificando a adoção de JSON/SQL sem tocar nas suítes.
 
+  ### Organização interna de keywords (fatiamento por complexidade)
+- Objetivo: manter arquivos e keywords fáceis de ler/testar, reduzir duplicação e atender linting (Robocop LEN03).
+- Princípio: o fatiamento acontece dentro da camada de keywords (não cria camada nova). Services/adapters permanecem inalterados.
 
-## QA Monorepo Estrutura de pastas
+- Integração Carts+Products (3 arquivos):
+  - `resources/api/keywords/carts_products_keywords.resource` (entry point BDD):
+    - Guarda apenas as keywords BDD dos casos UC‑CARTPROD‑001..005.
+    - Cada Dado/Quando/Então chama helpers nomeados, mantendo poucos comandos por keyword.
+  - `resources/api/keywords/carts_products_helpers.resource` (helpers de alto nível):
+    - Concentra passos compostos dos fluxos (preparar carrinho, executar buscas, merges, validações de estado, deleção).
+    - Conhece o “contexto de integração” e orquestra utilitários core.
+  - `resources/api/keywords/carts_products_core_helpers.resource` (utilitários atômicos):
+    - Seleção determinística de produtos (por categoria/busca), montagem de payloads, validações de agregados, resolução de cartId, etc.
+    - Pensado para reuso amplo, com acoplamento mínimo ao cenário específico.
+
+- Domínio Carts (1 arquivo de helpers):
+  - `resources/api/keywords/carts_helpers.resource` consolida validações e transformações técnicas usadas em vários testes do domínio.
+  - O volume/heterogeneidade não justificou separar em “core + helpers”; podemos evoluir se a complexidade crescer.
+
+- Domínio Products (baseline monolítico):
+  - `resources/api/keywords/products_keywords.resource` permanece em um único arquivo como referência de comparação.
+  - Útil para avaliar benefícios do fatiamento quando o domínio evoluir.
+
+- Observações:
+  - Mesmo os “core helpers” ainda pertencem ao domínio (conhecem regras/validações do DummyJSON). O nível realmente baixo (sem regra de negócio) continua nos services/adapters.
+  - Helpers não importam `resources/common/logger.resource`; o arquivo principal do domínio já expõe o logger (conforme AGENTS.md).
+  - Preferir sintaxe moderna (Robot ≥7): `IF/ELSE`, `RETURN`, `VAR` e estruturas inline, reduzindo `Create Dictionary`/`Set Test Variable`.
+
+
+## Infra de Pastas - Monorepo
+- tests: apenas suítes (.robot) — sem lógica, somente negocial BDD:
+  - `tests/api/domains/<dominio>/<dominio>_suite.robot`: validação de negócio (Dado/Quando/Então) incluindo boundaries/negativos.
+  - `tests/api/integration/<funcionalidade>_fluxos.robot`: fluxos de integração (Dado/Quando/Então).
+  - Web seguem o mesmo padrão em `tests/web`.
+- resources: camadas reutilizáveis por plataforma:
+  - `resources/api/adapters`: baixo nível (Requests/gRPC/protocolo kafka). Ex.: `http_client.resource` (sessão, base URL, retry, timeouts).
+  - `resources/api/services`: “Service Objects” (uma keyword por endpoint, sem regras/asserções de negócio).
+  - `resources/api/keywords`: orquestração de negócios (combina services, validações funcionais e massa de dados).
+  - `resources/common`: utilidades transversais (hooks de suite, json_utils, data_provider.resource, logger.resource).
+  - `resources/web` e `resources/mobile`: adapters/pages/screens/keywords específicos dessas plataformas.
+- data:
+  - `data/json/<dominio>.json`: massa curada por cenário (determinística para regressão).
+  - `data/full_api_data/`: dump de referência (não usado diretamente nas suítes).
+- environments: variáveis por ambiente (`dev.py`, `qa.py`, ...), incluindo base URLs e timeouts.
+- libs: utilitários Python — ex.: `libs/data/data_provider.py` (backends de massa) e `libs/logging/styled_logger.py` (logger estilizado).
+- results: artefatos por plataforma/domínio (`results/<plataforma>/<dominio>/`), facilitando histórico e coleta em CI.
+
+
+### QA Monorepo Estrutura de pastas
 ```text
-─ tests/                            # Somente suítes (.robot) com logica BDD, nada de códgio e lógica aqui, apenas negócio.
-  ├─ api/                           # Todoas as suites de apis   
-  │  ├─ integration/                # Suites de integração entre apis
-  │  └─ domains/                    # Suites separas por dominio
-  │     ├─ carts/                   # Dominio de uma API
-  │     │  └─ carts_suite.robot  # Exemplo da suite da API client api do dominio carts (car)
-  │     └─ products/                # Dominio de uma API
-  │        └─ products_suite.robot  # Exemplo da suite da API client api do dominio products 
-  └─ web/                           # Pasta com as suites de web ui
-     ├─ integration/                # Futura implementação
-     └─ domains/                    
-     
-─ resources/                        # Keywords reutilizáveis (.resource/.robot) por camada
-  ├─ common/                        # Transversais às plataformas
-  │  ├─ data_provider.resource      # Abstrai origem de dados (JSON/SQL)
-  │  └─ hooks.resource              # Suite/Test Setup/Teardown padrões
-  │
-  ├─ api/
-  │  ├─ adapters/                               # Baixo nível: Requests/gRPC
-  │  │  └─ http_client.resource                 # base url, session, headers, retries
-  │  ├─ services/                               # “Service Objects”: endpoints/métodos, parte bruta da aplicação, chamadas para api sem aplicação negocial
-  │  │  ├─ carts_service.resource               # services para a carts_keywords.resource   
-  │  │  └─ products_service.resource            # services para a products_keywords.resource
-  │  └─ keywords/                               # Regras de negócio compostas
-  │     ├─ carts_keywords.resource              # keywords para a carts+suite.robot
-  │     └─ products_keywords.resource           # keywords para a products_suite.robot
-  │
-  └─ web/
-     ├─ adapters/               # base url, session, headers, retries
-     ├─ pages/                  # POM (1 arquivo por página)
-     ├─ keywords/               # Fluxos de negócio Web (usa pages)
-     └─ locators/               # (Opcional) Se quiser separar seletores
-
-─ data/                         # Dados de teste (origem atual + massa total)
-  ├─ json/                      # Massa curada para execução dos testes (cenários específicos)
-  │  ├─ auth.json               # Massa focada (subset) derivada do full_api_data
-  │  ├─ products.json           # Massa focada (subset) derivada do full_api_data
-  │  └─ ...                     # Próximos domínios (carts, users, etc.)
-  ├─ full_api_data/             # Dump completo da fonte (não usar direto nas suítes)
-  │  └─ DummyJson/
-  │     ├─ products.json
-  │     └─ carts.json
-  └─ factories/                 # Futuro: Factory Pattern p/ geração dinâmica de massa
-
-─ environments/                 # Variáveis por ambiente
-  ├─ dev.py                     
-  ├─ uat.py 
-  ├─ prod.py
-  └─ secrets.template.yaml      # modelo para segredos (não commitar real, para testes locais)
-
-─ libs/                         # Bibliotecas Python custom (keywords dinâmicas, utils)
-  ├─ http/
-  ├─ db/                        # ex: sqlserver_client.py (pyodbc)
-  └─ data/
-     └─ data_provider.py
-
-─ configs/
-  ├─ logging.conf               # se usar logging python em libs 
-  ├─ robot.profile.ini          # perfis de execução (opcional) 
-  └─ robocop.toml               # lint do Robot 
-  ...                           # demais possiveis configs que podem ser usadas em bibliotecas, etc
-
-─ .github/                      # Pipelines                                    
-  └─ workflows/
-
-─ docs/                         # Documentação funcional e técnica
-  ├─ feedback_AI/               # Arquivos com feedbacks para melhoria repassados a Inteligência Artificial afim de melhorar processos ou corrigir erros
-  ├─ fireCrawl/                 # Documentos baixados via firecrawl afim de facilitar o entendimento da IA acerca dos sites usados no código
-  │  └─ dummyjson/              # Documentação sobre as APIs do dummyJson para analise da Inteligência Artificial.
-  ├─ use_cases/                 # Casos de uso por domínio (fonte de verdade das suítes)
-  │  ├─ Auth_Use_Cases.md
-  │  ├─ Products_Use_Cases.md
-  │  ├─ Carts_Use_Cases.md
-  │  └─ ...
-  └─ libs/                      # Referência de bibliotecas atualizadas com direcionamentos sobre como IA deve automatizar de forma atualizada
-     ├─ robotframework.md
-     ├─ robotframework-robocop.md
-     ├─ robotframework-jsonschemalibrary.md
-     ├─ requestslibrary.md
-     ├─ grpc.md / protobuf.md
-     ├─ pyodbc.md
-     └─ python-dotenv.md
-─ results/                      # Artefatos de execução Robot organizados por plataforma/domínio
-  ├─ api/
-  │  ├─ auth/                   # Execuções domínio auth (log.html, report.html, output.xml)
-  │  └─ products/               # Execuções domínio products
-  └─ web
-─ .env.example
-─ requirements.txt              # robotframework, Browser, Requests, Appium, grpcio, pyodbc etc.
-─ pyproject.toml                # (opcional) gerenciar lint/format (robotidy/robocop)
-─ .gitignore 
-─ README.md
-─ AGENTS.md
+framework-robot-unificado/
+├─ tests/                              # Somente suítes (.robot) com logica BDD, nada de códgio e lógica aqui, apenas negócio.
+│  ├─ common/
+│  │  └─ validacao_sql_server.robot    # Sanidade de drivers, envs e conexão SQL Server (SELECT 1)
+│  └─ api/                             # Todoas as suites de APIs
+│     ├─ domains/                      # Suites separas por dominio
+│     │  ├─ carts/                     # Dominio de uma API
+│     │  │  └─ carts_suite.robot       # Suite de um endpoint do domínio Carts (positivos/negativos/limites)
+│     │  └─ products/                  # Dominio de uma API
+│     │     └─ products_suite.robot    # Fluxos do domínio Products
+│     └─ integration/                  # Suítes de integração entre domínios/endpoints
+│        └─ carts_products_fluxos.robot             # Integração Carts + Products
+│
+├─ resources/                          # Keywords reutilizáveis (.resource) por camada
+│  ├─ common/                          # Transversal às plataformas
+│  │  ├─ data_provider.resource        # Keywords para backends de massa (JSON/SQL Server)
+│  │  ├─ hooks.resource                # Suite Setup/Teardown padrão (sessão HTTP, etc.)
+│  │  ├─ logger.resource               # Logger estilizado (prefixo [arquivo:Lnn])
+│  │  ├─ json_utils.resource           # Utilidades de validação/conversão JSON
+│  │  └─ context.resource              # Contexto/variáveis compartilhadas em execução de integraçao
+│  └─ api/
+│     ├─ adapters/                     # Baixo nível: gerenciamento de sessão/timeout/retry
+│     │  └─ http_client.resource       # Adapter HTTP (RequestsLibrary encapsulado)
+│     ├─ services/                     # Service Objects (uma keyword por endpoint)
+│     │  ├─ carts_service.resource
+│     │  └─ products_service.resource
+│     └─ keywords/                     # Orquestração/regra de negócio do domínio
+│        ├─ carts_keywords.resource
+│        ├─ carts_helpers.resource     # Helpers técnicos para Carts
+│        ├─ carts_products_keywords.resource        # Keywords de integração Carts + Products (entry point BDD)
+│        ├─ carts_products_helpers.resource         # Helpers de integração (passos compostos/reuso)
+│        ├─ carts_products_core_helpers.resource    # Helpers core (utilitários atômicos: seleção/payload/validações)
+│        └─ products_keywords.resource # Mantido monolítico para comparação (sem fatiamento interno)
+│
+├─ data/                               # Massa de teste e referência
+│  └─ json/
+│     ├─ carts.json                    # massa utilizada no Dominio carts
+│     ├─ products.json                 # massa utilizada no Dominio products
+│     └─ integration_carts_products.json            # Massa utilizada no teste integrado
+│
+├─ environments/                       # Variáveis por ambiente (importadas via Variables)
+│  ├─ dev.py
+│  ├─ uat.py
+│  ├─ _placeholders.py                 # Espaço para valores padrão/dicas (sem segredos)
+│  └─ secrets.template.yaml            # Modelo de segredos (não commitar valores reais) - Para colocar em testes locais
+│
+├─ libs/                               # Bibliotecas Python auxiliares
+│  ├─ context/
+│  │  └─ integration_context.py        # Contexto para cenários de integração
+│  ├─ data/
+│  │  └─ data_provider.py              # Backends: json/sqlserver
+│  └─ logging/
+│     └─ styled_logger.py              # Listener v3: injeta [arquivo:Lnn]
+│
+├─ docs/                               # Documentação e referências
+│  ├─ use_cases/                       # Casos de uso por domínio/integração
+│  │  ├─ Carts_Use_Cases.md
+│  │  ├─ Products_Use_Cases.md
+│  │  └─ Carts_Products_Use_Cases.md
+│  └─ libs/*.md, fireCrawl/*           # Outras referências usadas para contexto com IA.
+│
+├─ results/                            # Artefatos gerados em runtime por domínio/plataforma
+│  └─ api/
+│     ├─ products/                     # Ex.: log.html, report.html, output.xml
+│     ├─ carts/
+│     └─ integration/
+│        └─ carts_products/
+├─ .github/                      # Pipelines                                    
+│  └─ workflows/
+│
+├─ AGENTS.md                           # Diretrizes operacionais (padrões, camadas, execução)
+├─ README.md                           # Este guia
+└─ requirements.txt                    # Dependências principais (Robot, Requests, etc.)
 ```
 
 - tests: apenas suítes (.robot) — sem lógica, somente negocial BDD:
@@ -155,34 +182,177 @@ Para a manutenabilidade do monorepo será adotado alguns pilares fundamentais: B
 - libs: utilitários Python — ex.: `libs/data/data_provider.py` (backends de massa).
 - results: artefatos por plataforma/domínio (`results/<plataforma>/<dominio>/`), facilitando histórico e coleta em CI.
 
+## Dados Desacoplados - Json e SQL Server 
+
+- Biblioteca: `libs/data/data_provider.py` implementa backends:
+  - JSON: `data/json/<dominio>.json` com objetos por cenário.
+  - SQL Server: consulta `[schema].[dominio]` por `cenario` via `pyodbc`.
+- Resource: `resources/common/data_provider.resource` expõe:
+  - `Definir Backend De Dados | json|csv|sqlserver`.
+  - `Obter Massa De Teste | <dominio> | <cenario>`.
+  - `Configurar Diretórios De Dados | <json_dir> | <csv_dir> | <coluna>`.
+  - `Definir Conexao SQLServer | <conn_string> | <ativar>` e `Definir Schema SQLServer | <schema>`.
+- Variáveis de ambiente:
+  - `DATA_BACKEND`, `DATA_BASE_DIR`, `DATA_JSON_DIR`, `DATA_SQLSERVER_CONN`, `DATA_SQLSERVER_SCHEMA`, `DATA_SQLSERVER_TIMEOUT`, `DATA_SQLSERVER_DRIVER`.
+  - Service Principal (quando não usar connection string completa):
+    - Credenciais (canônicas do pipeline): `AZR_SDBS_PF_TDNP_T_SP_CLIENT_ID`, `AZR_SDBS_PF_TDNP_T_SP_CLIENT_SECRET`.
+    - Alternativas suportadas: `AZR_SQL_SERVER_CLIENT_ID`, `AZR_SQL_SERVER_CLIENT_SECRET`.
+    - Endpoint: `AZR_SQL_SERVER_HOST` (ex.: `azr-sdbs-pf-td-nova-transacional-dev-n.database.windows.net`), `AZR_SQL_SERVER_PORT` (ex.: `1433`), `AZR_SQL_SERVER_DB` (ex.: `azr-sdb-pf-td-nova-transacional-dev-n`).
+- Benefício: alterna a estratégia de massa sem refatorar suites/keywords — forte desacoplamento e reuso.
+
+Diretrizes de uso:
+- Proibido hardcode de dados nas suítes.
+- Use SQL Server para registros reais/pré‑condições e validação final dos efeitos do teste.
+- Use JSON para negativos/limites/payloads sintéticos quando não houver dado real disponível.
+- Combine: JSON como base do payload + campos preenchidos com dados reais vindos do SQL quando fizer sentido.
+- SQL sempre com consultas read‑only e parametrizadas; criação de massa via SP apenas como exceção.
+- Data Provider deve retornar dicionários com chaves estáveis, independente da fonte.
+- Keywords principais:
+  - `Obter Massa De Teste | <dominio> | <cenario>`
+  - `Definir Backend De Dados | json|sqlserver`
+  - `Definir Conexao SQLServer | <conn_string>=None | <ativar=True>` (monta via env quando omitido)
+  - `Definir Schema SQLServer | <schema>`
+  - `Testar Conexao SQLServer` (SELECT 1 — sanidade de credenciais/timeouts)
+
+### Quick start (2 passos) — usar SQL Server
+- Pré‑requisito: defina os envs de conexão (recomendado Service Principal do pipeline):
+  - `DATA_SQLSERVER_CONN` OU `AZR_SQL_SERVER_HOST/DB/PORT` + `AZR_SDBS_PF_TDNP_T_SP_CLIENT_ID` e `AZR_SDBS_PF_TDNP_T_SP_CLIENT_SECRET`.
+  - Alternativamente (suportado): `AZR_SQL_SERVER_CLIENT_ID` e `AZR_SQL_SERVER_CLIENT_SECRET` no lugar dos nomes canônicos acima.
+  - Opcional: `DATA_SQLSERVER_SCHEMA` (se definido, pode pular o Passo 1).
+
+- Passos mínimos dentro da suíte (após importar `resources/common/data_provider.resource`):
+  1) `Definir Schema SQLServer    <schema>`
+  2) `Definir Conexao SQLServer   ${NONE}    True`
+
+- Observações rápidas:
+  - O Passo 2 monta a connection string a partir dos envs (ou usa `DATA_SQLSERVER_CONN`) e já ativa o backend SQL (`ativar=True`).
+  - Se o schema vier de `DATA_SQLSERVER_SCHEMA`, você pode executar apenas: `Definir Conexao SQLServer    ${NONE}    True`.
+
+Opcional (com environments/<env>.py):
+- Defina variáveis no arquivo de ambiente (sem segredos), por exemplo:
+  - `SQL_SERVER_HOST`, `SQL_SERVER_DB`, `SQL_SERVER_PORT=1433`, `SQL_SERVER_SCHEMA=dbo`.
+- No início da suíte, aplique essas variáveis aos envs do processo e ative o backend:
+  - `Aplicar Configuracoes SQLServer Do Ambiente    ${SQL_SERVER_HOST}    ${SQL_SERVER_DB}    ${SQL_SERVER_PORT}    ${SQL_SERVER_SCHEMA}`
+  - `Definir Conexao SQLServer    ${NONE}    True`
+
+### Boas práticas mínimas
+
+* **Proibido hardcode** nas suítes — sempre use `Obter Massa De Teste`.
+* **SQL:** consultas **read-only** e **parametrizadas**; criação de massa via **SP** apenas como **exceção**.
+* **JSON:** um arquivo por **domínio** com **cenários nomeados**; sem dados sensíveis reais.
+* **Padronização:** o Data Provider deve **retornar dicionários com as mesmas chaves**, venham de SQL ou JSON (quem consome não precisa saber a origem).
+* **Segurança:** segredos fora do repositório (use `secrets`/CI).
+
+## Layering e Imports (na prática)
+- Camadas sem atalhos: adapters → services → keywords → suites. Tests nunca chamam services/adapters direto; keywords não pulam services.
+- Services importam apenas o adapter HTTP e `Collections` quando necessário para montar payload/parâmetros. Nunca importam `RequestsLibrary` diretamente.
+- Keywords orquestram regra de negócio e usam utilitários de `resources/common/*`. Só adicione `Library     Collections` se houver uso real.
+- Helpers (`*_helpers.resource`, `_core_helpers.resource`) não importam `resources/common/logger.resource`; o arquivo principal do domínio já expõe o logger.
+
+### Imports típicos nas suítes
+```robot
+*** Settings ***
+Resource    ../../resources/common/hooks.resource
+Resource    ../../resources/common/data_provider.resource
+Resource    ../../resources/common/logger.resource
+Resource    ../../resources/api/keywords/<dominio>_keywords.resource
+Variables   ../../environments/${ENV}.py
+Suite Setup     Setup Suite Padrao
+Suite Teardown  Teardown Suite Padrao
+```
+
+## Contexto de Integração (mochila por teste)
+- O que é: um lugar seguro para guardar informações entre os passos Dado/Quando/Então do mesmo teste. Pense como uma “mochila” que o teste carrega.
+- Por que usar: evita ficar passando variáveis entre keywords e impede que dados de um teste “vazem” para outro.
+- Onde fica: `resources/common/context.resource` (usa a biblioteca Python `libs/context/integration_context.py`).
+
+Quando usar
+- Sempre que um passo precisar reutilizar algo obtido em um passo anterior (ex.: `cart_id`, resposta HTTP, parâmetros de paginação, massa carregada).
+- Em keywords de negócio (camada `resources/api/keywords`), mantendo as suítes simples (só BDD).
+
+Como usar (3 comandos)
+- Limpar a mochila (opcional, durante o teste): `Resetar Contexto De Integracao`
+- Guardar: `Definir Contexto De Integracao    CHAVE    VALOR`
+- Pegar: `${valor}=    Obter Contexto De Integracao    CHAVE`
+
+Exemplo mínimo (ajuste o caminho relativo conforme a sua suíte)
+```robot
+*** Settings ***
+Resource    resources/common/context.resource
+
+*** Test Cases ***
+UC-EXEMPLO-001 - Guardar e recuperar valor
+    [Documentation]    Demonstra guardar e depois recuperar um valor no mesmo teste
+    # Guardar algo que será usado depois
+    Definir Contexto De Integracao    CARRINHO_ID    42
+
+    # ... outros passos no meio ...
+
+    # Recuperar mais tarde
+    ${id}=    Obter Contexto De Integracao    CARRINHO_ID
+    Should Be Equal As Integers    ${id}    42
+```
+
+Exemplo típico em keywords de negócio
+```robot
+*** Settings ***
+Resource    resources/common/context.resource
+Resource    resources/api/services/carts_service.resource
+Resource    resources/common/json_utils.resource
+
+*** Keywords ***
+Quando Crio Um Carrinho Basico
+    ${resp}=    Adicionar Novo Carrinho    ${user_id}    ${payload}
+    Definir Contexto De Integracao    RESP_CARRINHO_ATUAL    ${resp}
+
+Entao O Carrinho Deve Estar Consistente
+    ${resp}=    Obter Contexto De Integracao    RESP_CARRINHO_ATUAL
+    Should Be True    ${resp.status_code} in [200, 201]
+    ${json}=    Converter Resposta Em Json    ${resp}
+    Should Contain    ${json}    id
+```
+
+Notas rápidas
+- Escopo por teste: cada teste tem sua própria “mochila”; valores não se misturam entre testes.
+- Erro comum: buscar uma chave que nunca foi guardada. O teste falha com mensagem do tipo “Valor 'X' não registrado no contexto do teste atual”.
+- O reset é opcional: use `Resetar Contexto De Integracao` apenas se precisar “zerar” a mochila durante o próprio teste. Não é necessário entre testes.
+- Boas práticas de nomes: use chaves claras e estáveis como `CARRINHO_ATUAL_ID`, `RESP_LISTAGEM`, `PARAMS_PAGINACAO`.
 
 ## Tags:
 Todas as tags ficam definidas apenas nos arquivos suites presente na pasta tests/
 
 ### Resumo:
 - Dominio:                products      carts             pagamentos           operacoes     ...
+- Endpoint:               cliente       calculadora              
 -	Tipo:                   positivo      negativo    	    limite               smoke
 -	Estado de exceção:			quarentena		experimental		  bloqueado
 
 ### Tipos
 
-1) Dominio *(uma por suíte)*
-  **Exemplos:** `products`, `carts`, `pagamentos`, `operacoes`, …
+1) Dominio *(uma por suíte, exceto em teste integrados)*
+  **Exemplos:** `products`, `carts`, `pagamentos`, `operacoes`, etc.
   **Uso:** identifica a área de negócio do arquivo `.robot`.
   **Regras:**
   * Sempre **minúsculas**, sem acento;
   * **Declarar em `Test Tags` da suíte** (vale para todos os testes do arquivo).
-  * Exatamente **uma** tag de domínio por suíte.
+  * Exatamente **uma** tag de domínio por suíte, execto em testes integrados.
 ```robot
 *** Settings ***
 Test Tags       carts
 ```
-2) Tipo *(por teste; escolha 1 ou mais conforme o caso)*
+2) Endpoint: Cada pode dominio tem mais de um endpoint
+  **Exemplos:** `cliente`, `monitor`, `registro-liquidacao`, `saldo-analitico`, etc.
+    **Uso:** identifica endepoints filiados ao respectivo dominio.
+    **Regras:**
+  * Sempre **minúsculas**, sem acento, nomes compostos separados por - (hifen);
+  
+3) Tipo *(por teste; escolha 1 ou mais conforme o caso)*
   * **`smoke`**: verificação mínima de saúde (fluxo feliz essencial). Deve ser **rápido e estável**.
-  * **`positivo`**: caminho feliz completo do caso de uso.
+  * **`positivo`**: caminho feliz completo do caso de uso, alternativo.
   * **`negativo`**: validações/erros esperados (ex.: 4xx, regras de negócio).
   * **`limite`**: limites e bordas (tamanhos máximos, valores extremos, paginação no limite, etc.).
-3) Estado de exceção *(opcional; no máximo 1 por teste)*
+
+4) Estado de exceção *(opcional; no máximo 1 por teste)*
 * **`quarentena`**: teste **flaky** (não deve quebrar PRs; rodar fora do gate).
 * **`experimental`**: em implementação (pode falhar; rodar só quando solicitado).
 * **`bloqueado`**: infra/dep indisponível (deve ser **ignorado** no CI).
@@ -190,8 +360,7 @@ Test Tags       carts
 ## Documentação:
 Documentação em todos os *** Test Cases *** e em todo os *** Keywords **
 
-
-### Test Cases
+### Test Cases 
 
 *** Test Cases ***
 [TC_ID] - [Descriptive Name]
@@ -209,49 +378,35 @@ Documentação em todos os *** Test Cases *** e em todo os *** Keywords **
 [Keyword Name]
     [Documentation]    [Breve descricao] 
 	
-Keywords complexas devem adotar os possiveis campos abaixo, **CASO** estes existam:
+Keywords complexas devem adotar os possiveis campos abaixo, **CASO** estes existam, evitar o campo caso não existam:
 *** Keywords ***
 [Keyword Name]
     [Documentation]    [Breve descricao]
     ...    
-    ...    *Argumentos:*
+    ...    *Argumentos:* 
     ...    - ${arg1}: [Descricao e tipo]
     ...    - ${arg2}: [Descricao e tipo]
     ...    ...
     ...
     ...    *Retorno:* [O que é retornado]
-    ...    *Efeito lateral:* [Qualquer efeito parelelo]
+    ...    *Efeito lateral:* [Qualquer efeito parelelo] 
     ...    *Excoes:* [Execoes possiveis]
     ...    
     ...    *Exemplo de uso:*
     ...    | [exemplo] |
 
 
-## Dados Desacoplados
-
-**Regra de ouro:** nenhum dado fica “hardcoded” nas suítes. Toda massa é obtida por **Data Provider** único, que lê de **duas fontes oficiais**:
-
-1. **Azure SQL Server (dados vivos)**
-   Usado para **pré-condições reais** (ex.: cliente com saldo, título ativo) e **validação final** dos testes (confirmar status/efeitos no banco).
-   *Excepcionalmente*, pode gerar massa via **SP/factory** de teste — **somente quando indispensável**.
-
-2. **JSON (massa sintética)**
-   Usado quando o dado **não existe** no ambiente ou para **negativos/limites** (ex.: payload sem campo, valores no limite).
-
-### Quando usar cada fonte
-
-* **Use SQL Server** quando o caso precisa de um **registro real** do domínio ou para **comprovar o efeito** do teste no final.
-* **Use JSON** para **modelar payloads** (negativos, limites, combinações raras) sem depender de estado do ambiente.
-* **Combine** quando fizer sentido: JSON como base do payload + campos preenchidos com dados reais vindos do SQL.
 
 
-### Boas práticas mínimas
-
-* **Proibido hardcode** nas suítes — sempre use `Obter Massa De Teste`.
-* **SQL:** consultas **read-only** e **parametrizadas**; criação de massa via **SP** apenas como **exceção**.
-* **JSON:** um arquivo por **domínio** com **cenários nomeados**; sem dados sensíveis reais.
-* **Padronização:** o Data Provider deve **retornar dicionários com as mesmas chaves**, venham de SQL ou JSON (quem consome não precisa saber a origem).
-* **Segurança:** segredos fora do repositório (use `secrets`/CI).
+## Logs Profissionais (rastreamento com [arquivo:Lnn])
+- Biblioteca: `libs/logging/styled_logger.py` com Listener v3 (captura `source`/`lineno`).
+- Resource: `resources/common/logger.resource` com:
+  - `Log Estilizado    <mensagem>    <NIVEL=INFO>    <curto=True>    <console=False>`.
+  - `Prefixo De Log Atual` para compor mensagens customizadas.
+- Diretrizes:
+- Nunca hardcode `[arquivo:Lnn]`; o listener injeta automaticamente o contexto correto.
+  - Logue eventos de negócio (parâmetros carregados, chamadas a services, resultados de validação).
+  - Use níveis quando fizer sentido (DEBUG para payloads, INFO para milestones, WARN/ERROR para anomalias).
 
 
 ## Environments (configuração por ambiente)
@@ -351,9 +506,69 @@ sqlserver:
   password: "<senha_ro>"
 ```
 
+## Desacoplamento e Manutenibilidade
+- Libs isoladas nos adapters: trocar Requests/Browser/gRPC não impacta services/keywords/suites.
+- Dados independentes do formato: suites consomem uma única keyword, backends mudam por configuração.
+- Hooks comuns: criação/encerramento de sessão e outras responsabilidades de infraestrutura centralizadas.
+
 ### Boas práticas
 
 * **CI sempre define o ambiente** (`-v ENV:uat` / `-v ENV:prod`).
 * **Nada de value “mágico” nas suítes**; toda referência vem de `environments/`.
 * **Segredos nunca no repo**: carregue em runtime via secret manager (ou `secrets.yaml` local, gitignored).
 * **Mudança de timeout/retry**? Ajuste **só aqui** — toda a stack herda.
+
+## Lint e Formatação
+- Robocop: `.venv/bin/robocop resources tests` (v6+ possui subcomando `check`).
+- Preferências (Robot ≥ 7):
+  - Use `VAR` em vez de `Set Test Variable`; prefira listas/dicionários inline a `Create List/Dictionary`.
+  - Prefira blocos `IF/ELSE` a `Run Keyword If`.
+  - Divida keywords longas em helpers internos para legibilidade/manutenção.
+- Adicione `*** Documentation ***` sucinta em resources relevantes.
+
+## Padrões para novos domínios
+- Crie os quatro artefatos por domínio:
+  - `resources/api/services/<dominio>_service.resource` — endpoints brutos (uma keyword por endpoint).
+  - `resources/api/keywords/<dominio>_keywords.resource` — orquestração/regra de negócio.
+  - `data/json/<dominio>.json` — massa por cenário com chave `cenario`.
+  - `tests/api/domains/<dominio>/<dominio>_fluxos.robot` — BDD PT‑BR (sem lógica), chamando apenas keywords de negócio.
+- Respeite sempre o layering; use `Log Estilizado` e Data Provider nas camadas Robot.
+
+## Contribuição e PRs (resumo)
+- Commits: Conventional Commits (`feat`, `fix`, `docs`, `refactor`, etc.) com scopes como `api/<dominio>`, `resources`, `libs`, `docs`, `tests`.
+- PRs: descreva objetivo, evidências (paths em `results/`), variáveis de ambiente tocadas, recursos/keywords atualizados.
+- Checklist mínimo: tests verdes (fluxos e boundaries), keywords documentadas, logs estilizados, Data Provider funcional, Robocop aplicados, comandos de execução com `-v ENV:<env>` quando aplicável.
+
+## Definition of Done (por domínio)
+- Fluxos: positivo (happy‑path), negativos relevantes e limites (ex.: paginação 0/1/alto).
+- Massa: centralizada por cenário (JSON/SQL), sem depender de dumps completos.
+- Logs: mensagens chave com `Log Estilizado` e referência de UC.
+- Execução: suítes `domains/*` verdes localmente e artefatos em `results/<plataforma>/<dominio>`.
+
+## Execução
+1) Ambiente
+   - `python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt`
+2) Sanidade (sempre rodar do diretório `framework-robot-unificado`)
+   - Dry run (parametrizando o ambiente e gerando artefatos dedicados): `.venv/bin/python -m robot --dryrun -v ENV:dev -i api -d results/api/_dryrun tests`
+   - Alternativa (import fixo nas suítes): se a suíte usa `Variables ../../environments/dev.py`, o `-v ENV` é opcional.
+3) Exemplos (com ENV configurado)
+   - Products (fluxos): `.venv/bin/python -m robot -v ENV:dev -d results/api/products tests/api/domains/products/products_suite.robot`
+   - Carts (fluxos): `.venv/bin/python -m robot -v ENV:dev -d results/api/carts tests/api/domains/carts`
+   - Filtrar por tags: `-i "api AND products AND regression"`
+   - Sanidade SQL Server: `.venv/bin/python -m robot -d results/common/sql tests/common/validacao_sql_server.robot`
+4) Qualidade de código
+   - Lint: `.venv/bin/robocop resources tests`
+   - Format (opcional): `.venv/bin/robotidy resources tests`
+
+  ## Passo a passo: do zero ao primeiro teste
+1) Massa: crie (ou ajuste) `data/json/<dominio>.json` incluindo um objeto por cenário com a chave `"cenario"`.
+2) Keywords: verifique/implemente a keyword de negócio em `resources/api/keywords/<dominio>_keywords.resource` orquestrando apenas services do domínio.
+3) Suíte: adicione o caso BDD PT‑BR em `tests/api/domains/<dominio>/<dominio>_fluxos.robot` chamando apenas keywords de negócio.
+4) Imports: na suíte, importe hooks, data/provider, logger e keywords do domínio; use `Suite Setup/Teardown` padrão.
+5) Execução: rode dry run para checar imports; depois execute filtrando por tag/ID e gere artefatos em `results/api/<dominio>`; valide pelo `log.html`.
+
+## Troubleshooting Comum
+- Keyword `Log Estilizado` não encontrada: importe `resources/common/logger.resource` e confirme Robot 7.x.
+- Massa não encontrada: verifique `DATA_*` e arquivos em `data/json/<dominio>.json` ou `data/csv/<dominio>.csv`.
+- Flakiness/tempo: ajuste timeouts/retries no adapter HTTP; prefira asserts inclusivos (ex.: 200/201).
+- Caminhos/Imports: rode `--dryrun` em `tests` para capturar erros de import rapidamente.
