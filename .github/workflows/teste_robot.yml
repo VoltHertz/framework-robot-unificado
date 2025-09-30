@@ -1,49 +1,149 @@
 name: CI integracao-automacao
-run-name: Pipeline piloto em Validação (framework-robot-unificado)
+run-name: Pipeline piloto em Validação
 
-on:
+# Controla quando o workflow será executado
+on:  
+  # Permite executar este workflow manualmente a partir da aba Actions
   workflow_dispatch:
+  # schedule:
+  #   # Executa todos os dias à meia-noite UTC
+  #   - cron: '30 12 * * 1,2,3,4,5' 
 
+# Uma execução de workflow é composta por um ou mais jobs que podem executar sequencialmente ou em paralelo
 jobs:
+  # Este workflow contém um único job chamado "build"
   build:
+    # O tipo de runner no qual o job será executado
     runs-on: [self-hosted, aks]
     permissions: write-all
+    container:
+      credentials:
+        username: ${{ vars.ACR_USERNAME_BACKSTAGE }}
+        password: ${{ secrets.ACR_PASSWORD_BACKSTAGE }}
+      image: ${{ vars.AZURE_CONTAINER_REGISTRY_BACKSTAGE }}/imagembuildb3/robot-alm-sql:latest
+      volumes:
+        - /var/run/docker:/var/run/docker
+      # Variáveis de ambiente que serão usadas em todo o job
     env:
+      DNS_SERVER_NAME: ${{vars.DNS_SERVER_NAME}}
       REPOSITORIO_TESTES: ${{ github.repository }}
       BRANCH_TESTES: ${{ github.ref_name }}
+
+      # Variaveis de execução dos testes
       ARQUIVO_TESTE: tests/common/testes_pipeline.robot
       PASTA_LOG: results/common/pipeline
       ARQUIVO_REQUIREMENTS: requirements.txt
       EMAIL_TO: prestador-bruno.rcandido@b3.com.br, prestador-yuri.herdt@b3.com.br
       EMAIL_FROM: prestador-bruno.rcandido@b3.com.br
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Teste de conectividade com ambiente (Giftcard)
+      # Credenciais Azure Service Principal para conexão com banco de dados
+      AZR_SDBS_PF_TDNP_T_SP_CLIENT_ID: ${{ vars.AZR_SDBS_PF_TDNP_T_SP_CLIENT_ID }}
+      AZR_SDBS_PF_TDNP_T_SP_CLIENT_SECRET: ${{ secrets.AZR_SDBS_PF_TDNP_T_SP_CLIENT_SECRET }}
+
+    # Os steps representam uma sequência de tarefas que serão executadas como parte do job
+    steps:      
+      # Faz checkout do repositório no $GITHUB_WORKSPACE para que o job possa acessá-lo
+      - uses: actions/checkout@v4
+      
+      # Testa conectividade com o ambiente de destino
+      - name: Teste de conectividade com ambiente
         run: |
           echo "=== Testando conectividade com ambiente de destino ==="
           echo "URL de teste: https://td-aks-dev.internalenv.corp/internal-api/giftcards/swagger/index.html"
           curl -k -v --connect-timeout 10 --max-time 30 "https://td-aks-dev.internalenv.corp/internal-api/giftcards/swagger/index.html" || echo "Falha na conexão"
+          echo "=== Teste de conectividade concluído ==="
+      # Instala driver ODBC do Microsoft SQL Server
+      #- name: Install Microsoft ODBC Driver for SQL Server
+       #env:
+         # http_proxy: http://${{ vars.PROXY_HOST }}:${{ vars.PROXY_PORT }}
+         # https_proxy: http://${{ vars.PROXY_HOST }}:${{ vars.PROXY_PORT }}
+      #  run: |
+         
+      #   echo "Instalando ODBC Driver para SQL Server..."
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
+      #    sudo -E apt-get update
+      #    sudo -E apt-get install -y curl gpg lsb-release unixodbc-dev
+      #    sudo -E curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
+      #    echo "deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/ubuntu/22.04/prod jammy main" | sudo tee /etc/apt/sources.list.d/mssql-release.list
+      #    sudo -E apt-get update
+      #    sudo -E ACCEPT_EULA=Y apt-get install -y msodbcsql17
+      #    echo "✅ ODBC Driver instalado com sucesso!"
+      #    odbcinst -j
 
-      - name: Instalar dependências
+      - name: Teste conectividade SQL Server
         run: |
-          python -m pip install -U pip
-          pip install -U -r $ARQUIVO_REQUIREMENTS
-
-      - name: Executar testes Robot Framework (ENV=dev)
+          echo "Testando conectividade com SQL Server..."
+          telnet azr-sdbs-pf-td-nova-transacional-dev-n.database.windows.net 1433 && echo  || echo "Telnet falhou"
+      
+      # Executa os testes automatizados Robot Framework
+      - name: Executa Testes Robot Framework
         id: tests
         run: |
-          python -m robot -v ENV:dev -d $PASTA_LOG $ARQUIVO_TESTE
-          ZIP_NAME="report-results-$(date +%Y%m%d%H%M%S).zip"
+          echo "=== DEBUG PROXY E VARIÁVEIS ==="
+          if [ -n "$AZR_SDBS_PF_TDNP_T_SP_CLIENT_ID" ]; then
+            echo "CLIENT_ID presente: ✅ SIM (${#AZR_SDBS_PF_TDNP_T_SP_CLIENT_ID} chars)"
+          else
+            echo "CLIENT_ID presente: ❌ NÃO"
+          fi
+          
+          
+          echo "=== TESTANDO CONECTIVIDADE AZURE ==="
+          curl -v --connect-timeout 10 https://login.microsoftonline.com/ || echo "❌ Falha ao conectar Azure AD"
+          
+          echo "=== INSTALANDO DEPENDÊNCIAS ==="
+          python -m pip install --proxy=http://${{ vars.PROXY_HOST }}:${{ vars.PROXY_PORT }} -U pip
+          pip install --proxy=http://${{ vars.PROXY_HOST }}:${{ vars.PROXY_PORT }} -U -r $ARQUIVO_REQUIREMENTS
+          
+          echo "=== TESTANDO CONEXÃO SQL ==="
+          echo "📁 Verificando estrutura de diretórios..."
+          ls -la ./libs/data/ || echo "❌ Diretório não encontrado"
+          
+          echo "🐍 Verificando versão do Python..."
+          python --version
+          
+          echo "📦 Verificando se pyodbc está instalado..."
+          python -c "import pyodbc; print('✅ pyodbc importado com sucesso')" || echo "❌ Erro ao importar pyodbc"
+          
+          echo "🔄 Executando dbConnection.py..."
+          cd ./libs/data
+          python dbConnection.py || echo "❌ Erro na execução do dbConnection.py"
+          echo "✅ Retornando ao diretório raiz..."
+          cd .. ; cd ..
+          
+          
+          echo "=== EXECUTANDO TESTES ROBOT ==="
+          python -m robot -d $PASTA_LOG $ARQUIVO_TESTE
+      
+      # Cria um arquivo ZIP dos logs com um nome dinâmico baseado no repositorio
+      - name: Gera report zip com nomenclatura dinâmica
+        id: report_zip
+        run: |
+          # Cria timestamp legível (YYYY-MM-DD_HH-MM-SS)
+          TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+          
+          # Extrai apenas o nome do repositório (sem o owner)
+          REPO_NAME=$(echo "$REPOSITORIO_TESTES" | cut -d'/' -f2)
+          
+          # Cria nome do arquivo zip
+          ZIP_NAME="${REPO_NAME}_${BRANCH_TESTES}_${TIMESTAMP}.zip"
+          
+          # Cria arquivo zip dos logs
           cd $PASTA_LOG && zip -r "../$ZIP_NAME" . && cd ..
+          
+          # Verifica se o arquivo ZIP foi criado com sucesso
+          if [ -f "$ZIP_NAME" ]; then
+            echo "✅ Arquivo ZIP criado com sucesso: $ZIP_NAME"
+            echo "📁 Tamanho do arquivo: $(du -h "$ZIP_NAME" | cut -f1)"
+          else            echo "❌ Erro ao criar arquivo ZIP"
+            exit 1
+          fi
+          
+          # Define outputs para uso em steps seguintes
+          echo "report_path=$PASTA_LOG/log.html" >> $GITHUB_OUTPUT
           echo "zip_path=$PWD/$ZIP_NAME" >> $GITHUB_OUTPUT
           echo "zip_name=$ZIP_NAME" >> $GITHUB_OUTPUT
-
+      
+      # Upload dos resultados de teste para o GitHub actions
       - name: Upload dos resultados
         if: always()
         uses: actions/upload-artifact@v4
@@ -51,35 +151,72 @@ jobs:
           name: report-results
           path: ${{ env.PASTA_LOG }}
           if-no-files-found: ignore
-          retention-days: 5
-
+          retention-days: 5      # Envia email em caso de sucesso dos testes
       - name: Envia Email - Sucesso
         if: success()
         uses: dawidd6/action-send-mail@2cea9617b09d79a095af21254fbcb7ae95903dde
         with:
+          # Configurações do servidor SMTP
           server_address: smtprelay.intraservice.corp
+          # Configurações da mensagem
           subject: "✅ [QA Pipeline] Testes Executados com Sucesso - ${{ env.REPOSITORIO_TESTES }}/${{ env.BRANCH_TESTES }}"
           to: ${{ env.EMAIL_TO }}
           from: ${{ env.EMAIL_FROM }}
-          attachments: ${{ steps.tests.outputs.zip_path }}
+          # Anexa arquivo zip dos logs
+          attachments: ${{ steps.report_zip.outputs.zip_path }}
+          # Corpo do email
           body: |
-            🎉 SUCESSO - Pipeline executado via GitHub Actions
+            🎉 **SUCESSO** - Pipeline executado via GitHub Actions
+            
             ✅ Todos os testes foram executados com sucesso!
-            Repositório: ${{ env.REPOSITORIO_TESTES }} | Branch: ${{ env.BRANCH_TESTES }}
-            Arquivo de Teste: ${{ env.ARQUIVO_TESTE }}
-
+            
+            📋 **Detalhes da Execução:**
+            • Repositório: ${{ env.REPOSITORIO_TESTES }}
+            • Branch: ${{ env.BRANCH_TESTES }}
+            • Arquivo de Teste: ${{ env.ARQUIVO_TESTE }}
+            • Status: ${{ job.status }}
+            • Arquivo ZIP: ${{ steps.report_zip.outputs.zip_name }}
+            
+            🔗 **Link da Execução:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            
+            📎 **Anexos:** Logs completos estão anexados em formato ZIP.
+            
+            ---
+            🤖 Mensagem automática do sistema de CI/CD
+        # Envia email em caso de falha dos testes
       - name: Envia Email - Falha
         if: failure()
         uses: dawidd6/action-send-mail@2cea9617b09d79a095af21254fbcb7ae95903dde
         with:
+          # Configurações do servidor SMTP
           server_address: smtprelay.intraservice.corp
+          # Configurações da mensagem
           subject: "❌ [QA Pipeline] FALHA na Execução dos Testes - ${{ env.REPOSITORIO_TESTES }}/${{ env.BRANCH_TESTES }}"
           to: ${{ env.EMAIL_TO }}
           from: ${{ env.EMAIL_FROM }}
-          attachments: ${{ steps.tests.outputs.zip_path }}
+          # Anexa arquivo zip dos logs
+          attachments: ${{ steps.report_zip.outputs.zip_path }}
+          # Corpo do email
           body: |
-            🚨 FALHA - Pipeline executado via GitHub Actions
+            🚨 **FALHA** - Pipeline executado via GitHub Actions
+            
             ❌ Ocorreu uma falha durante a execução dos testes!
-            Repositório: ${{ env.REPOSITORIO_TESTES }} | Branch: ${{ env.BRANCH_TESTES }}
-            Arquivo de Teste: ${{ env.ARQUIVO_TESTE }}
-
+            
+            📋 **Detalhes da Execução:**
+            • Repositório: ${{ env.REPOSITORIO_TESTES }}
+            • Branch: ${{ env.BRANCH_TESTES }}
+            • Arquivo de Teste: ${{ env.ARQUIVO_TESTE }}
+            • Status: ${{ job.status }}
+            • Arquivo ZIP: ${{ steps.report_zip.outputs.zip_name }}
+            
+            🔗 **Link da Execução:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            
+            📎 **Anexos:** Logs completos para análise estão anexados em formato ZIP.
+            
+            🔍 **Próximos Passos:**
+            1. Verifique os logs anexados para identificar a causa da falha
+            2. Acesse o link da execução para mais detalhes
+            3. Corrija os problemas identificados
+            
+            ---
+            🤖 Mensagem automática do sistema de CI/CD
