@@ -157,6 +157,7 @@ framework-robot-unificado/
 ├─ environments/                       # Variáveis por ambiente (importadas via Variables)
 │  ├─ dev.py
 │  ├─ uat.py
+│  ├─ local.py                        # Execuções locais rápidas (fora do CI/CD)
 │  ├─ _placeholders.py                 # Espaço para valores padrão/dicas (sem segredos)
 │  └─ secrets.template.yaml            # Modelo de segredos (não commitar valores reais) - Para colocar em testes locais
 │
@@ -440,6 +441,7 @@ Variables    ../../environments/${ENV}.py
 ```
 
 No terminal/CI informe o ambiente com `-v ENV:<nome>` (ex.: `-v ENV:uat`).
+Para execução local rápida, utilize `-v ENV:local` (usa `environments/local.py`).
 Se preferir variável de sistema: `ENV=uat robot tests/...` e mantenha o import igual.
 
 ### Regras

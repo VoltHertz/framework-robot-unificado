@@ -11,7 +11,7 @@
 - tests: only suites (.robot) without logic. Ex.: `tests/api/domains/<dominio>/<nome>_fluxos.robot`.
 - resources: reusable layers — `api/adapters`, `api/services`, `api/keywords` e `common/` (hooks, utils, data provider, logger estilizado).
 - data: `json/<dominio>.json` test data and `full_api_data/` references.
-- environments: runtime variables per env (`dev.py`, `uat.py`); secrets template in `secrets.template.yaml`.
+- environments: runtime variables per env (`dev.py`, `uat.py`, `local.py`); secrets template in `secrets.template.yaml`.
 - libs: Python helpers (e.g., `libs/data/data_provider.py`).
 - results: Robot outputs organized by domain/platform.
 - docs, grpc, configs, tools: documentation, proto/stubs, config placeholders, and scripts.
