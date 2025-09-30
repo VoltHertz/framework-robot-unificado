@@ -342,8 +342,8 @@ Test Tags       carts
 ```
 2) Endpoint: Cada pode dominio tem mais de um endpoint
   **Exemplos:** `cliente`, `monitor`, `registro-liquidacao`, `saldo-analitico`, etc.
-    **Uso:** identifica endepoints filiados ao respectivo dominio.
-    **Regras:**
+  **Uso:** identifica endepoints filiados ao respectivo dominio.
+  **Regras:**
   * Sempre **minúsculas**, sem acento, nomes compostos separados por - (hifen);
   
 3) Tipo *(por teste; escolha 1 ou mais conforme o caso)*
@@ -407,6 +407,37 @@ Keywords complexas devem adotar os possiveis campos abaixo, **CASO** estes exist
 - Nunca hardcode `[arquivo:Lnn]`; o listener injeta automaticamente o contexto correto.
   - Logue eventos de negócio (parâmetros carregados, chamadas a services, resultados de validação).
   - Use níveis quando fizer sentido (DEBUG para payloads, INFO para milestones, WARN/ERROR para anomalias).
+
+### Níveis e exemplos de execução
+- Nível global de log (CLI): use `--loglevel` para controlar a verbosidade do run inteiro.
+  - Valores: `TRACE`, `DEBUG`, `INFO` (padrão), `WARN`, `ERROR`.
+  - Diferenciar arquivo vs console: `--loglevel DEBUG:INFO` grava DEBUG no log.html, console exibe só INFO+.
+- Ajuste em runtime (na suíte/teste):
+  - `Set Log Level    DEBUG` (no `Suite Setup` ou quando precisar depurar)
+- Usando o logger estilizado (por mensagem):
+  - `Log Estilizado    Preparando payload...    DEBUG` (mensagem só aparece se o nível global permitir)
+  - `Log Estilizado    Criado carrinho ${id}    INFO    curto=True    console=True` (também no console)
+- Prefixo curto vs completo: o 3º argumento do nosso keyword (`curto=True|False`) controla se aparece apenas o nome do arquivo ou o caminho completo.
+
+Exemplos de execução (CLI)
+- Mais detalhes (DEBUG):
+  - `.venv/bin/python -m robot --loglevel DEBUG -v ENV:dev -d results/api/products tests/api/domains/products/products_suite.robot`
+- Execução enxuta (apenas WARN/ERROR):
+  - `.venv/bin/python -m robot --loglevel WARN -v ENV:dev -d results/api/products tests/api/domains/products/products_suite.robot`
+- Debug detalhado no arquivo, console mais limpo (INFO+):
+  - `.venv/bin/python -m robot --loglevel DEBUG:INFO -v ENV:dev -d results/api/_dryrun tests`
+
+Exemplo em suíte (runtime)
+```robot
+*** Settings ***
+Suite Setup     Set Log Level    DEBUG
+Resource        resources/common/logger.resource
+
+*** Test Cases ***
+UC-LOG-001 - Exemplo de logs
+    Log Estilizado    Preparando payload...    DEBUG
+    Log Estilizado    Criado carrinho ${id}    INFO    curto=True    console=True
+```
 
 
 ## Environments (configuração por ambiente)
