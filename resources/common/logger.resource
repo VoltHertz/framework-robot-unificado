@@ -1,5 +1,10 @@
 *** Settings ***
 Documentation    Logger estilizado para padronizar mensagens com prefixo [arquivo:Lnn].
+...              Como ajustar níveis:
+...              - CLI: use `--loglevel` (TRACE/DEBUG/INFO/WARN/ERROR) ou `DEBUG:INFO` para log detalhado e console enxuto.
+...              - Runtime: `Set Log Level    DEBUG` (em Suite/Test Setup) para depuração pontual.
+...              - Por mensagem: `Log Estilizado    <texto>    DEBUG    curto=True    console=True`.
+...              Consulte README.md → seção "Logs Profissionais" para exemplos completos.
 Library    ../../libs/logging/styled_logger.py
 
 
