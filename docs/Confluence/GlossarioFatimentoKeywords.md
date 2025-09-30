@@ -2,6 +2,18 @@ Aqui vai a seção complementar, pronta para colar na página, explicando — em
 
 ---
 
+## Índice
+- [Glossário prático dos termos](#glossário-prático-dos-termos-para-fatiamento-de-keywords)
+  - [1) Pré-condição (helpers de alto nível)](#1-pré-condição-helpers-de-alto-nível)
+  - [2) Chamada de múltiplos serviços (helpers de alto nível)](#2-chamada-de-múltiplos-serviços-helpers-de-alto-nível)
+  - [3) Validações funcionais (helpers de alto nível)](#3-validações-funcionais-helpers-de-alto-nível)
+  - [4) Montagem de payload (core helpers)](#4-montagem-de-payload-core-helpers)
+  - [5) Seleção determinística (core helpers)](#5-seleção-determinística-core-helpers)
+  - [6) Combinadores de respostas (core helpers)](#6-combinadores-de-respostas-core-helpers)
+- [Onde cada conceito vive, na prática](#onde-cada-conceito-vive-na-prática)
+- [Anti-padrões (evite)](#anti-padrões-evite)
+- [Dica rápida de revisão (PR)](#dica-rápida-de-revisão-pr)
+
 ## Glossário prático dos termos (para fatiamento de *keywords*)
 
 ### 1) **Pré-condição** (helpers de alto nível)

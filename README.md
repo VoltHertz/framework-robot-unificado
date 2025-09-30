@@ -25,6 +25,24 @@ Para a manutenabilidade do monorepo será adotado alguns pilares fundamentais: B
 - Logs padronizados: prefixo automático [arquivo:linha].
 
 
+## Índice
+- [Pilares principais](#pilares-principais)
+- [Modelo em Camadas](#modelo-em-camadas)
+- [Infra de Pastas - Monorepo](#infra-de-pastas---monorepo)
+- [Dados Desacoplados - Json e SQL Server](#dados-desacoplados---json-e-sql-server)
+- [Layering e Imports (na prática)](#layering-e-imports-na-prática)
+- [Contexto de Integração (mochila por teste)](#contexto-de-integração-mochila-por-teste)
+- [Logs Profissionais](#logs-profissionais-rastreamento-com-arquivo-lnn)
+- [Environments (configuração por ambiente)](#environments-configuração-por-ambiente)
+- [Desacoplamento e Manutenibilidade](#desacoplamento-e-manutenibilidade)
+- [Lint e Formatação](#lint-e-formatação)
+- [Padrões para novos domínios](#padrões-para-novos-domínios)
+- [Contribuição e PRs](#contribuição-e-prs-resumo)
+- [Definition of Done](#definition-of-done-por-domínio)
+- [Execução](#execução)
+- [Troubleshooting Comum](#troubleshooting-comum)
+
+
 ## Modelo em Camadas
 - Adapters (baixo nível):
   - Isolam bibliotecas (RequestsLibrary/gRPC). Definem sessões, políticas de timeout/retry, headers e logs básicos.
