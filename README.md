@@ -238,6 +238,53 @@ Suite Setup     Setup Suite Padrao
 Suite Teardown  Teardown Suite Padrao
 ```
 
+### Hooks por domínio (DummyJSON e Giftcard)
+- Objetivo: abrir apenas as sessões HTTP necessárias para a suíte, com base nas URLs do ambiente.
+- Hooks disponíveis em `resources/common/hooks.resource`:
+  - `Setup Suite Padrao` / `Teardown Suite Padrao` (DummyJSON)
+  - `Setup Suite Giftcard` / `Teardown Suite Giftcard`
+- Como funciona a resolução de URL:
+  - DummyJSON: usa `BASE_URL_API_DUMMYJSON` (em `environments/<env>.py`).
+  - Giftcard: usa `BASE_URL_API_GIFTCARD`; se não definido, faz fallback para `API_BASE_URL`.
+- Como usar na suíte (exemplos):
+  - DummyJSON
+    ```robot
+    *** Settings ***
+    Resource      ../../resources/common/hooks.resource
+    Variables     ../../environments/${ENV}.py
+    Suite Setup   Setup Suite Padrao
+    Suite Teardown    Teardown Suite Padrao
+    ```
+  - Giftcard
+    ```robot
+    *** Settings ***
+    Resource      ../../resources/common/hooks.resource
+    Variables     ../../environments/${ENV}.py
+    Suite Setup   Setup Suite Giftcard
+    Suite Teardown    Teardown Suite Giftcard
+    ```
+
+### Múltiplas APIs (URLs por domínio)
+- Defina uma variável por domínio no arquivo de ambiente (evite `BASE_URL_API` genérico):
+  - HTTP: `BASE_URL_API_<DOMINIO>` (ex.: `BASE_URL_API_DUMMYJSON`, `BASE_URL_API_GIFTCARD`, `BASE_URL_API_PAGAMENTOS`).
+  - gRPC (opcional): `GRPC_HOST_<DOMINIO>` (ex.: `GRPC_HOST_PAGAMENTOS`).
+- Exemplo (`environments/local.py`):
+  ```python
+  BASE_URL_API_DUMMYJSON = "https://dummyjson.com"
+  BASE_URL_API_GIFTCARD = "https://td-aks-dev.internalenv.corp/internal-api/"
+  # ou mantenha somente API_BASE_URL para Giftcard como fallback
+  API_BASE_URL = "https://td-aks-dev.internalenv.corp/internal-api/"
+  ```
+
+### Adapter HTTP (sessão genérica por alias)
+- `resources/api/adapters/http_client.resource` expõe:
+  - `Criar Sessao HTTP | alias | base_url | verify=True` (genérico)
+  - `Iniciar Sessao API DummyJSON` e `Iniciar Sessao API Giftcard` (wrappers que resolvem a URL do domínio e chamam a genérica)
+- Boas práticas:
+  - Cada domínio tem um alias fixo (ex.: `DUMMYJSON`, `GIFTCARD`).
+  - Services de um domínio usam apenas seu alias. Não misture aliases entre domínios.
+  - Em suítes de integração que precisarem de mais de uma sessão, chame os `Setup` específicos ou inicie a segunda sessão explicitamente no início do teste.
+
 ## Contexto de Integração (mochila por teste)
 - O que é: um lugar seguro para guardar informações entre os passos Dado/Quando/Então do mesmo teste. Pense como uma “mochila” que o teste carrega.
 - Por que usar: evita ficar passando variáveis entre keywords e impede que dados de um teste “vazem” para outro.

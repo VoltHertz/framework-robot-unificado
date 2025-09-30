@@ -143,6 +143,19 @@ Suite Teardown  Teardown Suite Padrao
 ## Security & Configuration Tips
 - Não commit secrets; use `environments/secrets.template.yaml`. Configure endpoints e flags (ex.: `BASE_URL_API_DUMMYJSON`, `BROWSER_HEADLESS`) em `environments/<env>.py` e selecione via `-v ENV:<env>`.
 
+### URLs e sessões por domínio
+- Convenção de variáveis por domínio em `environments/<env>.py`:
+  - HTTP: `BASE_URL_API_<DOMINIO>` (ex.: `BASE_URL_API_DUMMYJSON`, `BASE_URL_API_GIFTCARD`).
+  - gRPC (opcional): `GRPC_HOST_<DOMINIO>`.
+- Adapter HTTP (`resources/api/adapters/http_client.resource`):
+  - `Criar Sessao HTTP | alias | base_url | verify=True` (genérico)
+  - Wrappers por domínio: `Iniciar Sessao API DummyJSON`, `Iniciar Sessao API Giftcard` (resolvem a URL e chamam a genérica). 
+  - Alias por domínio (ex.: `DUMMYJSON`, `GIFTCARD`): services do domínio devem usar apenas seu alias.
+- Hooks (`resources/common/hooks.resource`):
+  - DummyJSON: `Setup Suite Padrao` / `Teardown Suite Padrao` (usa `BASE_URL_API_DUMMYJSON`).
+  - Giftcard: `Setup Suite Giftcard` / `Teardown Suite Giftcard` (usa `BASE_URL_API_GIFTCARD` ou fallback `API_BASE_URL`).
+- Suítes de integração: podem chamar mais de um `Setup` específico ou iniciar a sessão adicional explicitamente antes do teste.
+
 ### Múltiplas APIs (URLs por domínio/ambiente)
 - Para cada domínio de API defina sua própria URL por ambiente em `environments/<env>.py`.
 - Convenção de nomes:
