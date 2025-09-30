@@ -245,7 +245,7 @@ Suite Teardown  Teardown Suite Padrao
   - `Setup Suite Giftcard` / `Teardown Suite Giftcard`
 - Como funciona a resolução de URL:
   - DummyJSON: usa `BASE_URL_API_DUMMYJSON` (em `environments/<env>.py`).
-  - Giftcard: usa `BASE_URL_API_GIFTCARD`; se não definido, faz fallback para `API_BASE_URL`.
+  - Giftcard: usa `BASE_URL_API_GIFTCARD`.
 - Como usar na suíte (exemplos):
   - DummyJSON
     ```robot
@@ -272,8 +272,6 @@ Suite Teardown  Teardown Suite Padrao
   ```python
   BASE_URL_API_DUMMYJSON = "https://dummyjson.com"
   BASE_URL_API_GIFTCARD = "https://td-aks-dev.internalenv.corp/internal-api/"
-  # ou mantenha somente API_BASE_URL para Giftcard como fallback
-  API_BASE_URL = "https://td-aks-dev.internalenv.corp/internal-api/"
   ```
 
 ### Adapter HTTP (sessão genérica por alias)

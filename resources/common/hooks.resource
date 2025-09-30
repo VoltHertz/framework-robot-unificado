@@ -47,24 +47,16 @@ Garantir Variaveis DummyJSON
     RETURN    ${base_url}
 
 Garantir Variaveis Giftcard
-    [Documentation]    Garante que as variáveis da API Giftcard estejam carregadas (preferência específica, depois genérica).
+    [Documentation]    Garante que as variáveis da API Giftcard estejam carregadas.
     ...    *Retorno:* str | base URL resolvida.
-    ${gift_url}=    Get Variable Value    ${BASE_URL_API_GIFTCARD}    ${None}
-    ${fallback}=     Get Variable Value    ${API_BASE_URL}            ${None}
-    ${base_url}=     Set Variable    ${gift_url}
+    ${base_url}=    Get Variable Value    ${BASE_URL_API_GIFTCARD}    ${None}
     IF    '${base_url}'=='${None}'
         ${env}=    Get Variable Value    ${ENV}    dev
         VAR    ${env_path}    ${EXECDIR}/environments/${env}.py
         Import Variables    ${env_path}
-        ${gift_url}=    Get Variable Value    ${BASE_URL_API_GIFTCARD}    ${None}
-        ${fallback}=     Get Variable Value    ${API_BASE_URL}            ${None}
-        IF    '${gift_url}'!='${None}'
-            ${base_url}=    Set Variable    ${gift_url}
-        ELSE
-            ${base_url}=    Set Variable    ${fallback}
-        END
+        ${base_url}=    Get Variable Value    ${BASE_URL_API_GIFTCARD}    ${None}
         IF    '${base_url}'=='${None}'
-            Fail    BASE_URL_API_GIFTCARD/API_BASE_URL não definida mesmo após importar environments/${env}.py
+            Fail    BASE_URL_API_GIFTCARD não definida mesmo após importar environments/${env}.py
         END
     END
     RETURN    ${base_url}

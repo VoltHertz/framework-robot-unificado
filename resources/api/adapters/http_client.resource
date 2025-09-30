@@ -47,19 +47,13 @@ Resolver Base Url Giftcard
     [Documentation]    Resolve base URL da API Giftcard com fallback ao arquivo de ambiente (`API_BASE_URL`).
     [Arguments]    ${base_url}
     ${resolved_gift}=    Get Variable Value    ${BASE_URL_API_GIFTCARD}    ${None}
-    ${resolved_base}=    Get Variable Value    ${API_BASE_URL}    ${None}
     IF    '${base_url}'!='${None}'
         VAR    ${base_final}    ${base_url}
     ELSE
-        # Preferência: variável específica do domínio, depois fallback genérico
-        IF    '${resolved_gift}'!='${None}'
-            VAR    ${base_final}    ${resolved_gift}
-        ELSE
-            VAR    ${base_final}    ${resolved_base}
-        END
+        VAR    ${base_final}    ${resolved_gift}
     END
     IF    '${base_final}'=='${None}'
-        Fail    BASE_URL_API_GIFTCARD/API_BASE_URL não definida. Importe environments/${ENV}.py ou informe ${base_url}.
+        Fail    BASE_URL_API_GIFTCARD não definida. Importe environments/${ENV}.py ou informe ${base_url}.
     END
     RETURN    ${base_final}
 

@@ -153,7 +153,7 @@ Suite Teardown  Teardown Suite Padrao
   - Alias por domínio (ex.: `DUMMYJSON`, `GIFTCARD`): services do domínio devem usar apenas seu alias.
 - Hooks (`resources/common/hooks.resource`):
   - DummyJSON: `Setup Suite Padrao` / `Teardown Suite Padrao` (usa `BASE_URL_API_DUMMYJSON`).
-  - Giftcard: `Setup Suite Giftcard` / `Teardown Suite Giftcard` (usa `BASE_URL_API_GIFTCARD` ou fallback `API_BASE_URL`).
+  - Giftcard: `Setup Suite Giftcard` / `Teardown Suite Giftcard` (usa `BASE_URL_API_GIFTCARD`).
 - Suítes de integração: podem chamar mais de um `Setup` específico ou iniciar a sessão adicional explicitamente antes do teste.
 
 ### Múltiplas APIs (URLs por domínio/ambiente)
