@@ -1,8 +1,6 @@
-BASE_URL_API = "https://api-uat.example"  # Placeholder legado
 BASE_URL_API_DUMMYJSON = "https://dummyjson.com"  # Usado pelos testes de DummyJSON
 GRPC_HOST = "grpc-uat.example"
 BROWSER_HEADLESS = True
-DATA_BACKEND = "json"
 
 # HTTP adapter defaults (timeouts/retries)
 # Timeout padrão (segundos) para requests HTTP

@@ -22,7 +22,6 @@ HTTP_MAX_RETRIES = None
 HTTP_RETRY_BACKOFF = None
 
 # Data Provider (JSON)
-DATA_BACKEND = None
 DATA_BASE_DIR = None
 DATA_JSON_DIR = None
 

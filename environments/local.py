@@ -8,7 +8,6 @@ Observações:
 """
 
 # URLs base
-BASE_URL_API = "https://api-dev.example"  # Placeholder legado
 BASE_URL_API_DUMMYJSON = "https://dummyjson.com"  # Usado pelos testes de DummyJSON
 BASE_URL_API_GIFTCARD = "https://td-aks-dev.internalenv.corp/internal-api/"  # URL específica do domínio Giftcard
 
@@ -18,8 +17,6 @@ GRPC_HOST = "grpc-dev.example"
 # Execução Web/UI (quando aplicável)
 BROWSER_HEADLESS = True
 
-# Data Provider
-DATA_BACKEND = "json"
 
 # HTTP adapter defaults (timeouts/retries)
 # Timeout padrão (segundos) para requests HTTP

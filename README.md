@@ -211,7 +211,7 @@ framework-robot-unificado/
 - Resource: `resources/common/data_provider.resource` expõe:
   - `Obter Massa De Teste | <dominio> | <cenario>`
 - Variáveis de ambiente suportadas:
-  - `DATA_BACKEND` (default `json`), `DATA_BASE_DIR`, `DATA_JSON_DIR`.
+  - `DATA_BASE_DIR`, `DATA_JSON_DIR`.
 
 Boas práticas mínimas
 
@@ -522,14 +522,14 @@ Boas práticas
 
 * **APIs/Web**
 
-  * `BASE_URL_API` – URL base das APIs do domínio.
+  * `BASE_URL_API_<DOMINIO>` – URL base da API do domínio (ex.: `BASE_URL_API_DUMMYJSON`).
   * `BASE_URL_WEB` – URL base da Web UI (se aplicável).
   * `HTTP_TIMEOUT_S` – timeout padrão (ex.: `30`).
   * `HTTP_RETRY_MAX` – tentativas (ex.: `2`).
   * `HTTP_RETRY_BACKOFF_MS` – backoff base (ex.: `200`).
 * **Dados**
 
-  * `DATA_BACKEND` – `"json"`.
+  * `DATA_BASE_DIR`, `DATA_JSON_DIR` (opcionais)
 * **Execução Web (quando houver)**
 
   * `BROWSER` (ex.: `"chromium"`), `BROWSER_HEADLESS` (`True/False`)
@@ -546,14 +546,12 @@ Boas práticas
 **`environments/uat.py`**
 
 ```python
-BASE_URL_API = "https://api-uat.seudominio.com"
+BASE_URL_API_DUMMYJSON = "https://dummyjson.com"
 BASE_URL_WEB = "https://web-uat.seudominio.com"
 
 HTTP_TIMEOUT_S = 45
 HTTP_RETRY_MAX = 2
 HTTP_RETRY_BACKOFF_MS = 300
-
-DATA_BACKEND = "json"
 
 BROWSER = "chromium"
 BROWSER_HEADLESS = True

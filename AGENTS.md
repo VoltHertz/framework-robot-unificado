@@ -170,7 +170,7 @@ Suite Teardown  Teardown Suite Padrao
 - Keywords principais:
   - `Obter Massa De Teste | <dominio> | <cenario>` — retorna dicionário do cenário a partir de `data/json/<dominio>.json`.
 - Variáveis de ambiente suportadas:
-  - `DATA_BACKEND` (default `json`), `DATA_BASE_DIR`, `DATA_JSON_DIR`.
+  - `DATA_BASE_DIR`, `DATA_JSON_DIR`.
 - Convenções:
   - JSON: arquivo por domínio (`data/json/<dominio>.json`) com cenários nomeados.
 - Massa “full”: `data/full_api_data/*` guarda referência completa da fonte; não usar diretamente nas suites — derive subconjuntos para `data/json`.
