@@ -17,5 +17,5 @@ applyTo: "**"
 - Leia o arquivo .github/instructions/project.instructions.md para entender as instruções específicas do projeto.
 - Sempre mantenha a documentação .github/instructions/project.instructions.md atualizada com as últimas atividades que você fez no projeto.
 - Sempre coloque o nome do arquivo e o número da linha na mensagem de log enviadas para console, afim de que seja facil identificar a origem do log.
-- Cada ação ou sub-ação que você for praticar no projeto deve ser informada primeiramente e preferencialmente em 1 linha ou 2 linhas para o usuário, mas se precisar mais no máximo 5. Para que ele consiga acompanhar no que você está trabalhando.
+- Cada ação ou sub-ação que você for praticar no projeto deve ser informado primeiro e de forma resumida. Para que ele consiga acompanhar no que você está trabalhando.
 - Confie completamente no /github/instructions/project.instructions.md

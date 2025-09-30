@@ -304,8 +304,8 @@ Opcional (com environments/<env>.py):
 
 ## Tags — Taxonomia e Utilidade
 Resumo (feedback004)
-- Domínio (1 por suíte, obrigatório): `products`, `carts`, `pagamentos`, `operacoes`, ...
-- Plataforma (opcional, quando fizer sentido): `api`, `web`, `mobile`.
+- Domínio (1 por suíte, obrigatório): `products`, `carts`, `pagamentos`, `operacoes`, etc.
+- Endpoint (preferencialmente 1 por suite): `cliente`, `monitor`, `registro-liquidacao`, `saldo-analitico`, etc.
 - Tipos (por teste; 1 ou mais): `smoke`, `positivo`, `negativo`, `limite`.
 - Estado de exceção (por teste; no máximo 1): `quarentena`, `experimental`, `bloqueado`.
 
@@ -461,7 +461,6 @@ Dictionary Should Contain Key   ${resp.json()}    carts
 
 ## Lint e Formatação
 - Robocop: `.venv/bin/robocop resources tests` (v6+ possui subcomando `check`).
-- Robotidy (opcional): `.venv/bin/robotidy resources tests`.
 - Preferências (Robot ≥ 7):
   - Use `VAR` em vez de `Set Test Variable`; prefira listas/dicionários inline a `Create List/Dictionary`.
   - Prefira blocos `IF/ELSE` a `Run Keyword If`.
@@ -479,7 +478,7 @@ Dictionary Should Contain Key   ${resp.json()}    carts
 ## Contribuição e PRs (resumo)
 - Commits: Conventional Commits (`feat`, `fix`, `docs`, `refactor`, etc.) com scopes como `api/<dominio>`, `resources`, `libs`, `docs`, `tests`.
 - PRs: descreva objetivo, evidências (paths em `results/`), variáveis de ambiente tocadas, recursos/keywords atualizados.
-- Checklist mínimo: tests verdes (fluxos e boundaries), keywords documentadas (feedback003), logs estilizados, Data Provider funcional, Robocop/Robotidy aplicados, comandos de execução com `-v ENV:<env>` quando aplicável.
+- Checklist mínimo: tests verdes (fluxos e boundaries), keywords documentadas, logs estilizados, Data Provider funcional, Robocop aplicados, comandos de execução com `-v ENV:<env>` quando aplicável.
 
 ## Definition of Done (por domínio)
 - Fluxos: positivo (happy‑path), negativos relevantes e limites (ex.: paginação 0/1/alto).

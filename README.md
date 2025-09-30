@@ -188,9 +188,9 @@ framework-robot-unificado/
   - JSON: `data/json/<dominio>.json` com objetos por cenário.
   - SQL Server: consulta `[schema].[dominio]` por `cenario` via `pyodbc`.
 - Resource: `resources/common/data_provider.resource` expõe:
-  - `Definir Backend De Dados | json|csv|sqlserver`.
+  - `Definir Backend De Dados | json|sqlserver`.
   - `Obter Massa De Teste | <dominio> | <cenario>`.
-  - `Configurar Diretórios De Dados | <json_dir> | <csv_dir> | <coluna>`.
+  - `Configurar Diretórios De Dados | <json_dir> | <coluna>`.
   - `Definir Conexao SQLServer | <conn_string> | <ativar>` e `Definir Schema SQLServer | <schema>`.
 - Variáveis de ambiente:
   - `DATA_BACKEND`, `DATA_BASE_DIR`, `DATA_JSON_DIR`, `DATA_SQLSERVER_CONN`, `DATA_SQLSERVER_SCHEMA`, `DATA_SQLSERVER_TIMEOUT`, `DATA_SQLSERVER_DRIVER`.
@@ -340,9 +340,9 @@ Todas as tags ficam definidas apenas nos arquivos suites presente na pasta tests
 *** Settings ***
 Test Tags       carts
 ```
-2) Endpoint: Cada pode dominio tem mais de um endpoint
+2) Aplicação: Cada pode dominio pode ter mais de uma API:
   **Exemplos:** `cliente`, `monitor`, `registro-liquidacao`, `saldo-analitico`, etc.
-  **Uso:** identifica endepoints filiados ao respectivo dominio.
+  **Uso:** identifica APIs filiados ao respectivo dominio.
   **Regras:**
   * Sempre **minúsculas**, sem acento, nomes compostos separados por - (hifen);
   
@@ -600,6 +600,6 @@ sqlserver:
 
 ## Troubleshooting Comum
 - Keyword `Log Estilizado` não encontrada: importe `resources/common/logger.resource` e confirme Robot 7.x.
-- Massa não encontrada: verifique `DATA_*` e arquivos em `data/json/<dominio>.json` ou `data/csv/<dominio>.csv`.
+- Massa não encontrada: verifique `DATA_*` e arquivos em `data/json/<dominio>.json` ou `data/<dominio>.csv`.
 - Flakiness/tempo: ajuste timeouts/retries no adapter HTTP; prefira asserts inclusivos (ex.: 200/201).
 - Caminhos/Imports: rode `--dryrun` em `tests` para capturar erros de import rapidamente.
