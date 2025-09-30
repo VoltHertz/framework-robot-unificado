@@ -12,7 +12,7 @@ python-dotenv==1.0.1                        # Env loader
 requests==2.32.3                            # Underlying HTTP client
 robotframework-jsonschemalibrary==1.0       # Validação de respostas via JSON Schema
 robotframework-robocop==6.6.1               # Análise estática de código
+pyodbc==5.2.0                               # ODBC database connector
 
 # gRPC toolchain (opcional): mover para arquivo separado para evitar falhas de build
 # Instale quando precisar testar gRPC e houver toolchain C++ no SO (gcc/g++)
-
