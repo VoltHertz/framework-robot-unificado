@@ -283,6 +283,29 @@ Suite Teardown  Teardown Suite Padrao
   - Services de um domínio usam apenas seu alias. Não misture aliases entre domínios.
   - Em suítes de integração que precisarem de mais de uma sessão, chame os `Setup` específicos ou inicie a segunda sessão explicitamente no início do teste.
 
+Como escolher entre genérica e wrapper
+- Genérica (rápida): quando você só precisa abrir uma sessão para uma API nova sem criar toda a estrutura de domínio ainda.
+  - Requisitos: defina `BASE_URL_API_<DOMINIO>` no `environments/<env>.py`.
+  - Uso direto na suíte:
+    ```robot
+    *** Settings ***
+    Resource    ../../resources/api/adapters/http_client.resource
+    Variables   ../../environments/${ENV}.py
+
+    *** Test Cases ***
+    Abrir Sessao E Listar Algo
+        Criar Sessao HTTP    NOVO    ${BASE_URL_API_NOVO}
+        ${resp}=    GET On Session    NOVO    /health
+        Should Be Equal As Integers    ${resp.status_code}    200
+    ```
+
+- Wrapper por domínio (recomendado): quando o domínio vai evoluir (hooks próprios, headers/autenticação, logs específicos).
+  - Passos:
+    1) Criar wrapper `Iniciar Sessao API <Dominio>` que resolve `BASE_URL_API_<DOMINIO>` e chama `Criar Sessao HTTP`.
+    2) Criar hooks `Setup Suite <Dominio>`/`Teardown Suite <Dominio>` para a suíte do domínio.
+    3) Services do domínio usam alias fixo (ex.: `NOVO`).
+  - Benefícios: URL resolvida por convenção, alias padronizado e ponto único para plugar autenticação/políticas no futuro.
+
 ## Contexto de Integração (mochila por teste)
 - O que é: um lugar seguro para guardar informações entre os passos Dado/Quando/Então do mesmo teste. Pense como uma “mochila” que o teste carrega.
 - Por que usar: evita ficar passando variáveis entre keywords e impede que dados de um teste “vazem” para outro.

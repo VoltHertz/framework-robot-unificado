@@ -156,6 +156,17 @@ Suite Teardown  Teardown Suite Padrao
   - Giftcard: `Setup Suite Giftcard` / `Teardown Suite Giftcard` (usa `BASE_URL_API_GIFTCARD`).
 - Suítes de integração: podem chamar mais de um `Setup` específico ou iniciar a sessão adicional explicitamente antes do teste.
 
+Padrão de uso — Genérica vs Wrapper
+- Caminho genérico (rápido):
+  - Use quando precisar abrir sessão ad-hoc ou validar uma API nova sem toda a estrutura.
+  - Pré-requisito: `BASE_URL_API_<DOMINIO>` definido no ambiente.
+  - Suite: `Criar Sessao HTTP    <ALIAS>    ${BASE_URL_API_<DOMINIO>}` e chame `GET/POST On Session` com o alias.
+
+- Caminho wrapper (recomendado para domínios):
+  - Adicione `Iniciar Sessao API <Dominio>` (resolve `BASE_URL_API_<DOMINIO>` e chama `Criar Sessao HTTP`).
+  - Adicione hooks `Setup/Teardown Suite <Dominio>` e use-os nas suítes.
+  - Mantenha um alias fixo para o domínio e use-o em todos os services.
+
 ### Múltiplas APIs (URLs por domínio/ambiente)
 - Para cada domínio de API defina sua própria URL por ambiente em `environments/<env>.py`.
 - Convenção de nomes:
