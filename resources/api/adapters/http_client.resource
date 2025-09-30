@@ -1,5 +1,5 @@
 *** Settings ***
-Documentation    Adapter HTTP baseado em RequestsLibrary para sessões DummyJSON e Giftcard.
+Documentation    Adapter HTTP baseado em RequestsLibrary para sessões HTTP por domínio (DummyJSON, Giftcard, etc.).
 Library    RequestsLibrary
 Resource   ../../common/logger.resource
 Variables  ../../../environments/_placeholders.py
@@ -15,13 +15,7 @@ Iniciar Sessao API DummyJSON
     [Arguments]    ${base_url}=${None}
     ${base_final}=    Resolver Base Url Dummyjson    ${base_url}
     ${timeout}    ${max_retries}    ${backoff_factor}=    Resolver Parametros De Robustez
-    Log Estilizado    Sessão DummyJSON base=${base_final}
-    Log Estilizado    HTTP timeout=${timeout}s retries=${max_retries} backoff=${backoff_factor}
-
-    # Cria a sessão Requests com timeout e retry básicos (suporte nativo do RequestsLibrary)
-    ${headers}=    Evaluate    {'Content-Type': 'application/json'}
-    Create Session    DUMMYJSON    ${base_final}    verify=${True}    timeout=${timeout}
-    ...    max_retries=${max_retries}    backoff_factor=${backoff_factor}    headers=${headers}
+    Criar Sessao HTTP    DUMMYJSON    ${base_final}
 
 Encerrar Sessao API DummyJSON
     [Documentation]    Registra encerramento da sessão HTTP `DUMMYJSON`, mantendo simetria nos hooks de suíte.
@@ -47,26 +41,41 @@ Iniciar Sessao API Giftcard
     [Arguments]    ${base_url}=${None}
     ${base_final}=    Resolver Base Url Giftcard    ${base_url}
     ${timeout}    ${max_retries}    ${backoff_factor}=    Resolver Parametros De Robustez
-    Log Estilizado    Sessão GIFTCARD base=${base_final}
-    Log Estilizado    HTTP timeout=${timeout}s retries=${max_retries} backoff=${backoff_factor}
-
-    ${headers}=    Evaluate    {'Content-Type': 'application/json'}
-    Create Session    GIFTCARD    ${base_final}    verify=${True}    timeout=${timeout}
-    ...    max_retries=${max_retries}    backoff_factor=${backoff_factor}    headers=${headers}
+    Criar Sessao HTTP    GIFTCARD    ${base_final}
 
 Resolver Base Url Giftcard
     [Documentation]    Resolve base URL da API Giftcard com fallback ao arquivo de ambiente (`API_BASE_URL`).
     [Arguments]    ${base_url}
+    ${resolved_gift}=    Get Variable Value    ${BASE_URL_API_GIFTCARD}    ${None}
     ${resolved_base}=    Get Variable Value    ${API_BASE_URL}    ${None}
     IF    '${base_url}'!='${None}'
         VAR    ${base_final}    ${base_url}
     ELSE
-        VAR    ${base_final}    ${resolved_base}
+        # Preferência: variável específica do domínio, depois fallback genérico
+        IF    '${resolved_gift}'!='${None}'
+            VAR    ${base_final}    ${resolved_gift}
+        ELSE
+            VAR    ${base_final}    ${resolved_base}
+        END
     END
     IF    '${base_final}'=='${None}'
-        Fail    API_BASE_URL não definida. Importe environments/${ENV}.py ou informe ${base_url}.
+        Fail    BASE_URL_API_GIFTCARD/API_BASE_URL não definida. Importe environments/${ENV}.py ou informe ${base_url}.
     END
     RETURN    ${base_final}
+
+Criar Sessao HTTP
+    [Documentation]    Cria sessão HTTP RequestsLibrary para um alias/base_url com timeouts/retries padronizados.
+    [Arguments]    ${alias}    ${base_url}    ${verify}=${True}
+    ${timeout}    ${max_retries}    ${backoff_factor}=    Resolver Parametros De Robustez
+    ${headers}=    Evaluate    {'Content-Type': 'application/json'}
+    Log Estilizado    Criando sessão ${alias} base=${base_url}
+    Create Session    ${alias}    ${base_url}    verify=${verify}    timeout=${timeout}
+    ...    max_retries=${max_retries}    backoff_factor=${backoff_factor}    headers=${headers}
+
+Encerrar Sessao API Giftcard
+    [Documentation]    Encerramento simbólico da sessão GIFTCARD (RequestsLibrary gerencia automaticamente).
+    Log Estilizado    Encerrando sessão GIFTCARD (noop)
+    No Operation
 
 Valor Com Padrao
     [Documentation]    Substitui valores None pela configuração padrão informada.

@@ -13,6 +13,9 @@ Observação:
 
 # Base URLs
 BASE_URL_API_DUMMYJSON = None
+BASE_URL_API_GIFTCARD = None
+API_BASE_URL = None
+
 
 # Parâmetros HTTP (timeouts/retries)
 HTTP_TIMEOUT = None
