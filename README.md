@@ -444,6 +444,28 @@ No terminal/CI informe o ambiente com `-v ENV:<nome>` (ex.: `-v ENV:uat`).
 Para execução local rápida, utilize `-v ENV:local` (usa `environments/local.py`).
 Se preferir variável de sistema: `ENV=uat robot tests/...` e mantenha o import igual.
 
+### Múltiplas APIs por domínio (URLs por ambiente)
+- Para cada API/domínio, defina uma variável própria no arquivo de ambiente, seguindo o padrão `BASE_URL_API_<DOMINIO>` (UPPER_SNAKE_CASE):
+  - Ex.: `BASE_URL_API_DUMMYJSON`, `BASE_URL_API_PAGAMENTOS`, `BASE_URL_API_OPERACOES`.
+- Para gRPC (opcional), use `GRPC_HOST_<DOMINIO>` quando necessário:
+  - Ex.: `GRPC_HOST_PAGAMENTOS = "grpc-dev.pagamentos.suaempresa.com:443"`.
+- Evite usar `BASE_URL_API` genérico; prefira sempre URLs específicas por domínio.
+
+Exemplo (environments/local.py)
+```python
+# HTTP APIs por domínio
+BASE_URL_API_DUMMYJSON = "https://dummyjson.com"
+BASE_URL_API_PAGAMENTOS = "https://api-dev.pagamentos.suaempresa.com"
+BASE_URL_API_OPERACOES  = "https://api-dev.operacoes.suaempresa.com"
+
+# gRPC (opcional)
+GRPC_HOST_PAGAMENTOS = "grpc-dev.pagamentos.suaempresa.com:443"
+```
+
+Boas práticas
+- Declare apenas as APIs/domínios que a suíte realmente usa.
+- Em `hooks.resource`, cada domínio pode ter um “Garantir Variáveis <Domínio>” que lê sua própria `BASE_URL_API_<DOMINIO>`.
+
 ### Regras
 
 * **Somente configuração**, nada de lógica complexa.

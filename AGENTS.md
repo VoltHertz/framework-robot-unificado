@@ -143,6 +143,14 @@ Suite Teardown  Teardown Suite Padrao
 ## Security & Configuration Tips
 - Não commit secrets; use `environments/secrets.template.yaml`. Configure endpoints e flags (ex.: `BASE_URL_API_DUMMYJSON`, `BROWSER_HEADLESS`) em `environments/<env>.py` e selecione via `-v ENV:<env>`.
 
+### Múltiplas APIs (URLs por domínio/ambiente)
+- Para cada domínio de API defina sua própria URL por ambiente em `environments/<env>.py`.
+- Convenção de nomes:
+  - HTTP: `BASE_URL_API_<DOMINIO>` (UPPER_SNAKE_CASE). Ex.: `BASE_URL_API_DUMMYJSON`, `BASE_URL_API_PAGAMENTOS`.
+  - gRPC (opcional): `GRPC_HOST_<DOMINIO>`. Ex.: `GRPC_HOST_PAGAMENTOS`.
+- Evite variáveis genéricas como `BASE_URL_API`; prefira uma variável por domínio.
+- Hooks (por domínio) devem ler apenas sua variável correspondente (ex.: `Garantir Variaveis DummyJSON` lê `BASE_URL_API_DUMMYJSON`).
+
 ## Data Provider (JSON)
 - Biblioteca: `libs/data/data_provider.py` fornece somente backend JSON.
 - Resource: `resources/common/data_provider.resource` expõe keywords para buscar massa.
