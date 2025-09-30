@@ -164,7 +164,7 @@ framework-robot-unificado/
 │  ├─ context/
 │  │  └─ integration_context.py        # Contexto para cenários de integração
 │  ├─ data/
-│  │  └─ data_provider.py              # Backends: json/sqlserver
+│  │  └─ data_provider.py              # Backend: json
 │  └─ logging/
 │     └─ styled_logger.py              # Listener v3: injeta [arquivo:Lnn]
 │
@@ -209,7 +209,6 @@ framework-robot-unificado/
 - Biblioteca: `libs/data/data_provider.py` implementa o backend JSON lendo `data/json/<dominio>.json` com cenários nomeados.
 - Resource: `resources/common/data_provider.resource` expõe:
   - `Obter Massa De Teste | <dominio> | <cenario>`
-  - `Definir Backend De Dados | json` (compatível; padrão já é JSON)
 - Variáveis de ambiente suportadas:
   - `DATA_BACKEND` (default `json`), `DATA_BASE_DIR`, `DATA_JSON_DIR`.
 

@@ -136,107 +136,27 @@ Suite Teardown  Teardown Suite Padrao
 - [ ] Suites passam localmente (fluxos e limites) com `results_*/` anexados.
 - [ ] Test cases e keywords documentados conforme padrão desta seção e IDs UC aplicados.
 - [ ] Logs migrados para `Log Estilizado` (sem prefixos hardcoded).
-- [ ] Data provider funciona para o domínio (JSON no mínimo; SQL quando aplicável).
+- [ ] Data provider funciona para o domínio (JSON).
 - [ ] Variáveis de ambiente necessárias documentadas no PR.
 - [ ] Robocop/Robotidy aplicados quando alteradas resources.
 
 ## Security & Configuration Tips
 - Não commit secrets; use `environments/secrets.template.yaml`. Configure endpoints e flags (ex.: `BASE_URL_API_DUMMYJSON`, `BROWSER_HEADLESS`) em `environments/<env>.py` e selecione via `-v ENV:<env>`.
 
-## Data Provider Unificado (Pluggable)
-- Biblioteca: `libs/data/data_provider.py` deve oferecer dois backends plugáveis (`json`, `sqlserver`).
-- Resource: `resources/common/data_provider.resource` expõe keywords para configurar backend, conexão e schema, além de buscar massa.
+## Data Provider (JSON)
+- Biblioteca: `libs/data/data_provider.py` fornece somente backend JSON.
+- Resource: `resources/common/data_provider.resource` expõe keywords para buscar massa.
 - Keywords principais:
-  - `Definir Backend De Dados | json|sqlserver` — alterna a fonte em runtime (podendo mudar várias vezes na mesma execução).
-  - `Definir Conexao SQLServer | <conn_string> | <ativar>` e `Definir Schema SQLServer | <schema>` — configuram o backend SQL Server.
-  - `Obter Massa De Teste | <dominio> | <cenario>` — retorna dicionário do cenário usando o backend ativo.
+  - `Obter Massa De Teste | <dominio> | <cenario>` — retorna dicionário do cenário a partir de `data/json/<dominio>.json`.
 - Variáveis de ambiente suportadas:
   - `DATA_BACKEND` (default `json`), `DATA_BASE_DIR`, `DATA_JSON_DIR`.
-  - `DATA_SQLSERVER_CONN`, `DATA_SQLSERVER_SCHEMA`.
 - Convenções:
-  - JSON: arquivo por domínio (`data/json/<dominio>.json`) com objetos por cenário.
-  - SQL Server: tabela por domínio com coluna `cenario` (linha representa um cenário). Retorno remove a chave `cenario` para uniformidade.
+  - JSON: arquivo por domínio (`data/json/<dominio>.json`) com cenários nomeados.
 - Massa “full”: `data/full_api_data/*` guarda referência completa da fonte; não usar diretamente nas suites — derive subconjuntos para `data/json`.
 
 Diretrizes de uso
 - Proibido hardcode de dados nas suítes — sempre use `Obter Massa De Teste`.
-- Use SQL Server para registros reais/pré‑condições e validação final dos efeitos.
-- Use JSON para negativos/limites/payloads sintéticos quando não houver dado real disponível.
-- Combine quando fizer sentido: JSON como base + campos preenchidos com dados reais vindos do SQL (alternando backend durante o teste).
-- SQL: consultas read‑only e parametrizadas; criação de massa via SP apenas como exceção.
-
-### Plano de Implementação — Backend SQL Server no Data Provider
-Objetivo: habilitar obtenção de massa de teste diretamente do SQL Server, de forma plugável (Strategy), mantendo JSON como default e permitindo alternar entre as duas fontes ao longo da execução. Reaproveitar os padrões já validados em `docs/feedbackAI/feedback005/Scripts/dbConnection.py` (service principal Azure, timeouts estendidos, troubleshooting), mas adaptar o código para `libs/data/data_provider.py`/`resources/common/data_provider.resource` sem importar diretamente arquivos da pasta `docs/feedbackAI/feedback005`.
-
-Escopo (mínimo viável):
-- Python: `libs/data/data_provider.py` implementa backend `sqlserver` via `pyodbc` e Strategy interna.
-- Robot: `resources/common/data_provider.resource` expõe keywords para definir backend, conexão e schema, além de `Obter Massa De Teste` único (capaz de alternar entre JSON e SQL a qualquer momento).
-- Convenção de dados: tabela por domínio `[schema].[dominio]` com coluna `cenario` (chave). Linhas representam cenários; retorno remove `cenario` e normaliza tipos.
-
-Design proposto (inspirado em `dbConnection.py`):
-- Strategy interna (sem criar novos módulos agora):
-  - Classe `SqlServerBackend` com métodos: `configure(conn_string: str, schema: str)`, `get(dominio: str, cenario: str) -> dict`.
-  - Classe `JsonBackend` atual permanece.
-  - `DataProvider` escolhe backend por env `DATA_BACKEND` ou por keyword em runtime (estado interno), permitindo scripts alternarem entre JSON e SQL dentro da mesma execução.
-- Conexão e pooling:
-  - Manter um único handle `pyodbc.Connection` por processo (cache simples no backend). Reabrir se desconectar.
-  - Implementar builder de connection string com base nos envs de service principal (ex.: `AZR_SDBS_PF_TDNP_T_SP_CLIENT_ID`, `AZR_SDBS_PF_TDNP_T_SP_CLIENT_SECRET`, host, database), replicando o formato testado: `Driver={ODBC Driver 17 for SQL Server};Server=tcp:<host>,1433;Database=<db>;UID=<client_id>;PWD=<client_secret>;Authentication=ActiveDirectoryServicePrincipal;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=180;Login Timeout=180`.
-  - Validar que variáveis obrigatórias (client id/secret/host/db) estão preenchidas; lançar erro amigável quando ausentes (sem expor segredos).
-  - Read‑only por padrão; transações não são necessárias para consulta de massa.
-- Query parametrizada:
-  - `SELECT * FROM [{schema}].[{dominio}] WHERE cenario = ?` usando parâmetros `pyodbc`.
-- Normalização:
-  - Remover a coluna `cenario` do resultado.
-  - Tentar desserializar campos JSON válidos (ex.: payloads armazenados como texto) mantendo strings originais quando falhar.
-- Erros e mensagens (troubleshooting):
-  - Mensagens claras para: driver ausente (`pyodbc.InterfaceError`), DNS/host inacessível (usar tentativa de socket/dns opcional), credenciais inválidas, timeout de login (180s), tabela/esquema inexistente, cenário não encontrado.
-  - Reaproveitar logs amigáveis do script base (ex.: listar drivers encontrados quando em modo diagnóstico) sem imprimir segredo (`***`).
-  - Não logar segredos; exibir somente o prefixo do connection string (host/DB) e o client id mascarado.
-
-- Configuração de conexão (camadas):
-  - Envs obrigatórios sugeridos (adequar conforme infra):
-    - Credenciais (canônicas, já existentes no pipeline piloto): `AZR_SDBS_PF_TDNP_T_SP_CLIENT_ID`, `AZR_SDBS_PF_TDNP_T_SP_CLIENT_SECRET`.
-    - Alternativas suportadas (fallback): `AZR_SQL_SERVER_CLIENT_ID`, `AZR_SQL_SERVER_CLIENT_SECRET`.
-    - Endpoint: `AZR_SQL_SERVER_HOST`, `AZR_SQL_SERVER_DB`, `AZR_SQL_SERVER_PORT` (default `1433`).
-  - `DATA_SQLSERVER_CONN` pode aceitar uma connection string pronta (caso o time prefira); se ausente, construir dinamicamente a partir dos envs acima.
-  - `DATA_SQLSERVER_TIMEOUT` opcional (default 180s) para `Connection Timeout`/`Login Timeout`.
-- Keywords Python expostas no backend devem mascarar valores sensíveis em logs (`***`).
-
-Keywords (Robot) a adicionar/ajustar em `resources/common/data_provider.resource`:
-- `Definir Backend De Dados    json|sqlserver` — altera backend em runtime (default permanece `json`).
-- `Definir Conexao SQLServer   <conn_string>=None    <ativar=${True}>` —
-  - Permite informar connection string pronta ou gatilha para que o backend monte a string usando variáveis de ambiente (service principal).
-  - Opcionalmente já ativa o backend `sqlserver`.
-- `Definir Schema SQLServer    <schema>` — salva o schema padrão das tabelas.
-- `Obter Massa De Teste        <dominio>    <cenario>` — encaminha para o backend atual (sem mudar assinatura atual).
-
-Variáveis de ambiente (reforço):
-- `DATA_BACKEND=json|sqlserver` — seleciona backend default (json por padrão).
-- `DATA_SQLSERVER_CONN` — connection string ODBC (sem segredos no repositório); exemplos em `environments/_placeholders.py`.
-- `DATA_SQLSERVER_SCHEMA` — schema default para leitura (ex.: `qa`, `dbo`).
-
-Exemplos de connection string (não commitar valores reais):
-- Autenticação SQL: `DRIVER={ODBC Driver 18 for SQL Server};SERVER=<host>,<port>;DATABASE=<db>;UID=<user>;PWD=<pass>;Encrypt=yes;TrustServerCertificate=yes`
-- Autenticação integrada (Windows): `DRIVER={ODBC Driver 18 for SQL Server};SERVER=<host>;DATABASE=<db>;Trusted_Connection=yes;Encrypt=yes;TrustServerCertificate=yes`
-
-Passos (roadmap incremental):
-1) Python: extrair Strategy interna em `libs/data/data_provider.py` e implementar `SqlServerBackend` (conexão, query parametrizada, normalização, cache de conexão).
-2) Robot: estender `resources/common/data_provider.resource` com as keywords de configuração/uso do SQL Server.
-3) Environments: adicionar placeholders em `environments/_placeholders.py` e documentar uso no README (sem segredos), incluindo nomes das variáveis de service principal.
-4) Troubleshooting: enriquecer mensagens de erro (mapear `pyodbc.Error`/`InterfaceError`/`OperationalError`), expondo mensagens semelhantes às do script base.
-5) Testes manuais: simular indisponibilidades (driver ausente, host errado, credenciais vazias) e validar fallback para JSON e mensagens amigáveis.
-6) Automação de sanidade: adaptar o script `docs/feedbackAI/feedback005/Tests/testes_pipeline.robot` para `tests/common/validacao_sql_server.robot` (ou similar), permitindo checar drivers, variáveis e conectividade via Robot antes de rodar suites.
-7) Documentação: atualizar README (Data Provider) e `docs/libs/robotframework.md`/`docs/libs/robocop.md` quando aplicável, incluindo checklist de envs obrigatórios e referência ao teste de sanidade.
-
-Não metas (nesta fase):
-- Suporte a outras fontes além de JSON e SQL Server.
-- Escrita em banco (inserção/atualização). Apenas consultas read‑only.
-
-Definition of Done (SQL Backend):
-- Keywords de Data Provider expostas e documentadas; default `json` mantido.
-- Backend `sqlserver` funcional com query parametrizada e tratamento de erros; retorno sem a chave `cenario` e com normalização básica.
-- Placeholders/ENVs atualizados; nenhuma referência a `docs/feedbackAI/feedback005` no código.
-- README atualizado com exemplos de uso e troubleshooting.
+- Mantenha cenários pequenos, determinísticos e legíveis.
 
 ## Logger Estilizado (Arquivo:Linha)
 - Biblioteca: `libs/logging/styled_logger.py` (Listener v3) + resource `resources/common/logger.resource`.

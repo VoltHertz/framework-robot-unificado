@@ -65,11 +65,6 @@ class DataProviderLibrary:
     def get_test_data(self, dominio: str, cenario: str) -> Dict[str, Any]:
         return _provider.get_test_data(dominio, cenario)
 
-    def set_data_backend(self, backend: str) -> None:
-        _provider.set_backend(backend)
-
 
 # Robot aliases -----------------------------------------------------------
 Get_Test_Data = DataProviderLibrary().get_test_data
-Set_Data_Backend = DataProviderLibrary().set_data_backend
-

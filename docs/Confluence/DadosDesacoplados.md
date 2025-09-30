@@ -43,13 +43,10 @@
 
 **Arquivos e recursos chave (do monorepo):**
 
-* `libs/data/data_provider.py` — implementação dos backends (json/sqlserver).
+* `libs/data/data_provider.py` — backend JSON para massa de teste.
 * `resources/common/data_provider.resource` — façade Robot para as keywords de massa:
 
-  * `Definir Backend De Dados | json|sqlserver`
   * `Obter Massa De Teste | <dominio> | <cenario>`
-  * `Definir Conexao SQLServer | <conn_string> | <ativar>`
-  * `Definir Schema SQLServer | <schema>`
 * `data/json/<dominio>.json` — massa **curada por cenário** (determinística).
 * `environments/*.py` — URLs, timeouts e metadados (sem segredos).
 * `tests/*` — **nunca** embute massa; **consome** via keywords.
@@ -118,28 +115,11 @@ Suite Setup     Setup Suite Padrao
 Suite Teardown  Teardown Suite Padrao
 ```
 
-### 5.1 Usar **SQL Server**
-
-Pré-requisito: variáveis de ambiente/CI definidas (`DATA_SQLSERVER_CONN` **ou** host/db/port + credenciais gerenciadas).
-
-```robot
-*** Test Cases ***
-UC-PROD-001 - Validar estoque apos ajuste
-    Definir Schema SQLServer    dbo
-    Definir Conexao SQLServer   ${NONE}    True
-    ${massa}=    Obter Massa De Teste    products    listagem_basica
-    # ... chama keywords de negócio ...
-    # ... valida efeitos via consulta SQL (keyword de domínio) ...
-```
-
-> O `ativar=True` já troca o backend do Data Provider para SQL após montar a connection string (ou usar a que veio por env). ([GitHub][2])
-
-### 5.2 Usar **JSON**
+### 5.1 Usar **JSON**
 
 ```robot
 *** Test Cases ***
 UC-PROD-002 - Busca negativa por categoria invalida
-    Definir Backend De Dados    json
     ${massa}=    Obter Massa De Teste    products    busca_por_categoria_invalida
     # usa ${massa.query} para montar a chamada
 ```
@@ -268,13 +248,12 @@ Suite Teardown  Teardown Suite Padrao
 
 *** Test Cases ***
 UC-PROD-020 - Busca negativa por categoria
-    Definir Backend De Dados    json
     ${massa}=    Obter Massa De Teste    products    busca_por_categoria_invalida
     Quando Busco Produtos Pela Categoria    ${massa.query.category}
     Entao Devo Receber Erro De Categoria Inexistente
 ```
 
-> **Essência:** **dados fora das suítes**, **mesmas keywords** em qualquer backend, **validação de efeitos reais** via SQL quando necessário.
+> **Essência:** **dados fora das suítes**, consumo único via `Obter Massa De Teste` com backend JSON.
 
 [1]: https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html "Robot Framework User Guide"
 [2]: https://github.com/VoltHertz/framework-robot-unificado "GitHub - VoltHertz/framework-robot-unificado: Framework unificado de testes (API, Web) em Robot Framework"

@@ -17,15 +17,3 @@ Obter Massa De Teste
     [Arguments]    ${dominio}    ${cenario}
     ${dados}=    Get Test Data    ${dominio}    ${cenario}
     RETURN    ${dados}
-
-Definir Backend De Dados
-    [Documentation]    Define o backend de massa durante a execução (somente 'json' suportado).
-    ...
-    ...    Argumentos:
-    ...    - ${backend}: `json`.
-    ...
-    ...    Retorno: N/A
-    ...    Efeito lateral: Altera a fonte utilizada por `Obter Massa De Teste`.
-    ...    Exceções: ValueError quando o backend não for suportado.
-    [Arguments]    ${backend}
-    Set Data Backend    ${backend}
