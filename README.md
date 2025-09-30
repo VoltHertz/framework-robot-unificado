@@ -24,6 +24,11 @@ Para a manutenabilidade do monorepo será adotado alguns pilares fundamentais: B
 
 - Logs padronizados: prefixo automático [arquivo:linha].
 
+### Nota sobre exemplos (DummyJSON)
+- Todos os exemplos de domínio usados no repositório (carts e products) apontam para o fornecedor público DummyJSON: https://dummyjson.com
+- Eles servem apenas como um exemplo prático de modelo ideal de organização dos testes. Em projetos reais, substitua por seus domínios/endpoints.
+
+
 
 ## Índice
 - [Pilares principais](#pilares-principais)
@@ -341,7 +346,7 @@ Todas as tags ficam definidas apenas nos arquivos suites presente na pasta tests
 
 ### Resumo:
 - Dominio:                products      carts             pagamentos           operacoes     ...
-- Endpoint:               cliente       calculadora              
+- Aplicacao:              cliente       calculadora       monitor              saldo-analitico       
 -	Tipo:                   positivo      negativo    	    limite               smoke
 -	Estado de exceção:			quarentena		experimental		  bloqueado
 

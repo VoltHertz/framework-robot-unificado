@@ -1,7 +1,9 @@
-# Dados Desacoplados (JSON & SQL Server) — Guia Oficial
+# Dados Desacoplados (JSON & SQL Server)
 
 > **Objetivo:** padronizar **como** criamos, buscamos e validamos massa de dados nos testes, mantendo **determinismo**, **reuso** e **manutenibilidade** sem “hardcode” nas suítes.
 > **Escopo:** esta página cobre **apenas** a estratégia de dados desacoplados (JSON + SQL Server) usada no monorepo.
+
+> Nota sobre exemplos (DummyJSON): os exemplos de domínio citados como carts/products usam o fornecedor público DummyJSON (https://dummyjson.com) apenas como referência prática de modelo ideal. Em projetos reais, troque pelos seus domínios/endpoints. O comportamento do fornecedor pode variar ao longo do tempo.
 
 ---
 

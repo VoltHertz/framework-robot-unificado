@@ -1,7 +1,9 @@
-# Guia oficial — Organização interna de **keywords** (fatiamento por complexidade)
+# Organização interna de **keywords** (fatiamento por complexidade)
 
 > **Escopo desta página**
 > Esta página explica **como** e **por que** fatiamos as *keywords* dentro do nosso monorepo Robot Framework. O objetivo é manter arquivos pequenos, previsíveis e fáceis de evoluir quando o número de fluxos crescer para centenas. O conteúdo aqui se conecta ao nosso README e ao layout real do repositório.
+
+> Nota sobre exemplos (DummyJSON): exemplos com “carts”/“products” referenciam DummyJSON (https://dummyjson.com) apenas como estudo de caso prático. Use seus domínios reais no dia a dia.
 
 ---
 

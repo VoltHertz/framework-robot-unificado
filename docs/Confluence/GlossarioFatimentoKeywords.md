@@ -1,9 +1,6 @@
-Aqui vai a seção complementar, pronta para colar na página, explicando — em linguagem clara para **juniors** — os termos usados no item 2 (helpers de alto nível e core helpers), com **conceitos**, **boas práticas** e **mini-exemplos**.
-
----
-
-
 ## Glossário prático dos termos (para fatiamento de *keywords*)
+
+> Nota sobre exemplos (DummyJSON): quando mencionarmos “carts” e “products”, estamos usando DummyJSON (https://dummyjson.com) como exemplo prático do modelo. Em sistemas reais, substitua pelos seus domínios/endpoints.
 
 ### 1) **Pré-condição** (helpers de alto nível)
 
