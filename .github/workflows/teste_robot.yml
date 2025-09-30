@@ -1,0 +1,85 @@
+name: CI integracao-automacao
+run-name: Pipeline piloto em Validação (framework-robot-unificado)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: [self-hosted, aks]
+    permissions: write-all
+    env:
+      REPOSITORIO_TESTES: ${{ github.repository }}
+      BRANCH_TESTES: ${{ github.ref_name }}
+      ARQUIVO_TESTE: tests/common/testes_pipeline.robot
+      PASTA_LOG: results/common/pipeline
+      ARQUIVO_REQUIREMENTS: requirements.txt
+      EMAIL_TO: prestador-bruno.rcandido@b3.com.br, prestador-yuri.herdt@b3.com.br
+      EMAIL_FROM: prestador-bruno.rcandido@b3.com.br
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Teste de conectividade com ambiente (Giftcard)
+        run: |
+          echo "=== Testando conectividade com ambiente de destino ==="
+          echo "URL de teste: https://td-aks-dev.internalenv.corp/internal-api/giftcards/swagger/index.html"
+          curl -k -v --connect-timeout 10 --max-time 30 "https://td-aks-dev.internalenv.corp/internal-api/giftcards/swagger/index.html" || echo "Falha na conexão"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Instalar dependências
+        run: |
+          python -m pip install -U pip
+          pip install -U -r $ARQUIVO_REQUIREMENTS
+
+      - name: Executar testes Robot Framework (ENV=dev)
+        id: tests
+        run: |
+          python -m robot -v ENV:dev -d $PASTA_LOG $ARQUIVO_TESTE
+          ZIP_NAME="report-results-$(date +%Y%m%d%H%M%S).zip"
+          cd $PASTA_LOG && zip -r "../$ZIP_NAME" . && cd ..
+          echo "zip_path=$PWD/$ZIP_NAME" >> $GITHUB_OUTPUT
+          echo "zip_name=$ZIP_NAME" >> $GITHUB_OUTPUT
+
+      - name: Upload dos resultados
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-results
+          path: ${{ env.PASTA_LOG }}
+          if-no-files-found: ignore
+          retention-days: 5
+
+      - name: Envia Email - Sucesso
+        if: success()
+        uses: dawidd6/action-send-mail@2cea9617b09d79a095af21254fbcb7ae95903dde
+        with:
+          server_address: smtprelay.intraservice.corp
+          subject: "✅ [QA Pipeline] Testes Executados com Sucesso - ${{ env.REPOSITORIO_TESTES }}/${{ env.BRANCH_TESTES }}"
+          to: ${{ env.EMAIL_TO }}
+          from: ${{ env.EMAIL_FROM }}
+          attachments: ${{ steps.tests.outputs.zip_path }}
+          body: |
+            🎉 SUCESSO - Pipeline executado via GitHub Actions
+            ✅ Todos os testes foram executados com sucesso!
+            Repositório: ${{ env.REPOSITORIO_TESTES }} | Branch: ${{ env.BRANCH_TESTES }}
+            Arquivo de Teste: ${{ env.ARQUIVO_TESTE }}
+
+      - name: Envia Email - Falha
+        if: failure()
+        uses: dawidd6/action-send-mail@2cea9617b09d79a095af21254fbcb7ae95903dde
+        with:
+          server_address: smtprelay.intraservice.corp
+          subject: "❌ [QA Pipeline] FALHA na Execução dos Testes - ${{ env.REPOSITORIO_TESTES }}/${{ env.BRANCH_TESTES }}"
+          to: ${{ env.EMAIL_TO }}
+          from: ${{ env.EMAIL_FROM }}
+          attachments: ${{ steps.tests.outputs.zip_path }}
+          body: |
+            🚨 FALHA - Pipeline executado via GitHub Actions
+            ❌ Ocorreu uma falha durante a execução dos testes!
+            Repositório: ${{ env.REPOSITORIO_TESTES }} | Branch: ${{ env.BRANCH_TESTES }}
+            Arquivo de Teste: ${{ env.ARQUIVO_TESTE }}
+

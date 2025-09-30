@@ -10,6 +10,7 @@ Observações:
 # URLs base
 BASE_URL_API = "https://api-dev.example"  # Placeholder legado
 BASE_URL_API_DUMMYJSON = "https://dummyjson.com"  # Usado pelos testes de DummyJSON
+API_BASE_URL = "https://td-aks-dev.internalenv.corp/internal-api/"  # API Giftcard (exemplo)
 
 # gRPC (placeholder)
 GRPC_HOST = "grpc-dev.example"
@@ -31,4 +32,3 @@ HTTP_RETRY_BACKOFF = 0.2
 HTTP_RETRY_STATUS_LIST = "429,502,503,504"
 # Métodos considerados idempotentes para retry (CSV)
 HTTP_RETRY_METHODS = "GET,HEAD,OPTIONS,PUT,DELETE"
-

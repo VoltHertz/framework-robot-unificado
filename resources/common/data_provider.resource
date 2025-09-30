@@ -17,3 +17,11 @@ Obter Massa De Teste
     [Arguments]    ${dominio}    ${cenario}
     ${dados}=    Get Test Data    ${dominio}    ${cenario}
     RETURN    ${dados}
+
+Connect to Azure Database
+    [Documentation]    Conecta ao Azure SQL usando Service Principal (modelo de referência).
+    ...
+    ...    Observação: implementação baseada em `libs/data/dbConnection.py`.
+    ...    Parâmetros são mantidos por compatibilidade, mas não são utilizados atualmente.
+    [Arguments]    ${server}=${EMPTY}    ${database}=${EMPTY}    ${user}=${EMPTY}    ${password}=${EMPTY}
+    ${_}=    Evaluate    __import__('libs.data.dbConnection').data.dbConnection.connect_to_database()

@@ -1,5 +1,6 @@
 BASE_URL_API = "https://api-dev.example"  # Placeholder legado
 BASE_URL_API_DUMMYJSON = "https://dummyjson.com"  # Usado pelos testes de DummyJSON
+API_BASE_URL = "https://td-aks-dev.internalenv.corp/internal-api/"  # API Giftcard (exemplo)
 GRPC_HOST = "grpc-dev.example"
 BROWSER_HEADLESS = True
 DATA_BACKEND = "json"

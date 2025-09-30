@@ -1,5 +1,5 @@
 *** Settings ***
-Documentation    Adapter HTTP baseado em RequestsLibrary para sessões DummyJSON.
+Documentation    Adapter HTTP baseado em RequestsLibrary para sessões DummyJSON e Giftcard.
 Library    RequestsLibrary
 Resource   ../../common/logger.resource
 Variables  ../../../environments/_placeholders.py
@@ -39,6 +39,32 @@ Resolver Base Url Dummyjson
     END
     IF    '${base_final}'=='${None}'
         Fail    BASE_URL_API_DUMMYJSON não definida. Importe environments/${ENV}.py ou informe ${base_url}.
+    END
+    RETURN    ${base_final}
+
+Iniciar Sessao API Giftcard
+    [Documentation]    Cria e configura a sessão HTTP `GIFTCARD` usando base URL e parâmetros de robustez do ambiente.
+    [Arguments]    ${base_url}=${None}
+    ${base_final}=    Resolver Base Url Giftcard    ${base_url}
+    ${timeout}    ${max_retries}    ${backoff_factor}=    Resolver Parametros De Robustez
+    Log Estilizado    Sessão GIFTCARD base=${base_final}
+    Log Estilizado    HTTP timeout=${timeout}s retries=${max_retries} backoff=${backoff_factor}
+
+    ${headers}=    Evaluate    {'Content-Type': 'application/json'}
+    Create Session    GIFTCARD    ${base_final}    verify=${True}    timeout=${timeout}
+    ...    max_retries=${max_retries}    backoff_factor=${backoff_factor}    headers=${headers}
+
+Resolver Base Url Giftcard
+    [Documentation]    Resolve base URL da API Giftcard com fallback ao arquivo de ambiente (`API_BASE_URL`).
+    [Arguments]    ${base_url}
+    ${resolved_base}=    Get Variable Value    ${API_BASE_URL}    ${None}
+    IF    '${base_url}'!='${None}'
+        VAR    ${base_final}    ${base_url}
+    ELSE
+        VAR    ${base_final}    ${resolved_base}
+    END
+    IF    '${base_final}'=='${None}'
+        Fail    API_BASE_URL não definida. Importe environments/${ENV}.py ou informe ${base_url}.
     END
     RETURN    ${base_final}
 
