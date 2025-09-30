@@ -14,7 +14,7 @@ Para a manutenabilidade do monorepo será adotado alguns pilares fundamentais: B
 
 - Camadas explicitas na pasta resources: adapters → services → keywords → suites
 
-- Dados desacoplados: Data Provider plugável (JSON/SQL Server).
+- Dados desacoplados: Data Provider (JSON).
 
 - Tags consistentes: domínio, endpoint, tipo e estado.
 
@@ -34,7 +34,7 @@ Para a manutenabilidade do monorepo será adotado alguns pilares fundamentais: B
 - [Pilares principais](#pilares-principais)
 - [Modelo em Camadas](#modelo-em-camadas)
 - [Infra de Pastas - Monorepo](#infra-de-pastas---monorepo)
-- [Dados Desacoplados - Json e SQL Server](#dados-desacoplados---json-e-sql-server)
+- [Massa de Dados (JSON)](#massa-de-dados-json)
 - [Layering e Imports (na prática)](#layering-e-imports-na-prática)
 - [Contexto de Integração (mochila por teste)](#contexto-de-integração-mochila-por-teste)
 - [Logs Profissionais](#logs-profissionais-rastreamento-com-arquivo-lnn)
@@ -118,7 +118,6 @@ Para a manutenabilidade do monorepo será adotado alguns pilares fundamentais: B
 framework-robot-unificado/
 ├─ tests/                              # Somente suítes (.robot) com logica BDD, nada de códgio e lógica aqui, apenas negócio.
 │  ├─ common/
-│  │  └─ validacao_sql_server.robot    # Sanidade de drivers, envs e conexão SQL Server (SELECT 1)
 │  └─ api/                             # Todoas as suites de APIs
 │     ├─ domains/                      # Suites separas por dominio
 │     │  ├─ carts/                     # Dominio de uma API
@@ -205,65 +204,20 @@ framework-robot-unificado/
 - libs: utilitários Python — ex.: `libs/data/data_provider.py` (backends de massa).
 - results: artefatos por plataforma/domínio (`results/<plataforma>/<dominio>/`), facilitando histórico e coleta em CI.
 
-## Dados Desacoplados - Json e SQL Server 
+## Massa de Dados (JSON)
 
-- Biblioteca: `libs/data/data_provider.py` implementa backends:
-  - JSON: `data/json/<dominio>.json` com objetos por cenário.
-  - SQL Server: consulta `[schema].[dominio]` por `cenario` via `pyodbc`.
+- Biblioteca: `libs/data/data_provider.py` implementa o backend JSON lendo `data/json/<dominio>.json` com cenários nomeados.
 - Resource: `resources/common/data_provider.resource` expõe:
-  - `Definir Backend De Dados | json|sqlserver`.
-  - `Obter Massa De Teste | <dominio> | <cenario>`.
-  - `Configurar Diretórios De Dados | <json_dir> | <coluna>`.
-  - `Definir Conexao SQLServer | <conn_string> | <ativar>` e `Definir Schema SQLServer | <schema>`.
-- Variáveis de ambiente:
-  - `DATA_BACKEND`, `DATA_BASE_DIR`, `DATA_JSON_DIR`, `DATA_SQLSERVER_CONN`, `DATA_SQLSERVER_SCHEMA`, `DATA_SQLSERVER_TIMEOUT`, `DATA_SQLSERVER_DRIVER`.
-  - Service Principal (quando não usar connection string completa):
-    - Credenciais (canônicas do pipeline): `AZR_SDBS_PF_TDNP_T_SP_CLIENT_ID`, `AZR_SDBS_PF_TDNP_T_SP_CLIENT_SECRET`.
-    - Alternativas suportadas: `AZR_SQL_SERVER_CLIENT_ID`, `AZR_SQL_SERVER_CLIENT_SECRET`.
-    - Endpoint: `AZR_SQL_SERVER_HOST` (ex.: `azr-sdbs-pf-td-nova-transacional-dev-n.database.windows.net`), `AZR_SQL_SERVER_PORT` (ex.: `1433`), `AZR_SQL_SERVER_DB` (ex.: `azr-sdb-pf-td-nova-transacional-dev-n`).
-- Benefício: alterna a estratégia de massa sem refatorar suites/keywords — forte desacoplamento e reuso.
-
-Diretrizes de uso:
-- Proibido hardcode de dados nas suítes.
-- Use SQL Server para registros reais/pré‑condições e validação final dos efeitos do teste.
-- Use JSON para negativos/limites/payloads sintéticos quando não houver dado real disponível.
-- Combine: JSON como base do payload + campos preenchidos com dados reais vindos do SQL quando fizer sentido.
-- SQL sempre com consultas read‑only e parametrizadas; criação de massa via SP apenas como exceção.
-- Data Provider deve retornar dicionários com chaves estáveis, independente da fonte.
-- Keywords principais:
   - `Obter Massa De Teste | <dominio> | <cenario>`
-  - `Definir Backend De Dados | json|sqlserver`
-  - `Definir Conexao SQLServer | <conn_string>=None | <ativar=True>` (monta via env quando omitido)
-  - `Definir Schema SQLServer | <schema>`
-  - `Testar Conexao SQLServer` (SELECT 1 — sanidade de credenciais/timeouts)
+  - `Definir Backend De Dados | json` (compatível; padrão já é JSON)
+- Variáveis de ambiente suportadas:
+  - `DATA_BACKEND` (default `json`), `DATA_BASE_DIR`, `DATA_JSON_DIR`.
 
-### Quick start (2 passos) — usar SQL Server
-- Pré‑requisito: defina os envs de conexão (recomendado Service Principal do pipeline):
-  - `DATA_SQLSERVER_CONN` OU `AZR_SQL_SERVER_HOST/DB/PORT` + `AZR_SDBS_PF_TDNP_T_SP_CLIENT_ID` e `AZR_SDBS_PF_TDNP_T_SP_CLIENT_SECRET`.
-  - Alternativamente (suportado): `AZR_SQL_SERVER_CLIENT_ID` e `AZR_SQL_SERVER_CLIENT_SECRET` no lugar dos nomes canônicos acima.
-  - Opcional: `DATA_SQLSERVER_SCHEMA` (se definido, pode pular o Passo 1).
-
-- Passos mínimos dentro da suíte (após importar `resources/common/data_provider.resource`):
-  1) `Definir Schema SQLServer    <schema>`
-  2) `Definir Conexao SQLServer   ${NONE}    True`
-
-- Observações rápidas:
-  - O Passo 2 monta a connection string a partir dos envs (ou usa `DATA_SQLSERVER_CONN`) e já ativa o backend SQL (`ativar=True`).
-  - Se o schema vier de `DATA_SQLSERVER_SCHEMA`, você pode executar apenas: `Definir Conexao SQLServer    ${NONE}    True`.
-
-Opcional (com environments/<env>.py):
-- Defina variáveis no arquivo de ambiente (sem segredos), por exemplo:
-  - `SQL_SERVER_HOST`, `SQL_SERVER_DB`, `SQL_SERVER_PORT=1433`, `SQL_SERVER_SCHEMA=dbo`.
-- No início da suíte, aplique essas variáveis aos envs do processo e ative o backend:
-  - `Aplicar Configuracoes SQLServer Do Ambiente    ${SQL_SERVER_HOST}    ${SQL_SERVER_DB}    ${SQL_SERVER_PORT}    ${SQL_SERVER_SCHEMA}`
-  - `Definir Conexao SQLServer    ${NONE}    True`
-
-### Boas práticas mínimas
+Boas práticas mínimas
 
 * **Proibido hardcode** nas suítes — sempre use `Obter Massa De Teste`.
-* **SQL:** consultas **read-only** e **parametrizadas**; criação de massa via **SP** apenas como **exceção**.
 * **JSON:** um arquivo por **domínio** com **cenários nomeados**; sem dados sensíveis reais.
-* **Padronização:** o Data Provider deve **retornar dicionários com as mesmas chaves**, venham de SQL ou JSON (quem consome não precisa saber a origem).
+* **Padronização:** o Data Provider deve **retornar dicionários com as mesmas chaves**.
 * **Segurança:** segredos fora do repositório (use `secrets`/CI).
 
 ## Layering e Imports (na prática)
@@ -507,11 +461,7 @@ Se preferir variável de sistema: `ENV=uat robot tests/...` e mantenha o import 
   * `HTTP_RETRY_BACKOFF_MS` – backoff base (ex.: `200`).
 * **Dados**
 
-  * `DATA_BACKEND` – `"json"` ou `"sqlserver"`.
-* **Banco (somente metadados; credenciais via segredo)**
-
-  * `SQLSERVER_HOST`, `SQLSERVER_DB`
-  * `SQL_READ_TIMEOUT_S` (ex.: `15`)
+  * `DATA_BACKEND` – `"json"`.
 * **Execução Web (quando houver)**
 
   * `BROWSER` (ex.: `"chromium"`), `BROWSER_HEADLESS` (`True/False`)
@@ -535,11 +485,7 @@ HTTP_TIMEOUT_S = 45
 HTTP_RETRY_MAX = 2
 HTTP_RETRY_BACKOFF_MS = 300
 
-DATA_BACKEND = "sqlserver"
-
-SQLSERVER_HOST = "tcp:uat-sql.seudominio.com,1433"
-SQLSERVER_DB = "app_uat"
-SQL_READ_TIMEOUT_S = 15
+DATA_BACKEND = "json"
 
 BROWSER = "chromium"
 BROWSER_HEADLESS = True
@@ -555,9 +501,6 @@ POLL_BACKOFF_MS = 300
 # Copie para secrets.yaml (não commitar). O código deve ler via caminho/variável segura.
 api:
   token: "<coloque_sua_chave>"
-sqlserver:
-  user: "<usuario_ro>"
-  password: "<senha_ro>"
 ```
 
 ## Desacoplamento e Manutenibilidade
@@ -609,7 +552,7 @@ sqlserver:
    - Products (fluxos): `.venv/bin/python -m robot -v ENV:dev -d results/api/products tests/api/domains/products/products_suite.robot`
    - Carts (fluxos): `.venv/bin/python -m robot -v ENV:dev -d results/api/carts tests/api/domains/carts`
    - Filtrar por tags: `-i "api AND products AND regression"`
-   - Sanidade SQL Server: `.venv/bin/python -m robot -d results/common/sql tests/common/validacao_sql_server.robot`
+   - (exemplos adicionais podem ser adicionados conforme os domínios evoluírem)
 4) Qualidade de código
    - Lint: `.venv/bin/robocop resources tests`
    - Format (opcional): `.venv/bin/robotidy resources tests`
