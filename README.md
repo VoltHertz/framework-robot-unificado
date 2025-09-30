@@ -8,7 +8,7 @@ Para a manutenabilidade do monorepo será adotado alguns pilares fundamentais: B
 
 - Dependencias:
     `tests`  ──►  `resources/api/keywords`  ──►  `resources/api/services`  ──►  `resources/api/adapters`
-                              ╰──►  `resources/common/*` (assertions, data_provider, logging, hooks...)
+                              ╰──►  `resources/common/*` (data_provider, logging, hooks...)
   Proibido: tests chamarem services/adapters direto.
   Proibido: keywords pularem services para falar com adapters.
 
