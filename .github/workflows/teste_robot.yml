@@ -111,8 +111,8 @@ jobs:
           cd .. ; cd ..
           
           
-          echo "=== EXECUTANDO TESTES ROBOT ==="
-          python -m robot -d $PASTA_LOG $ARQUIVO_TESTE
+          echo "=== EXECUTANDO TESTES ROBOT (ENV=dev) ==="
+          python -m robot -v ENV:dev -d $PASTA_LOG $ARQUIVO_TESTE
       
       # Cria um arquivo ZIP dos logs com um nome dinâmico baseado no repositorio
       - name: Gera report zip com nomenclatura dinâmica
