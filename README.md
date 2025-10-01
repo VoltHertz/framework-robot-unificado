@@ -1,10 +1,10 @@
 # Robot Framework QA monorepo 
 
-Este é um projeto de monorepositório utilizado na automação de testes funcionais em robot framework buscando definir as melhores praticas para testes de apis em larga escala. Em outras palavaras, se tratá de um único repositório desenvolvido em Robot Framework, visando atender centenas de testes funcionais automatizados, em diferentes APIs e domínios, ao qual será utilizado por diferentes equipes. Que precisa contudo se manter manutenivel no longo prazo. Os testes serão executados em APIs (rest + protocolo kafka + gRPC) e Web UI. O CI/CD será automatizado em github actions, com deploy on-premise AKS
+Este é um projeto de monorepositório utilizado na automação de testes funcionais em Robot Framework, buscando definir as melhores práticas para testes de APIs em larga escala. Em outras palavras, trata-se de um único repositório visando atender centenas de testes funcionais automatizados, em diferentes APIs e domínios, a ser utilizado por diferentes equipes — que precisa se manter manutenível no longo prazo. Os testes serão executados em APIs (REST + protocolo Kafka + gRPC) e Web UI. O CI/CD será automatizado em GitHub Actions, com deploy on‑premise (AKS).
 
 
 ## Pilares principais
-Para a manutenabilidade do monorepo será adotado alguns pilares fundamentais: BDD em PT‑BR nas suítes (Dado/Quando/Então) com foco no negócio, desenvolvimento de script em camadas com desacoplamento tecnico do negocial, seguindo principio DRY(dont repeat yourself), tags consistentes, documentação padronizada(no formato robot) e associada ao Jira/confluence, massa de dados descoplados provenientes de banco de dados via conexão com SQL server e da .json.
+Para a manutenabilidade do monorepo serão adotados alguns pilares fundamentais: BDD em PT‑BR nas suítes (Dado/Quando/Então) com foco no negócio; desenvolvimento em camadas com desacoplamento técnico do negocial, seguindo o princípio DRY; tags consistentes; documentação padronizada (no formato Robot) e associada ao Jira/Confluence; e massa de dados desacoplada via arquivos `.json` (JSON‑only, sem dependência de SQL Server neste repositório).
 
 - Dependencias:
     `tests`  ──►  `resources/api/keywords`  ──►  `resources/api/services`  ──►  `resources/api/adapters`
@@ -63,7 +63,7 @@ Para a manutenabilidade do monorepo será adotado alguns pilares fundamentais: B
   - Colocam tags, IDs `UC-<DOM>-<SEQ>` e documentação padronizada para rastreabilidade e filtragem.
 - Dados (Data Provider):
   - Keyword única de consumo de massa (`Obter Massa De Teste`) alimentada por backends plugáveis.
-  - Evita acoplamento a formato/fonte, simplificando a adoção de JSON/SQL sem tocar nas suítes.
+  - Evita acoplamento a formato/fonte, simplificando a adoção de JSON (por enquanto JSON‑only) sem tocar nas suítes.
 
   ### Organização interna de keywords (fatiamento por complexidade)
 - Objetivo: manter arquivos e keywords fáceis de ler/testar, reduzir duplicação e atender linting (Robocop LEN03).
@@ -116,8 +116,9 @@ Para a manutenabilidade do monorepo será adotado alguns pilares fundamentais: B
 ### QA Monorepo Estrutura de pastas
 ```text
 framework-robot-unificado/
-├─ tests/                              # Somente suítes (.robot) com logica BDD, nada de códgio e lógica aqui, apenas negócio.
+├─ tests/                              # Somente suítes (.robot) com BDD; sem lógica de infraestrutura
 │  ├─ common/
+│  │  └─ testes_pipeline.robot         # Sanidade/validação de pipeline (Hello + GET Giftcard + diagnóstico)
 │  └─ api/                             # Todoas as suites de APIs
 │     ├─ domains/                      # Suites separas por dominio
 │     │  ├─ carts/                     # Dominio de uma API
@@ -129,11 +130,12 @@ framework-robot-unificado/
 │
 ├─ resources/                          # Keywords reutilizáveis (.resource) por camada
 │  ├─ common/                          # Transversal às plataformas
-│  │  ├─ data_provider.resource        # Keywords para backends de massa (JSON/SQL Server)
+│  │  ├─ data_provider.resource        # Keywords para massa (JSON‑only)
 │  │  ├─ hooks.resource                # Suite Setup/Teardown padrão (sessão HTTP, etc.)
 │  │  ├─ logger.resource               # Logger estilizado (prefixo [arquivo:Lnn])
 │  │  ├─ json_utils.resource           # Utilidades de validação/conversão JSON
-│  │  └─ context.resource              # Contexto/variáveis compartilhadas em execução de integraçao
+│  │  ├─ context.resource              # Contexto/variáveis compartilhadas em execução de integração
+│  │  └─ pipeline_utils.resource       # Utilitários para pipeline (Hello World, GET Giftcard, diagnóstico/env import)
 │  └─ api/
 │     ├─ adapters/                     # Baixo nível: gerenciamento de sessão/timeout/retry
 │     │  └─ http_client.resource       # Adapter HTTP (RequestsLibrary encapsulado)
@@ -165,7 +167,8 @@ framework-robot-unificado/
 │  ├─ context/
 │  │  └─ integration_context.py        # Contexto para cenários de integração
 │  ├─ data/
-│  │  └─ data_provider.py              # Backend: json
+│  │  ├─ data_provider.py              # Backend: JSON‑only (SQL removido do Data Provider)
+│  │  └─ dbConnection.py               # Utilitário de validação de conectividade SQL usado pelo pipeline
 │  └─ logging/
 │     └─ styled_logger.py              # Listener v3: injeta [arquivo:Lnn]
 │
@@ -182,8 +185,9 @@ framework-robot-unificado/
 │     ├─ carts/
 │     └─ integration/
 │        └─ carts_products/
-├─ .github/                      # Pipelines                                    
+├─ .github/                            # Pipelines
 │  └─ workflows/
+│     └─ teste_robot.yml               # Execução CI (sanidade/pipeline + artefatos de log)
 │
 ├─ AGENTS.md                           # Diretrizes operacionais (padrões, camadas, execução)
 ├─ README.md                           # Este guia
@@ -627,7 +631,7 @@ api:
 
 ## Definition of Done (por domínio)
 - Fluxos: positivo (happy‑path), negativos relevantes e limites (ex.: paginação 0/1/alto).
-- Massa: centralizada por cenário (JSON/SQL), sem depender de dumps completos.
+- Massa: centralizada por cenário (JSON), sem depender de dumps completos.
 - Logs: mensagens chave com `Log Estilizado` e referência de UC.
 - Execução: suítes `domains/*` verdes localmente e artefatos em `results/<plataforma>/<dominio>`.
 
