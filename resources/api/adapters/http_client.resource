@@ -1,8 +1,6 @@
 *** Settings ***
 Documentation    Adapter HTTP baseado em RequestsLibrary para sessões HTTP por domínio (DummyJSON, Giftcard, etc.).
 Library    RequestsLibrary
-Library    Collections
-Library    String
 Resource   ../../common/logger.resource
 Variables  ../../../environments/_placeholders.py
 
@@ -70,24 +68,16 @@ Diagnosticar Variaveis De Ambiente HTTP
     ${t}=        Get Variable Value    ${HTTP_TIMEOUT}              ${None}
     ${r}=        Get Variable Value    ${HTTP_MAX_RETRIES}          ${None}
     ${b}=        Get Variable Value    ${HTTP_RETRY_BACKOFF}        ${None}
-    ${retry_status}=    Get Variable Value    ${HTTP_RETRY_STATUS_LIST}    ${None}
-    ${retry_methods}=   Get Variable Value    ${HTTP_RETRY_METHODS}        ${None}
-    ${verify_flag}=     Get Variable Value    ${HTTP_VERIFY_TLS}           ${None}
-    ${headers_env}=     Get Variable Value    ${HTTP_DEFAULT_HEADERS}      ${None}
-    Log Estilizado    [Diagnóstico Adapter] DUMMYJSON='${dummy}' | GIFTCARD='${gift}' | TIMEOUT='${t}' | RETRIES='${r}' | BACKOFF='${b}' | STATUS='${retry_status}' | METHODS='${retry_methods}' | VERIFY='${verify_flag}' | HEADERS='${headers_env}'    DEBUG
+    Log Estilizado    [Diagnóstico Adapter] DUMMYJSON='${dummy}' | GIFTCARD='${gift}' | TIMEOUT='${t}' | RETRIES='${r}' | BACKOFF='${b}'    DEBUG
 
 Criar Sessao HTTP
     [Documentation]    Cria sessão HTTP RequestsLibrary para um alias/base_url com timeouts/retries padronizados.
-    [Arguments]    ${alias}    ${base_url}    ${verify}=${None}
+    [Arguments]    ${alias}    ${base_url}    ${verify}=${True}
     ${timeout}    ${max_retries}    ${backoff_factor}=    Resolver Parametros De Robustez
-    ${retry_status_list}    ${retry_method_list}=    Resolver Politica De Retry
-    ${verify_final}=    Resolver Verificacao TLS    ${verify}
-    ${headers}=    Resolver Cabecalhos Padrao
-    ${disable_warnings}=    Determinar Flag De Warnings    ${verify_final}
-    Log Estilizado    Criando sessão ${alias} base=${base_url} timeout=${timeout}s retries=${max_retries} backoff=${backoff_factor} verify=${verify_final} status=${retry_status_list} methods=${retry_method_list}    DEBUG
-    Create Session    ${alias}    ${base_url}    headers=${headers}    timeout=${timeout}
-    ...    verify=${verify_final}    max_retries=${max_retries}    backoff_factor=${backoff_factor}
-    ...    disable_warnings=${disable_warnings}    retry_status_list=${retry_status_list}    retry_method_list=${retry_method_list}
+    ${headers}=    Evaluate    {'Content-Type': 'application/json'}
+    Log Estilizado    Criando sessão ${alias} base=${base_url}
+    Create Session    ${alias}    ${base_url}    verify=${verify}    timeout=${timeout}
+    ...    max_retries=${max_retries}    backoff_factor=${backoff_factor}    headers=${headers}
 
 Encerrar Sessao API Giftcard
     [Documentation]    Encerramento simbólico da sessão GIFTCARD (RequestsLibrary gerencia automaticamente).
@@ -111,116 +101,3 @@ Resolver Parametros De Robustez
     ${max_retries}=          Valor Com Padrao    ${max_retries_raw}      3
     ${backoff_factor}=       Valor Com Padrao    ${backoff_factor_raw}   0.2
     RETURN    ${timeout}    ${max_retries}    ${backoff_factor}
-
-Resolver Politica De Retry
-    [Documentation]    Constrói listas de status e métodos elegíveis a retry com base no ambiente.
-    ${status_raw}=    Get Variable Value    ${HTTP_RETRY_STATUS_LIST}    ${None}
-    ${method_raw}=    Get Variable Value    ${HTTP_RETRY_METHODS}        ${None}
-    ${status_list}=   Converter Csv Para Inteiros    ${status_raw}
-    ${method_list}=   Converter Csv Para Strings     ${method_raw}
-    ${status_len}=    Get Length    ${status_list}
-    IF    ${status_len}==0
-        ${status_list}=    Criar Lista Status Padrao
-    END
-    ${methods_len}=    Get Length    ${method_list}
-    IF    ${methods_len}==0
-        ${method_list}=    Criar Lista Metodos Padrao
-    END
-    RETURN    ${status_list}    ${method_list}
-
-Resolver Verificacao TLS
-    [Documentation]    Determina se a verificação de certificado TLS ficará ativa (argumento > ambiente > default True).
-    [Arguments]    ${verify_argument}
-    IF    '${verify_argument}'!='${None}'
-        RETURN    ${verify_argument}
-    END
-    ${from_env}=    Get Variable Value    ${HTTP_VERIFY_TLS}    ${None}
-    IF    '${from_env}'=='${None}'
-        ${from_env}=    Get Variable Value    ${HTTP_VERIFY_SSL}    ${None}
-    END
-    ${resolved}=    Normalizar Booleano    ${from_env}    ${True}
-    RETURN    ${resolved}
-
-Resolver Cabecalhos Padrao
-    [Documentation]    Retorna headers padrão para a sessão HTTP (env > fallback JSON).
-    ${headers_env}=    Get Variable Value    ${HTTP_DEFAULT_HEADERS}    ${None}
-    IF    '${headers_env}'=='${None}'
-        ${headers}=    Evaluate    {'Content-Type': 'application/json'}
-    ELSE
-        ${headers}=    Set Variable    ${headers_env}
-    END
-    RETURN    ${headers}
-
-Determinar Flag De Warnings
-    [Documentation]    Define se warnings SSL devem ser suprimidos (1 quando verify=False).
-    [Arguments]    ${verify}
-    ${flag}=    Evaluate    0 if bool(${verify}) else 1
-    RETURN    ${flag}
-
-Converter Csv Para Inteiros
-    [Documentation]    Converte string CSV em lista de inteiros (ignora vazios/None).
-    [Arguments]    ${valor}
-    ${resultado}=    Create List
-    ${texto}=    Convert To String    ${valor}
-    ${texto}=    Strip String    ${texto}
-    IF    '${texto}'=='' or '${texto}'=='None'
-        RETURN    ${resultado}
-    END
-    ${partes}=    Split String    ${texto}    ,
-    FOR    ${item}    IN    @{partes}
-        ${limpo}=    Strip String    ${item}
-        IF    '${limpo}'!=''
-            ${numero}=    Convert To Integer    ${limpo}
-            Append To List    ${resultado}    ${numero}
-        END
-    END
-    RETURN    ${resultado}
-
-Converter Csv Para Strings
-    [Documentation]    Converte string CSV em lista de strings maiúsculas (ignora vazios/None).
-    [Arguments]    ${valor}
-    ${resultado}=    Create List
-    ${texto}=    Convert To String    ${valor}
-    ${texto}=    Strip String    ${texto}
-    IF    '${texto}'=='' or '${texto}'=='None'
-        RETURN    ${resultado}
-    END
-    ${partes}=    Split String    ${texto}    ,
-    FOR    ${item}    IN    @{partes}
-        ${limpo}=    Strip String    ${item}
-        IF    '${limpo}'!=''
-            ${maiusculo}=    Convert To Uppercase    ${limpo}
-            Append To List    ${resultado}    ${maiusculo}
-        END
-    END
-    RETURN    ${resultado}
-
-Criar Lista Status Padrao
-    [Documentation]    Retorna lista padrão de status HTTP elegíveis a retry.
-    ${lista}=    Create List    429    502    503    504
-    RETURN    ${lista}
-
-Criar Lista Metodos Padrao
-    [Documentation]    Retorna lista padrão de métodos idempotentes elegíveis a retry.
-    ${lista}=    Create List    PUT    HEAD    GET    OPTIONS    TRACE    DELETE
-    RETURN    ${lista}
-
-Normalizar Booleano
-    [Documentation]    Normaliza valores booleanos provenientes do ambiente (aceita True/False, 1/0, yes/no, sim/não).
-    [Arguments]    ${valor}    ${padrao}
-    IF    '${valor}'=='${None}'
-        RETURN    ${padrao}
-    END
-    ${texto}=    Convert To String    ${valor}
-    ${texto}=    Strip String    ${texto}
-    ${texto}=    Convert To Lowercase    ${texto}
-    IF    '${texto}'=='' or '${texto}'=='none'
-        RETURN    ${padrao}
-    END
-    IF    '${texto}' in ['true', '1', 'yes', 'sim']
-        RETURN    ${True}
-    END
-    IF    '${texto}' in ['false', '0', 'no', 'nao', 'não']
-        RETURN    ${False}
-    END
-    RETURN    ${padrao}
