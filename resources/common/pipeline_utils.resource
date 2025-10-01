@@ -12,8 +12,9 @@ Hello World
 
 Executa GET na API de GiftCard
     [Documentation]    Abre sessão GIFTCARD e executa GET em giftcards/ validando status 200.
+    # Diagnóstico explícito antes de abrir a sessão (ajuda a identificar variáveis ausentes)
+    Diagnosticar Variaveis De Ambiente HTTP
     Iniciar Sessao API Giftcard
     ${response}=    GET On Session    GIFTCARD    giftcards/
     Log Estilizado    GET giftcards/ status=${response.status_code}
     Should Be Equal As Integers    ${response.status_code}    200
-

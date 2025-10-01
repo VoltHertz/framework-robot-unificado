@@ -14,5 +14,6 @@ Cenário 01 - Hello World
 Cenário 2 - Chamada de API
     [Tags]    teste    API
     [Documentation]    Este cenário testa a chamada de uma API de Giftcard
+    Set Log Level    DEBUG
     Executa GET na API de GiftCard
-
+    Set Log Level    INFO
