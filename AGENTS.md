@@ -235,6 +235,27 @@ Diretrizes de uso
 - Massa não encontrada: confirme `DATA_*` envs, a existência de `data/json/<dominio>.json` (quando backend for JSON) ou a tabela `[schema].[dominio]` no SQL Server.
 - Tempo e flakiness: defina timeouts/retries no adapter HTTP; prefira asserts inclusivos quando fornecedor variar (ex.: 200/201 em criação).
 
+### Variáveis HTTP e ordem de import (env‑driven)
+- Sintoma típico em CI: erro "BASE_URL_API_<DOMINIO> não definida" ou diagnóstico com `DUMMYJSON='None' | GIFTCARD='None'` ao abrir sessão.
+- Causa: o arquivo `environments/${ENV}.py` não estava carregado no runtime do Robot no momento da leitura (ordem/ausência de import), apesar de existir no repo.
+
+- Boas práticas para evitar:
+  - Em suítes, coloque `Variables   ../../environments/${ENV}.py` no topo de `*** Settings ***`, antes de `Resource`.
+  - Use hooks por domínio: `Setup Suite Padrao` (DummyJSON), `Setup Suite Giftcard` (Giftcard) — eles encadeiam a abertura das sessões corretas.
+  - Quando precisar depurar, eleve o log: `--loglevel DEBUG` ou `Set Log Level    DEBUG`.
+
+- Ferramentas de diagnóstico (adapter HTTP):
+  - `Diagnosticar Variaveis De Ambiente HTTP` — registra os valores de `BASE_URL_API_DUMMYJSON`, `BASE_URL_API_GIFTCARD`, `HTTP_TIMEOUT`, `HTTP_MAX_RETRIES`, `HTTP_RETRY_BACKOFF` vistos no runtime.
+  - Logs adicionais no adapter (DEBUG/ERROR) em `Resolver Base Url <Domínio>` indicam a variável lida e apontam para o import correto.
+
+- Padrão de correção aplicado no pipeline:
+  - Antes de abrir a sessão Giftcard, o teste chama:
+    - `Diagnosticar Variaveis De Ambiente HTTP` → `Garantir Variaveis Giftcard` → `Diagnosticar Variaveis De Ambiente HTTP` → `Iniciar Sessao API Giftcard`.
+  - Mantém o modelo env‑driven (sem `-v BASE_URL_API_...` via CLI).
+
+- Nota sobre `environments/_placeholders.py`:
+  - Existe apenas para lint/IDE. Em runtime, as variáveis importadas pelas suítes sobrepõem os placeholders. Ele não é causa de `None` quando o `environments/${ENV}.py` foi importado corretamente.
+
 ## Plano de Implementação – Integração Carts + Products (API)
 
 Objetivo: Implementar testes automatizados em camadas (adapters → services → keywords → suites) cobrindo os casos de uso de integração definidos em `docs/use_cases/Carts_Products_Use_Cases.md`, reutilizando padrões e boas práticas já aplicados aos domínios `carts` e `products`.

@@ -658,3 +658,33 @@ api:
 - Massa não encontrada: verifique `DATA_*` e arquivos em `data/json/<dominio>.json` ou `data/<dominio>.csv`.
 - Flakiness/tempo: ajuste timeouts/retries no adapter HTTP; prefira asserts inclusivos (ex.: 200/201).
 - Caminhos/Imports: rode `--dryrun` em `tests` para capturar erros de import rapidamente.
+
+### Troubleshooting — Variáveis de ambiente (HTTP) e sessões
+- Sintoma: erro "BASE_URL_API_<DOMINIO> não definida" ao abrir sessão (ex.: Giftcard) ou diagnóstico indicando `DUMMYJSON='None' | GIFTCARD='None'`.
+- Causa provável: variáveis do `environments/${ENV}.py` ainda não carregadas no runtime do Robot (ordem/carregamento), não é problema de API fora do ar.
+
+- Solução prática (env‑driven, sem gambiarras via CLI):
+  - Dê preferência a importar variáveis logo no topo da suíte:
+    - `Variables    ../../environments/${ENV}.py` como primeira diretiva em `*** Settings ***`.
+  - Antes de abrir a sessão do domínio, garanta o carregamento das variáveis e registre diagnóstico:
+    - `Garantir Variaveis <Domínio>` (de `resources/common/hooks.resource`) faz `Import Variables environments/${ENV}.py` se faltar e valida.
+    - `Diagnosticar Variaveis De Ambiente HTTP` (de `resources/api/adapters/http_client.resource`) loga os valores vistos em runtime.
+  - Exemplo (como aplicado no pipeline):
+    ```robot
+    # Dentro da keyword que chama a API
+    Set Log Level    DEBUG
+    Diagnosticar Variaveis De Ambiente HTTP
+    ${_}=    Garantir Variaveis Giftcard
+    Diagnosticar Variaveis De Ambiente HTTP
+    Iniciar Sessao API Giftcard
+    ${resp}=    GET On Session    GIFTCARD    giftcards/
+    Should Be Equal As Integers    ${resp.status_code}    200
+    Set Log Level    INFO
+    ```
+
+- Diferenciando ausência de variável vs. API fora do ar:
+  - Variável ausente: falha em `Resolver Base Url <Domínio>` com mensagem explícita; diagnóstico mostra `...='<None>'`.
+  - API fora do ar/SSL/timeout: a base existe; a sessão/GET falha com erros de rede (connection/SSL/timeout) ou status ≠ 200.
+
+- Placeholders não são a causa:
+  - O adapter referencia `environments/_placeholders.py` apenas para lint/IDE. Em execução real, o `Variables ../../environments/${ENV}.py` sobrepõe estes valores. Mantenha o modelo env‑driven e evite duplicar valores via CLI.
