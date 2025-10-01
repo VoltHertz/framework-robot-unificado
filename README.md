@@ -2,12 +2,34 @@
 
 Este é um projeto de monorepositório utilizado na automação de testes funcionais em Robot Framework, buscando definir as melhores práticas para testes de APIs em larga escala. Em outras palavras, trata-se de um único repositório visando atender centenas de testes funcionais automatizados, em diferentes APIs e domínios, a ser utilizado por diferentes equipes — que precisa se manter manutenível no longo prazo. Os testes serão executados em APIs (REST + protocolo Kafka + gRPC) e Web UI. O CI/CD será automatizado em GitHub Actions, com deploy on‑premise (AKS).
 
+## Índice
+- [Pilares principais](#pilares-principais)
+- [Modelo em Camadas](#modelo-em-camadas)
+  - [Organização interna de keywords](#organização-interna-de-keywords-fatiamento-por-complexidade)
+  - [Layering e Imports (na prática)](#layering-e-imports-na-prática)
+- [Infra de Pastas - Monorepo](#infra-de-pastas---monorepo)
+- [Massa de Dados (JSON)](#massa-de-dados-json)
+- [Environments (configuração por ambiente)](#environments-configuração-por-ambiente)
+- [Tags](#tags)
+- [Documentação](#documentação)
+- [Execução](#execução)
+- [Outras Considerações](#outras-considerações)
+  - [Contexto de Integração (mochila por teste)](#contexto-de-integração-mochila-por-teste)
+  - [Desacoplamento e Manutenibilidade](#desacoplamento-e-manutenibilidade)
+  - [Lint e Formatação](#lint-e-formatação)
+  - [Padrões para novos domínios](#padrões-para-novos-domínios)
+  - [Definition of Done (por domínio)](#definition-of-done-por-domínio)
+  - [Contribuição e PRs (resumo)](#contribuição-e-prs-resumo)
+  - [Troubleshooting Comum](#troubleshooting-comum)
+    - [Variáveis de ambiente (HTTP) e sessões](#troubleshooting--variáveis-de-ambiente-http-e-sessões)
+  - [Logs Profissionais](#logs-profissionais-rastreamento-com-arquivo-lnn)
+  - [Nota sobre exemplos (DummyJSON)](#nota-sobre-exemplos-dummyjson)
 
 ## Pilares principais
 Para a manutenabilidade do monorepo serão adotados alguns pilares fundamentais: BDD em PT‑BR nas suítes (Dado/Quando/Então) com foco no negócio; desenvolvimento em camadas com desacoplamento técnico do negocial, seguindo o princípio DRY; tags consistentes; documentação padronizada (no formato Robot) e associada ao Jira/Confluence; e massa de dados desacoplada via arquivos `.json` (JSON‑only, sem dependência de SQL Server neste repositório).
 
 - Dependencias:
-    `tests`  ──►  `resources/api/keywords`  ──►  `resources/api/services`  ──►  `resources/api/adapters`
+    `tests`  ──►  `resources/api/keywords`  ─►  `resources/api/services`  ─►  `resources/api/adapters`
                               ╰──►  `resources/common/*` (data_provider, logging, hooks...)
   Proibido: tests chamarem services/adapters direto.
   Proibido: keywords pularem services para falar com adapters.
@@ -21,32 +43,6 @@ Para a manutenabilidade do monorepo serão adotados alguns pilares fundamentais:
 - Documentação padrão para teste cases e keywords.
 
 - Variaveis de ambientes separados na pasta environments.
-
-- Logs padronizados: prefixo automático [arquivo:linha].
-
-### Nota sobre exemplos (DummyJSON)
-- Todos os exemplos de domínio usados no repositório (carts e products) apontam para o fornecedor público DummyJSON: https://dummyjson.com
-- Eles servem apenas como um exemplo prático de modelo ideal de organização dos testes. Em projetos reais, substitua por seus domínios/endpoints.
-
-
-
-## Índice
-- [Pilares principais](#pilares-principais)
-- [Modelo em Camadas](#modelo-em-camadas)
-- [Infra de Pastas - Monorepo](#infra-de-pastas---monorepo)
-- [Massa de Dados (JSON)](#massa-de-dados-json)
-- [Layering e Imports (na prática)](#layering-e-imports-na-prática)
-- [Contexto de Integração (mochila por teste)](#contexto-de-integração-mochila-por-teste)
-- [Logs Profissionais](#logs-profissionais-rastreamento-com-arquivo-lnn)
-- [Environments (configuração por ambiente)](#environments-configuração-por-ambiente)
-- [Desacoplamento e Manutenibilidade](#desacoplamento-e-manutenibilidade)
-- [Lint e Formatação](#lint-e-formatação)
-- [Padrões para novos domínios](#padrões-para-novos-domínios)
-- [Contribuição e PRs](#contribuição-e-prs-resumo)
-- [Definition of Done](#definition-of-done-por-domínio)
-- [Execução](#execução)
-- [Troubleshooting Comum](#troubleshooting-comum)
-
 
 ## Modelo em Camadas
 - Adapters (baixo nível):
@@ -65,7 +61,7 @@ Para a manutenabilidade do monorepo serão adotados alguns pilares fundamentais:
   - Keyword única de consumo de massa (`Obter Massa De Teste`) alimentada por backends plugáveis.
   - Evita acoplamento a formato/fonte, simplificando a adoção de JSON (por enquanto JSON‑only) sem tocar nas suítes.
 
-  ### Organização interna de keywords (fatiamento por complexidade)
+### Organização interna de keywords (fatiamento por complexidade)
 - Objetivo: manter arquivos e keywords fáceis de ler/testar, reduzir duplicação e atender linting (Robocop LEN03).
 - Princípio: o fatiamento acontece dentro da camada de keywords (não cria camada nova). Services/adapters permanecem inalterados.
 
@@ -93,6 +89,81 @@ Para a manutenabilidade do monorepo serão adotados alguns pilares fundamentais:
   - Helpers não importam `resources/common/logger.resource`; o arquivo principal do domínio já expõe o logger (conforme AGENTS.md).
   - Preferir sintaxe moderna (Robot ≥7): `IF/ELSE`, `RETURN`, `VAR` e estruturas inline, reduzindo `Create Dictionary`/`Set Test Variable`.
 
+### Layering e Imports (na prática)
+- Camadas sem atalhos: adapters → services → keywords → suites. Tests nunca chamam services/adapters direto; keywords não pulam services.
+- Services importam apenas o adapter HTTP e `Collections` quando necessário para montar payload/parâmetros. Nunca importam `RequestsLibrary` diretamente.
+- Keywords orquestram regra de negócio e usam utilitários de `resources/common/*`. Só adicione `Library     Collections` se houver uso real.
+- Helpers (`*_helpers.resource`, `_core_helpers.resource`) não importam `resources/common/logger.resource`; o arquivo principal do domínio já expõe o logger.
+
+#### Imports típicos nas suítes
+```robot
+*** Settings ***
+Resource    ../../resources/common/hooks.resource
+Resource    ../../resources/common/data_provider.resource
+Resource    ../../resources/common/logger.resource
+Resource    ../../resources/api/keywords/<dominio>_keywords.resource
+Variables   ../../environments/${ENV}.py
+Suite Setup     Setup Suite Padrao
+Suite Teardown  Teardown Suite Padrao
+```
+
+#### Hooks por domínio (DummyJSON e Giftcard)
+- Objetivo: abrir apenas as sessões HTTP necessárias para a suíte, com base nas URLs do ambiente.
+- Hooks disponíveis em `resources/common/hooks.resource`:
+  - `Setup Suite Padrao` / `Teardown Suite Padrao` (DummyJSON)
+  - `Setup Suite Giftcard` / `Teardown Suite Giftcard`
+- Como funciona a resolução de URL:
+  - DummyJSON: usa `BASE_URL_API_DUMMYJSON` (em `environments/<env>.py`).
+  - Giftcard: usa `BASE_URL_API_GIFTCARD`.
+- Como usar na suíte (exemplos):
+  - DummyJSON
+    ```robot
+    *** Settings ***
+    Resource      ../../resources/common/hooks.resource
+    Variables     ../../environments/${ENV}.py
+    Suite Setup   Setup Suite Padrao
+    Suite Teardown    Teardown Suite Padrao
+    ```
+  - Giftcard
+    ```robot
+    *** Settings ***
+    Resource      ../../resources/common/hooks.resource
+    Variables     ../../environments/${ENV}.py
+    Suite Setup   Setup Suite Giftcard
+    Suite Teardown    Teardown Suite Giftcard
+    ```
+
+#### Adapter HTTP (sessão genérica por alias)
+- `resources/api/adapters/http_client.resource` expõe:
+  - `Criar Sessao HTTP | alias | base_url | verify=True` (genérico)
+  - `Iniciar Sessao API DummyJSON` e `Iniciar Sessao API Giftcard` (wrappers que resolvem a URL do domínio e chamam a genérica)
+- Boas práticas:
+  - Cada domínio tem um alias fixo (ex.: `DUMMYJSON`, `GIFTCARD`).
+  - Services de um domínio usam apenas seu alias. Não misture aliases entre domínios.
+  - Em suítes de integração que precisarem de mais de uma sessão, chame os `Setup` específicos ou inicie a segunda sessão explicitamente no início do teste.
+
+Como escolher entre genérica e wrapper
+- Genérica (rápida): quando você só precisa abrir uma sessão para uma API nova sem criar toda a estrutura de domínio ainda.
+  - Requisitos: defina `BASE_URL_API_<DOMINIO>` no `environments/<env>.py`.
+  - Uso direto na suíte:
+    ```robot
+    *** Settings ***
+    Resource    ../../resources/api/adapters/http_client.resource
+    Variables   ../../environments/${ENV}.py
+
+    *** Test Cases ***
+    Abrir Sessao E Listar Algo
+        Criar Sessao HTTP    NOVO    ${BASE_URL_API_NOVO}
+        ${resp}=    GET On Session    NOVO    /health
+        Should Be Equal As Integers    ${resp.status_code}    200
+    ```
+
+- Wrapper por domínio (recomendado): quando o domínio vai evoluir (hooks próprios, headers/autenticação, logs específicos).
+  - Passos:
+    1) Criar wrapper `Iniciar Sessao API <Dominio>` que resolve `BASE_URL_API_<DOMINIO>` e chama `Criar Sessao HTTP`.
+    2) Criar hooks `Setup Suite <Dominio>`/`Teardown Suite <Dominio>` para a suíte do domínio.
+    3) Services do domínio usam alias fixo (ex.: `NOVO`).
+  - Benefícios: URL resolvida por convenção, alias padronizado e ponto único para plugar autenticação/políticas no futuro.
 
 ## Infra de Pastas - Monorepo
 - tests: apenas suítes (.robot) — sem lógica, somente negocial BDD:
@@ -111,7 +182,6 @@ Para a manutenabilidade do monorepo serão adotados alguns pilares fundamentais:
 - environments: variáveis por ambiente (`dev.py`, `qa.py`, ...), incluindo base URLs e timeouts.
 - libs: utilitários Python — ex.: `libs/data/data_provider.py` (backends de massa) e `libs/logging/styled_logger.py` (logger estilizado).
 - results: artefatos por plataforma/domínio (`results/<plataforma>/<dominio>/`), facilitando histórico e coleta em CI.
-
 
 ### QA Monorepo Estrutura de pastas
 ```text
@@ -224,271 +294,6 @@ Boas práticas mínimas
 * **Padronização:** o Data Provider deve **retornar dicionários com as mesmas chaves**.
 * **Segurança:** segredos fora do repositório (use `secrets`/CI).
 
-## Layering e Imports (na prática)
-- Camadas sem atalhos: adapters → services → keywords → suites. Tests nunca chamam services/adapters direto; keywords não pulam services.
-- Services importam apenas o adapter HTTP e `Collections` quando necessário para montar payload/parâmetros. Nunca importam `RequestsLibrary` diretamente.
-- Keywords orquestram regra de negócio e usam utilitários de `resources/common/*`. Só adicione `Library     Collections` se houver uso real.
-- Helpers (`*_helpers.resource`, `_core_helpers.resource`) não importam `resources/common/logger.resource`; o arquivo principal do domínio já expõe o logger.
-
-### Imports típicos nas suítes
-```robot
-*** Settings ***
-Resource    ../../resources/common/hooks.resource
-Resource    ../../resources/common/data_provider.resource
-Resource    ../../resources/common/logger.resource
-Resource    ../../resources/api/keywords/<dominio>_keywords.resource
-Variables   ../../environments/${ENV}.py
-Suite Setup     Setup Suite Padrao
-Suite Teardown  Teardown Suite Padrao
-```
-
-### Hooks por domínio (DummyJSON e Giftcard)
-- Objetivo: abrir apenas as sessões HTTP necessárias para a suíte, com base nas URLs do ambiente.
-- Hooks disponíveis em `resources/common/hooks.resource`:
-  - `Setup Suite Padrao` / `Teardown Suite Padrao` (DummyJSON)
-  - `Setup Suite Giftcard` / `Teardown Suite Giftcard`
-- Como funciona a resolução de URL:
-  - DummyJSON: usa `BASE_URL_API_DUMMYJSON` (em `environments/<env>.py`).
-  - Giftcard: usa `BASE_URL_API_GIFTCARD`.
-- Como usar na suíte (exemplos):
-  - DummyJSON
-    ```robot
-    *** Settings ***
-    Resource      ../../resources/common/hooks.resource
-    Variables     ../../environments/${ENV}.py
-    Suite Setup   Setup Suite Padrao
-    Suite Teardown    Teardown Suite Padrao
-    ```
-  - Giftcard
-    ```robot
-    *** Settings ***
-    Resource      ../../resources/common/hooks.resource
-    Variables     ../../environments/${ENV}.py
-    Suite Setup   Setup Suite Giftcard
-    Suite Teardown    Teardown Suite Giftcard
-    ```
-
-### Múltiplas APIs (URLs por domínio)
-- Defina uma variável por domínio no arquivo de ambiente (evite `BASE_URL_API` genérico):
-  - HTTP: `BASE_URL_API_<DOMINIO>` (ex.: `BASE_URL_API_DUMMYJSON`, `BASE_URL_API_GIFTCARD`, `BASE_URL_API_PAGAMENTOS`).
-  - gRPC (opcional): `GRPC_HOST_<DOMINIO>` (ex.: `GRPC_HOST_PAGAMENTOS`).
-- Exemplo (`environments/local.py`):
-  ```python
-  BASE_URL_API_DUMMYJSON = "https://dummyjson.com"
-  BASE_URL_API_GIFTCARD = "https://td-aks-dev.internalenv.corp/internal-api/"
-  ```
-
-### Adapter HTTP (sessão genérica por alias)
-- `resources/api/adapters/http_client.resource` expõe:
-  - `Criar Sessao HTTP | alias | base_url | verify=True` (genérico)
-  - `Iniciar Sessao API DummyJSON` e `Iniciar Sessao API Giftcard` (wrappers que resolvem a URL do domínio e chamam a genérica)
-- Boas práticas:
-  - Cada domínio tem um alias fixo (ex.: `DUMMYJSON`, `GIFTCARD`).
-  - Services de um domínio usam apenas seu alias. Não misture aliases entre domínios.
-  - Em suítes de integração que precisarem de mais de uma sessão, chame os `Setup` específicos ou inicie a segunda sessão explicitamente no início do teste.
-
-Como escolher entre genérica e wrapper
-- Genérica (rápida): quando você só precisa abrir uma sessão para uma API nova sem criar toda a estrutura de domínio ainda.
-  - Requisitos: defina `BASE_URL_API_<DOMINIO>` no `environments/<env>.py`.
-  - Uso direto na suíte:
-    ```robot
-    *** Settings ***
-    Resource    ../../resources/api/adapters/http_client.resource
-    Variables   ../../environments/${ENV}.py
-
-    *** Test Cases ***
-    Abrir Sessao E Listar Algo
-        Criar Sessao HTTP    NOVO    ${BASE_URL_API_NOVO}
-        ${resp}=    GET On Session    NOVO    /health
-        Should Be Equal As Integers    ${resp.status_code}    200
-    ```
-
-- Wrapper por domínio (recomendado): quando o domínio vai evoluir (hooks próprios, headers/autenticação, logs específicos).
-  - Passos:
-    1) Criar wrapper `Iniciar Sessao API <Dominio>` que resolve `BASE_URL_API_<DOMINIO>` e chama `Criar Sessao HTTP`.
-    2) Criar hooks `Setup Suite <Dominio>`/`Teardown Suite <Dominio>` para a suíte do domínio.
-    3) Services do domínio usam alias fixo (ex.: `NOVO`).
-  - Benefícios: URL resolvida por convenção, alias padronizado e ponto único para plugar autenticação/políticas no futuro.
-
-## Contexto de Integração (mochila por teste)
-- O que é: um lugar seguro para guardar informações entre os passos Dado/Quando/Então do mesmo teste. Pense como uma “mochila” que o teste carrega.
-- Por que usar: evita ficar passando variáveis entre keywords e impede que dados de um teste “vazem” para outro.
-- Onde fica: `resources/common/context.resource` (usa a biblioteca Python `libs/context/integration_context.py`).
-
-Quando usar
-- Sempre que um passo precisar reutilizar algo obtido em um passo anterior (ex.: `cart_id`, resposta HTTP, parâmetros de paginação, massa carregada).
-- Em keywords de negócio (camada `resources/api/keywords`), mantendo as suítes simples (só BDD).
-
-Como usar (3 comandos)
-- Limpar a mochila (opcional, durante o teste): `Resetar Contexto De Integracao`
-- Guardar: `Definir Contexto De Integracao    CHAVE    VALOR`
-- Pegar: `${valor}=    Obter Contexto De Integracao    CHAVE`
-
-Exemplo mínimo (ajuste o caminho relativo conforme a sua suíte)
-```robot
-*** Settings ***
-Resource    resources/common/context.resource
-
-*** Test Cases ***
-UC-EXEMPLO-001 - Guardar e recuperar valor
-    [Documentation]    Demonstra guardar e depois recuperar um valor no mesmo teste
-    # Guardar algo que será usado depois
-    Definir Contexto De Integracao    CARRINHO_ID    42
-
-    # ... outros passos no meio ...
-
-    # Recuperar mais tarde
-    ${id}=    Obter Contexto De Integracao    CARRINHO_ID
-    Should Be Equal As Integers    ${id}    42
-```
-
-Exemplo típico em keywords de negócio
-```robot
-*** Settings ***
-Resource    resources/common/context.resource
-Resource    resources/api/services/carts_service.resource
-Resource    resources/common/json_utils.resource
-
-*** Keywords ***
-Quando Crio Um Carrinho Basico
-    ${resp}=    Adicionar Novo Carrinho    ${user_id}    ${payload}
-    Definir Contexto De Integracao    RESP_CARRINHO_ATUAL    ${resp}
-
-Entao O Carrinho Deve Estar Consistente
-    ${resp}=    Obter Contexto De Integracao    RESP_CARRINHO_ATUAL
-    Should Be True    ${resp.status_code} in [200, 201]
-    ${json}=    Converter Resposta Em Json    ${resp}
-    Should Contain    ${json}    id
-```
-
-Notas rápidas
-- Escopo por teste: cada teste tem sua própria “mochila”; valores não se misturam entre testes.
-- Erro comum: buscar uma chave que nunca foi guardada. O teste falha com mensagem do tipo “Valor 'X' não registrado no contexto do teste atual”.
-- O reset é opcional: use `Resetar Contexto De Integracao` apenas se precisar “zerar” a mochila durante o próprio teste. Não é necessário entre testes.
-- Boas práticas de nomes: use chaves claras e estáveis como `CARRINHO_ATUAL_ID`, `RESP_LISTAGEM`, `PARAMS_PAGINACAO`.
-
-## Tags:
-Todas as tags ficam definidas apenas nos arquivos suites presente na pasta tests/
-
-### Resumo:
-- Dominio:                products      carts             pagamentos           operacoes     ...
-- Aplicacao:              cliente       calculadora       monitor              saldo-analitico       
--	Tipo:                   positivo      negativo    	    limite               smoke
--	Estado de exceção:			quarentena		experimental		  bloqueado
-
-### Tipos
-
-1) Dominio *(uma por suíte, exceto em teste integrados)*
-  **Exemplos:** `products`, `carts`, `pagamentos`, `operacoes`, etc.
-  **Uso:** identifica a área de negócio do arquivo `.robot`.
-  **Regras:**
-  * Sempre **minúsculas**, sem acento;
-  * **Declarar em `Test Tags` da suíte** (vale para todos os testes do arquivo).
-  * Exatamente **uma** tag de domínio por suíte, execto em testes integrados.
-```robot
-*** Settings ***
-Test Tags       carts
-```
-2) Aplicação: Cada pode dominio pode ter mais de uma API:
-  **Exemplos:** `cliente`, `monitor`, `registro-liquidacao`, `saldo-analitico`, etc.
-  **Uso:** identifica APIs filiados ao respectivo dominio.
-  **Regras:**
-  * Sempre **minúsculas**, sem acento, nomes compostos separados por - (hifen);
-  
-3) Tipo *(por teste; escolha 1 ou mais conforme o caso)*
-  * **`smoke`**: verificação mínima de saúde (fluxo feliz essencial). Deve ser **rápido e estável**.
-  * **`positivo`**: caminho feliz completo do caso de uso, alternativo.
-  * **`negativo`**: validações/erros esperados (ex.: 4xx, regras de negócio).
-  * **`limite`**: limites e bordas (tamanhos máximos, valores extremos, paginação no limite, etc.).
-
-4) Estado de exceção *(opcional; no máximo 1 por teste)*
-* **`quarentena`**: teste **flaky** (não deve quebrar PRs; rodar fora do gate).
-* **`experimental`**: em implementação (pode falhar; rodar só quando solicitado).
-* **`bloqueado`**: infra/dep indisponível (deve ser **ignorado** no CI).
-
-## Documentação:
-Documentação em todos os *** Test Cases *** e em todo os *** Keywords **
-
-### Test Cases 
-
-*** Test Cases ***
-[TC_ID] - [Descriptive Name]
-    [Documentation]    [Descrição breve ou comentário relevante] ## Não há necessidade de descrever o que já está visivel no BDD, apenas um resumo/comentário ou informações a mais caso existam
-    ...    
-    ...    *Pré-requisitos:* [Pré-requisitos]
-    ...    *Dados de teste:* [Dados do teste]
-    ...    
-    ...    *JIRA Issue:* [PROJ-XXXX]
-    ...    *Confluence:* [Link to documentation]
- 
-### Keywords
-
-- Keywords simples devem receber a seguinte documentação - Geralmente utilizado nas conexões de nivel mais baixo como na pasta resources/adpaters ou resources/services, mas também em resources/keywords
-[Keyword Name]
-    [Documentation]    [Breve descricao] 
-	
-Keywords complexas devem adotar os possiveis campos abaixo, **CASO** estes existam, evitar o campo caso não existam:
-*** Keywords ***
-[Keyword Name]
-    [Documentation]    [Breve descricao]
-    ...    
-    ...    *Argumentos:* 
-    ...    - ${arg1}: [Descricao e tipo]
-    ...    - ${arg2}: [Descricao e tipo]
-    ...    ...
-    ...
-    ...    *Retorno:* [O que é retornado]
-    ...    *Efeito lateral:* [Qualquer efeito parelelo] 
-    ...    *Excoes:* [Execoes possiveis]
-    ...    
-    ...    *Exemplo de uso:*
-    ...    | [exemplo] |
-
-
-
-
-## Logs Profissionais (rastreamento com [arquivo:Lnn])
-- Biblioteca: `libs/logging/styled_logger.py` com Listener v3 (captura `source`/`lineno`).
-- Resource: `resources/common/logger.resource` com:
-  - `Log Estilizado    <mensagem>    <NIVEL=INFO>    <curto=True>    <console=False>`.
-  - `Prefixo De Log Atual` para compor mensagens customizadas.
-- Diretrizes:
-- Nunca hardcode `[arquivo:Lnn]`; o listener injeta automaticamente o contexto correto.
-  - Logue eventos de negócio (parâmetros carregados, chamadas a services, resultados de validação).
-  - Use níveis quando fizer sentido (DEBUG para payloads, INFO para milestones, WARN/ERROR para anomalias).
-
-### Níveis e exemplos de execução
-- Nível global de log (CLI): use `--loglevel` para controlar a verbosidade do run inteiro.
-  - Valores: `TRACE`, `DEBUG`, `INFO` (padrão), `WARN`, `ERROR`.
-  - Diferenciar arquivo vs console: `--loglevel DEBUG:INFO` grava DEBUG no log.html, console exibe só INFO+.
-- Ajuste em runtime (na suíte/teste):
-  - `Set Log Level    DEBUG` (no `Suite Setup` ou quando precisar depurar)
-- Usando o logger estilizado (por mensagem):
-  - `Log Estilizado    Preparando payload...    DEBUG` (mensagem só aparece se o nível global permitir)
-  - `Log Estilizado    Criado carrinho ${id}    INFO    curto=True    console=True` (também no console)
-- Prefixo curto vs completo: o 3º argumento do nosso keyword (`curto=True|False`) controla se aparece apenas o nome do arquivo ou o caminho completo.
-
-Exemplos de execução (CLI)
-- Mais detalhes (DEBUG):
-  - `.venv/bin/python -m robot --loglevel DEBUG -v ENV:dev -d results/api/products tests/api/domains/products/products_suite.robot`
-- Execução enxuta (apenas WARN/ERROR):
-  - `.venv/bin/python -m robot --loglevel WARN -v ENV:dev -d results/api/products tests/api/domains/products/products_suite.robot`
-- Debug detalhado no arquivo, console mais limpo (INFO+):
-  - `.venv/bin/python -m robot --loglevel DEBUG:INFO -v ENV:dev -d results/api/_dryrun tests`
-
-Exemplo em suíte (runtime)
-```robot
-*** Settings ***
-Suite Setup     Set Log Level    DEBUG
-Resource        resources/common/logger.resource
-
-*** Test Cases ***
-UC-LOG-001 - Exemplo de logs
-    Log Estilizado    Preparando payload...    DEBUG
-    Log Estilizado    Criado carrinho ${id}    INFO    curto=True    console=True
-```
-
-
 ## Environments (configuração por ambiente)
 
 **Objetivo:** concentrar **variáveis de execução** por ambiente (dev/uat/prod) sem espalhar configs pelas suítes.
@@ -596,44 +401,88 @@ api:
   token: "<coloque_sua_chave>"
 ```
 
-## Desacoplamento e Manutenibilidade
-- Libs isoladas nos adapters: trocar Requests/Browser/gRPC não impacta services/keywords/suites.
-- Dados independentes do formato: suites consomem uma única keyword, backends mudam por configuração.
-- Hooks comuns: criação/encerramento de sessão e outras responsabilidades de infraestrutura centralizadas.
+## Tags
+Todas as tags ficam definidas apenas nos arquivos suites presente na pasta tests/
 
-### Boas práticas
+Resumo:
+- Dominio:                products      carts             pagamentos           operacoes     ...
+- Aplicacao:              cliente       calculadora       monitor              saldo-analitico       
+- Tipo:                   positivo      negativo         limite               smoke
+- Estado de exceção:      quarentena    experimental     bloqueado
 
-* **CI sempre define o ambiente** (`-v ENV:uat` / `-v ENV:prod`).
-* **Nada de value “mágico” nas suítes**; toda referência vem de `environments/`.
-* **Segredos nunca no repo**: carregue em runtime via secret manager (ou `secrets.yaml` local, gitignored).
-* **Mudança de timeout/retry**? Ajuste **só aqui** — toda a stack herda.
+Tipos
 
-## Lint e Formatação
-- Robocop: `.venv/bin/robocop` (usa `robocop.toml` com paths/padrões do projeto; `check` é o comportamento padrão).
-- Preferências (Robot ≥ 7):
-  - Use `VAR` em vez de `Set Test Variable`; prefira listas/dicionários inline a `Create List/Dictionary`.
-  - Prefira blocos `IF/ELSE` a `Run Keyword If`.
-  - Divida keywords longas em helpers internos para legibilidade/manutenção.
-- Adicione `*** Documentation ***` sucinta em resources relevantes.
+1) Dominio *(uma por suíte, exceto em teste integrados)*
+  **Exemplos:** `products`, `carts`, `pagamentos`, `operacoes`, etc.
+  **Uso:** identifica a área de negócio do arquivo `.robot`.
+  **Regras:**
+  * Sempre **minúsculas**, sem acento;
+  * **Declarar em `Test Tags` da suíte** (vale para todos os testes do arquivo).
+  * Exatamente **uma** tag de domínio por suíte, execto em testes integrados.
+```robot
+*** Settings ***
+Test Tags       carts
+```
+2) Aplicação: Cada pode dominio pode ter mais de uma API:
+  **Exemplos:** `cliente`, `monitor`, `registro-liquidacao`, `saldo-analitico`, etc.
+  **Uso:** identifica APIs filiados ao respectivo dominio.
+  **Regras:**
+  * Sempre **minúsculas**, sem acento, nomes compostos separados por - (hifen);
+  
+3) Tipo *(por teste; escolha 1 ou mais conforme o caso)*
+  * **`smoke`**: verificação mínima de saúde (fluxo feliz essencial). Deve ser **rápido e estável**.
+  * **`positivo`**: caminho feliz completo do caso de uso, alternativo.
+  * **`negativo`**: validações/erros esperados (ex.: 4xx, regras de negócio).
+  * **`limite`**: limites e bordas (tamanhos máximos, valores extremos, paginação no limite, etc.).
 
-## Padrões para novos domínios
-- Crie os quatro artefatos por domínio:
-  - `resources/api/services/<dominio>_service.resource` — endpoints brutos (uma keyword por endpoint).
-  - `resources/api/keywords/<dominio>_keywords.resource` — orquestração/regra de negócio.
-  - `data/json/<dominio>.json` — massa por cenário com chave `cenario`.
-  - `tests/api/domains/<dominio>/<dominio>_fluxos.robot` — BDD PT‑BR (sem lógica), chamando apenas keywords de negócio.
-- Respeite sempre o layering; use `Log Estilizado` e Data Provider nas camadas Robot.
+4) Estado de exceção *(opcional; no máximo 1 por teste)*
+* **`quarentena`**: teste **flaky** (não deve quebrar PRs; rodar fora do gate).
+* **`experimental`**: em implementação (pode falhar; rodar só quando solicitado).
+* **`bloqueado`**: infra/dep indisponível (deve ser **ignorado** no CI).
 
-## Contribuição e PRs (resumo)
-- Commits: Conventional Commits (`feat`, `fix`, `docs`, `refactor`, etc.) com scopes como `api/<dominio>`, `resources`, `libs`, `docs`, `tests`.
-- PRs: descreva objetivo, evidências (paths em `results/`), variáveis de ambiente tocadas, recursos/keywords atualizados.
-- Checklist mínimo: tests verdes (fluxos e boundaries), keywords documentadas, logs estilizados, Data Provider funcional, Robocop aplicados, comandos de execução com `-v ENV:<env>` quando aplicável.
+## Documentação
+Documentação em todos os *** Test Cases *** e em todo os *** Keywords ***
 
-## Definition of Done (por domínio)
-- Fluxos: positivo (happy‑path), negativos relevantes e limites (ex.: paginação 0/1/alto).
-- Massa: centralizada por cenário (JSON), sem depender de dumps completos.
-- Logs: mensagens chave com `Log Estilizado` e referência de UC.
-- Execução: suítes `domains/*` verdes localmente e artefatos em `results/<plataforma>/<dominio>`.
+### Test Cases 
+
+```robot
+*** Test Cases ***
+[TC_ID] - [Descriptive Name]
+    [Documentation]    [Descrição breve ou comentário relevante] ## Não há necessidade de descrever o que já está visivel no BDD, apenas um resumo/comentário ou informações a mais caso existam
+    ...    
+    ...    *Pré-requisitos:* [Pré-requisitos]
+    ...    *Dados de teste:* [Dados do teste]
+    ...    
+    ...    *JIRA Issue:* [PROJ-XXXX]
+    ...    *Confluence:* [Link to documentation]
+```
+ 
+### Keywords
+
+- Keywords simples devem receber a seguinte documentação - Geralmente utilizado nas conexões de nivel mais baixo como na pasta resources/adpaters ou resources/services, mas também em resources/keywords
+```robot
+[Keyword Name]
+    [Documentation]    [Breve descricao]
+```
+
+Keywords complexas devem adotar os possiveis campos abaixo, **CASO** estes existam, evitar o campo caso não existam:
+```robot
+*** Keywords ***
+[Keyword Name]
+    [Documentation]    [Breve descricao]
+    ...    
+    ...    *Argumentos:* 
+    ...    - ${arg1}: [Descricao e tipo]
+    ...    - ${arg2}: [Descricao e tipo]
+    ...    ...
+    ...
+    ...    *Retorno:* [O que é retornado]
+    ...    *Efeito lateral:* [Qualquer efeito parelelo] 
+    ...    *Excoes:* [Execoes possiveis]
+    ...    
+    ...    *Exemplo de uso:*
+    ...    | [exemplo] |
+```
 
 ## Execução
 1) Ambiente
@@ -650,20 +499,118 @@ api:
    - Lint: `.venv/bin/robocop` (usa `robocop.toml` com `resources` e `tests` pré-configurados)
    - Format (opcional): `.venv/bin/robotidy resources tests`
 
-  ## Passo a passo: do zero ao primeiro teste
+### Passo a passo: do zero ao primeiro teste
 1) Massa: crie (ou ajuste) `data/json/<dominio>.json` incluindo um objeto por cenário com a chave `"cenario"`.
 2) Keywords: verifique/implemente a keyword de negócio em `resources/api/keywords/<dominio>_keywords.resource` orquestrando apenas services do domínio.
 3) Suíte: adicione o caso BDD PT‑BR em `tests/api/domains/<dominio>/<dominio>_fluxos.robot` chamando apenas keywords de negócio.
 4) Imports: na suíte, importe hooks, data/provider, logger e keywords do domínio; use `Suite Setup/Teardown` padrão.
 5) Execução: rode dry run para checar imports; depois execute filtrando por tag/ID e gere artefatos em `results/api/<dominio>`; valide pelo `log.html`.
 
-## Troubleshooting Comum
+## Outras Considerações
+
+### Contexto de Integração (mochila por teste)
+- O que é: um lugar seguro para guardar informações entre os passos Dado/Quando/Então do mesmo teste. Pense como uma “mochila” que o teste carrega.
+- Por que usar: evita ficar passando variáveis entre keywords e impede que dados de um teste “vazem” para outro.
+- Onde fica: `resources/common/context.resource` (usa a biblioteca Python `libs/context/integration_context.py`).
+
+Quando usar
+- Sempre que um passo precisar reutilizar algo obtido em um passo anterior (ex.: `cart_id`, resposta HTTP, parâmetros de paginação, massa carregada).
+- Em keywords de negócio (camada `resources/api/keywords`), mantendo as suítes simples (só BDD).
+
+Como usar (3 comandos)
+- Limpar a mochila (opcional, durante o teste): `Resetar Contexto De Integracao`
+- Guardar: `Definir Contexto De Integracao    CHAVE    VALOR`
+- Pegar: `${valor}=    Obter Contexto De Integracao    CHAVE`
+
+Exemplo mínimo (ajuste o caminho relativo conforme a sua suíte)
+```robot
+*** Settings ***
+Resource    resources/common/context.resource
+
+*** Test Cases ***
+UC-EXEMPLO-001 - Guardar e recuperar valor
+    [Documentation]    Demonstra guardar e depois recuperar um valor no mesmo teste
+    # Guardar algo que será usado depois
+    Definir Contexto De Integracao    CARRINHO_ID    42
+
+    # ... outros passos no meio ...
+
+    # Recuperar mais tarde
+    ${id}=    Obter Contexto De Integracao    CARRINHO_ID
+    Should Be Equal As Integers    ${id}    42
+```
+
+Exemplo típico em keywords de negócio
+```robot
+*** Settings ***
+Resource    resources/common/context.resource
+Resource    resources/api/services/carts_service.resource
+Resource    resources/common/json_utils.resource
+
+*** Keywords ***
+Quando Crio Um Carrinho Basico
+    ${resp}=    Adicionar Novo Carrinho    ${user_id}    ${payload}
+    Definir Contexto De Integracao    RESP_CARRINHO_ATUAL    ${resp}
+
+Entao O Carrinho Deve Estar Consistente
+    ${resp}=    Obter Contexto De Integracao    RESP_CARRINHO_ATUAL
+    Should Be True    ${resp.status_code} in [200, 201]
+    ${json}=    Converter Resposta Em Json    ${resp}
+    Should Contain    ${json}    id
+```
+
+Notas rápidas
+- Escopo por teste: cada teste tem sua própria “mochila”; valores não se misturam entre testes.
+- Erro comum: buscar uma chave que nunca foi guardada. O teste falha com mensagem do tipo “Valor 'X' não registrado no contexto do teste atual”.
+- O reset é opcional: use `Resetar Contexto De Integracao` apenas se precisar “zerar” a mochila durante o próprio teste. Não é necessário entre testes.
+- Boas práticas de nomes: use chaves claras e estáveis como `CARRINHO_ATUAL_ID`, `RESP_LISTAGEM`, `PARAMS_PAGINACAO`.
+
+### Desacoplamento e Manutenibilidade
+- Libs isoladas nos adapters: trocar Requests/Browser/gRPC não impacta services/keywords/suites.
+- Dados independentes do formato: suites consomem uma única keyword, backends mudam por configuração.
+- Hooks comuns: criação/encerramento de sessão e outras responsabilidades de infraestrutura centralizadas.
+
+Boas práticas
+
+* **CI sempre define o ambiente** (`-v ENV:uat` / `-v ENV:prod`).
+* **Nada de value “mágico” nas suítes**; toda referência vem de `environments/`.
+* **Segredos nunca no repo**: carregue em runtime via secret manager (ou `secrets.yaml` local, gitignored).
+* **Mudança de timeout/retry**? Ajuste **só aqui** — toda a stack herda.
+
+### Lint e Formatação
+- Robocop: `.venv/bin/robocop` (usa `robocop.toml` com paths/padrões do projeto; `check` é o comportamento padrão).
+- Preferências (Robot ≥ 7):
+  - Use `VAR` em vez de `Set Test Variable`; prefira listas/dicionários inline a `Create List/Dictionary`.
+  - Prefira blocos `IF/ELSE` a `Run Keyword If`.
+  - Divida keywords longas em helpers internos para legibilidade/manutenção.
+- Adicione `*** Documentation ***` sucinta em resources relevantes.
+
+### Padrões para novos domínios
+- Crie os quatro artefatos por domínio:
+  - `resources/api/services/<dominio>_service.resource` — endpoints brutos (uma keyword por endpoint).
+  - `resources/api/keywords/<dominio>_keywords.resource` — orquestração/regra de negócio.
+  - `data/json/<dominio>.json` — massa por cenário com chave `cenario`.
+  - `tests/api/domains/<dominio>/<dominio>_fluxos.robot` — BDD PT‑BR (sem lógica), chamando apenas keywords de negócio.
+- Respeite sempre o layering; use `Log Estilizado` e Data Provider nas camadas Robot.
+
+### Definition of Done (por domínio)
+- Fluxos: positivo (happy‑path), negativos relevantes e limites (ex.: paginação 0/1/alto).
+- Massa: centralizada por cenário (JSON), sem depender de dumps completos.
+- Logs: mensagens chave com `Log Estilizado` e referência de UC.
+- Execução: suítes `domains/*` verdes localmente e artefatos em `results/<plataforma>/<dominio>`.
+
+### Contribuição e PRs (resumo)
+- Commits: Conventional Commits (`feat`, `fix`, `docs`, `refactor`, etc.) com scopes como `api/<dominio>`, `resources`, `libs`, `docs`, `tests`.
+- PRs: descreva objetivo, evidências (paths em `results/`), variáveis de ambiente tocadas, recursos/keywords atualizados.
+- Checklist mínimo: tests verdes (fluxos e boundaries), keywords documentadas, logs estilizados, Data Provider funcional, Robocop aplicados, comandos de execução com `-v ENV:<env>` quando aplicável.
+
+### Troubleshooting Comum
 - Keyword `Log Estilizado` não encontrada: importe `resources/common/logger.resource` e confirme Robot 7.x.
 - Massa não encontrada: verifique `DATA_*` e arquivos em `data/json/<dominio>.json` ou `data/<dominio>.csv`.
 - Flakiness/tempo: ajuste timeouts/retries no adapter HTTP; prefira asserts inclusivos (ex.: 200/201).
 - Caminhos/Imports: rode `--dryrun` em `tests` para capturar erros de import rapidamente.
 
-### Troubleshooting — Variáveis de ambiente (HTTP) e sessões
+#### Troubleshooting — Variáveis de ambiente (HTTP) e sessões
 - Sintoma: erro "BASE_URL_API_<DOMINIO> não definida" ao abrir sessão (ex.: Giftcard) ou diagnóstico indicando `DUMMYJSON='None' | GIFTCARD='None'`.
 - Causa provável: variáveis do `environments/${ENV}.py` ainda não carregadas no runtime do Robot (ordem/carregamento), não é problema de API fora do ar.
 
@@ -692,3 +639,48 @@ api:
 
 - Placeholders não são a causa:
   - O adapter referencia `environments/_placeholders.py` apenas para lint/IDE. Em execução real, o `Variables ../../environments/${ENV}.py` sobrepõe estes valores. Mantenha o modelo env‑driven e evite duplicar valores via CLI.
+
+### Logs Profissionais (rastreamento com [arquivo:Lnn])
+- Biblioteca: `libs/logging/styled_logger.py` com Listener v3 (captura `source`/`lineno`).
+- Resource: `resources/common/logger.resource` com:
+  - `Log Estilizado    <mensagem>    <NIVEL=INFO>    <curto=True>    <console=False>`.
+  - `Prefixo De Log Atual` para compor mensagens customizadas.
+- Diretrizes:
+- Nunca hardcode `[arquivo:Lnn]`; o listener injeta automaticamente o contexto correto.
+  - Logue eventos de negócio (parâmetros carregados, chamadas a services, resultados de validação).
+  - Use níveis quando fizer sentido (DEBUG para payloads, INFO para milestones, WARN/ERROR para anomalias).
+
+Níveis e exemplos de execução
+- Nível global de log (CLI): use `--loglevel` para controlar a verbosidade do run inteiro.
+  - Valores: `TRACE`, `DEBUG`, `INFO` (padrão), `WARN`, `ERROR`.
+  - Diferenciar arquivo vs console: `--loglevel DEBUG:INFO` grava DEBUG no log.html, console exibe só INFO+.
+- Ajuste em runtime (na suíte/teste):
+  - `Set Log Level    DEBUG` (no `Suite Setup` ou quando precisar depurar)
+- Usando o logger estilizado (por mensagem):
+  - `Log Estilizado    Preparando payload...    DEBUG` (mensagem só aparece se o nível global permitir)
+  - `Log Estilizado    Criado carrinho ${id}    INFO    curto=True    console=True` (também no console)
+- Prefixo curto vs completo: o 3º argumento do nosso keyword (`curto=True|False`) controla se aparece apenas o nome do arquivo ou o caminho completo.
+
+Exemplos de execução (CLI)
+- Mais detalhes (DEBUG):
+  - `.venv/bin/python -m robot --loglevel DEBUG -v ENV:dev -d results/api/products tests/api/domains/products/products_suite.robot`
+- Execução enxuta (apenas WARN/ERROR):
+  - `.venv/bin/python -m robot --loglevel WARN -v ENV:dev -d results/api/products tests/api/domains/products/products_suite.robot`
+- Debug detalhado no arquivo, console mais limpo (INFO+):
+  - `.venv/bin/python -m robot --loglevel DEBUG:INFO -v ENV:dev -d results/api/_dryrun tests`
+
+Exemplo em suíte (runtime)
+```robot
+*** Settings ***
+Suite Setup     Set Log Level    DEBUG
+Resource        resources/common/logger.resource
+
+*** Test Cases ***
+UC-LOG-001 - Exemplo de logs
+    Log Estilizado    Preparando payload...    DEBUG
+    Log Estilizado    Criado carrinho ${id}    INFO    curto=True    console=True
+```
+
+### Nota sobre exemplos (DummyJSON)
+- Todos os exemplos de domínio usados no repositório (carts e products) apontam para o fornecedor público DummyJSON: https://dummyjson.com
+- Eles servem apenas como um exemplo prático de modelo ideal de organização dos testes. Em projetos reais, substitua por seus domínios/endpoints.

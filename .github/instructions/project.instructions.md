@@ -39,7 +39,7 @@ Exemplos prontos (usar sempre `-d results/api/<dominio>`):
 - Carts (fluxos): `cd framework-robot-unificado && .venv/bin/python -m robot -v ENV:dev -d results/api/carts tests/api/domains/carts/carts_suite.robot`
 - Filtrar por tags: `-i "api AND carts AND smoke"`
 
-- Lint Robot files (Robocop): `cd framework-robot-unificado && .venv/bin/robocop` (usa robocop.toml)
+- Lint Robot files (Robocop): `cd framework-robot-unificado && .venv/bin/robocop` (usa `robocop.toml` do repo)
  - Optional format (Robotidy): `cd framework-robot-unificado && .venv/bin/robotidy resources tests`
   - Dry run (catch import/path issues): `cd framework-robot-unificado && .venv/bin/robot --dryrun -v ENV:dev -d results/api/_dryrun tests`
 
