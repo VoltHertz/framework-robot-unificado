@@ -551,9 +551,9 @@ Boas práticas
 
   * `BASE_URL_API_<DOMINIO>` – URL base da API do domínio (ex.: `BASE_URL_API_DUMMYJSON`).
   * `BASE_URL_WEB` – URL base da Web UI (se aplicável).
-  * `HTTP_TIMEOUT_S` – timeout padrão (ex.: `30`).
-  * `HTTP_RETRY_MAX` – tentativas (ex.: `2`).
-  * `HTTP_RETRY_BACKOFF_MS` – backoff base (ex.: `200`).
+* `HTTP_TIMEOUT` – timeout padrão (segundos, ex.: `30`).
+* `HTTP_MAX_RETRIES` – tentativas (ex.: `2`).
+* `HTTP_RETRY_BACKOFF` – fator de backoff (segundos, ex.: `0.2`).
 * **Dados**
 
   * `DATA_BASE_DIR`, `DATA_JSON_DIR` (opcionais)
@@ -576,9 +576,9 @@ Boas práticas
 BASE_URL_API_DUMMYJSON = "https://dummyjson.com"
 BASE_URL_WEB = "https://web-uat.seudominio.com"
 
-HTTP_TIMEOUT_S = 45
-HTTP_RETRY_MAX = 2
-HTTP_RETRY_BACKOFF_MS = 300
+HTTP_TIMEOUT = 45
+HTTP_MAX_RETRIES = 2
+HTTP_RETRY_BACKOFF = 0.3
 
 BROWSER = "chromium"
 BROWSER_HEADLESS = True
