@@ -554,6 +554,10 @@ Boas práticas
 * `HTTP_TIMEOUT` – timeout padrão (segundos, ex.: `30`).
 * `HTTP_MAX_RETRIES` – tentativas (ex.: `2`).
 * `HTTP_RETRY_BACKOFF` – fator de backoff (segundos, ex.: `0.2`).
+* `HTTP_RETRY_STATUS_LIST` – CSV com status que disparam retry (ex.: `429,502,503,504`).
+* `HTTP_RETRY_METHODS` – CSV com métodos elegíveis a retry (ex.: `GET,HEAD,OPTIONS,PUT,DELETE`).
+* `HTTP_VERIFY_TLS` – controla verificação de certificado (default `True`).
+* `HTTP_DEFAULT_HEADERS` – dicionário com headers padrão adicionais (default `{'Content-Type': 'application/json'}`).
 * **Dados**
 
   * `DATA_BASE_DIR`, `DATA_JSON_DIR` (opcionais)
@@ -578,7 +582,11 @@ BASE_URL_WEB = "https://web-uat.seudominio.com"
 
 HTTP_TIMEOUT = 45
 HTTP_MAX_RETRIES = 2
-HTTP_RETRY_BACKOFF = 0.3
+HTTP_RETRY_BACKOFF = 0.2
+HTTP_RETRY_STATUS_LIST = "429,502,503,504"
+HTTP_RETRY_METHODS = "GET,HEAD,OPTIONS,PUT,DELETE"
+HTTP_VERIFY_TLS = True
+# HTTP_DEFAULT_HEADERS = {"Content-Type": "application/json", "X-Trace": "qa"}
 
 BROWSER = "chromium"
 BROWSER_HEADLESS = True
