@@ -609,7 +609,7 @@ api:
 * **Mudança de timeout/retry**? Ajuste **só aqui** — toda a stack herda.
 
 ## Lint e Formatação
-- Robocop: `.venv/bin/robocop resources tests` (v6+ possui subcomando `check`).
+- Robocop: `.venv/bin/robocop` (usa `robocop.toml` com paths/padrões do projeto; `check` é o comportamento padrão).
 - Preferências (Robot ≥ 7):
   - Use `VAR` em vez de `Set Test Variable`; prefira listas/dicionários inline a `Create List/Dictionary`.
   - Prefira blocos `IF/ELSE` a `Run Keyword If`.
@@ -647,7 +647,7 @@ api:
    - Filtrar por tags: `-i "api AND products AND regression"`
    - (exemplos adicionais podem ser adicionados conforme os domínios evoluírem)
 4) Qualidade de código
-   - Lint: `.venv/bin/robocop resources tests`
+   - Lint: `.venv/bin/robocop` (usa `robocop.toml` com `resources` e `tests` pré-configurados)
    - Format (opcional): `.venv/bin/robotidy resources tests`
 
   ## Passo a passo: do zero ao primeiro teste

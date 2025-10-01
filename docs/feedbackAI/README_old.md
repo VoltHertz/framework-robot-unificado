@@ -365,7 +365,7 @@ CLI úteis
    - Filtrar por tags: `-i "api AND products AND regression"`
    - Sanidade SQL Server: `.venv/bin/python -m robot -d results/common/sql tests/common/validacao_sql_server.robot`
 4) Qualidade de código
-   - Lint: `.venv/bin/robocop resources tests`
+   - Lint: `.venv/bin/robocop`
    - Format (opcional): `.venv/bin/robotidy resources tests`
 
 ### Estrutura de resultados (exemplo)
@@ -460,7 +460,7 @@ Dictionary Should Contain Key   ${resp.json()}    carts
 ```
 
 ## Lint e Formatação
-- Robocop: `.venv/bin/robocop resources tests` (v6+ possui subcomando `check`).
+- Robocop: `.venv/bin/robocop`
 - Preferências (Robot ≥ 7):
   - Use `VAR` em vez de `Set Test Variable`; prefira listas/dicionários inline a `Create List/Dictionary`.
   - Prefira blocos `IF/ELSE` a `Run Keyword If`.

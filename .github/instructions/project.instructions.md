@@ -15,7 +15,7 @@ applyTo: "**"
 - tests: only suites (.robot) without logic. Ex.: `tests/api/domains/<dominio>/<nome>_fluxos.robot`.
 - resources: reusable layers — `api/adapters`, `api/services`, `api/keywords` e `common/` (hooks, utils, data provider, logger estilizado).
 - data: `json/<dominio>.json` test data and `full_api_data/` references.
-- environments: runtime variables per env (`dev.py`, `uat.py`); secrets template in `secrets.template.yaml`.
+- environments: runtime variables per env (`dev.py`, `uat.py`, `local.py`); secrets template in `secrets.template.yaml`.
 - libs: Python helpers (e.g., `libs/data/data_provider.py`).
 - results: Robot outputs organized by domain/platform.
 - docs, grpc, configs, tools: documentation, proto/stubs, config placeholders, and scripts.
@@ -39,7 +39,7 @@ Exemplos prontos (usar sempre `-d results/api/<dominio>`):
 - Carts (fluxos): `cd framework-robot-unificado && .venv/bin/python -m robot -v ENV:dev -d results/api/carts tests/api/domains/carts/carts_suite.robot`
 - Filtrar por tags: `-i "api AND carts AND smoke"`
 
-- Lint Robot files (Robocop): `cd framework-robot-unificado && .venv/bin/robocop resources tests`
+- Lint Robot files (Robocop): `cd framework-robot-unificado && .venv/bin/robocop` (usa robocop.toml)
  - Optional format (Robotidy): `cd framework-robot-unificado && .venv/bin/robotidy resources tests`
   - Dry run (catch import/path issues): `cd framework-robot-unificado && .venv/bin/robot --dryrun -v ENV:dev -d results/api/_dryrun tests`
 
@@ -140,107 +140,59 @@ Suite Teardown  Teardown Suite Padrao
 - [ ] Suites passam localmente (fluxos e limites) com `results_*/` anexados.
 - [ ] Test cases e keywords documentados conforme padrão desta seção e IDs UC aplicados.
 - [ ] Logs migrados para `Log Estilizado` (sem prefixos hardcoded).
-- [ ] Data provider funciona para o domínio (JSON no mínimo; SQL quando aplicável).
+- [ ] Data provider funciona para o domínio (JSON).
 - [ ] Variáveis de ambiente necessárias documentadas no PR.
 - [ ] Robocop/Robotidy aplicados quando alteradas resources.
 
 ## Security & Configuration Tips
 - Não commit secrets; use `environments/secrets.template.yaml`. Configure endpoints e flags (ex.: `BASE_URL_API_DUMMYJSON`, `BROWSER_HEADLESS`) em `environments/<env>.py` e selecione via `-v ENV:<env>`.
 
-## Data Provider Unificado (Pluggable)
-- Biblioteca: `libs/data/data_provider.py` deve oferecer dois backends plugáveis (`json`, `sqlserver`).
-- Resource: `resources/common/data_provider.resource` expõe keywords para configurar backend, conexão e schema, além de buscar massa.
+### URLs e sessões por domínio
+- Convenção de variáveis por domínio em `environments/<env>.py`:
+  - HTTP: `BASE_URL_API_<DOMINIO>` (ex.: `BASE_URL_API_DUMMYJSON`, `BASE_URL_API_GIFTCARD`).
+  - gRPC (opcional): `GRPC_HOST_<DOMINIO>`.
+- Adapter HTTP (`resources/api/adapters/http_client.resource`):
+  - `Criar Sessao HTTP | alias | base_url | verify=True` (genérico)
+  - Wrappers por domínio: `Iniciar Sessao API DummyJSON`, `Iniciar Sessao API Giftcard` (resolvem a URL e chamam a genérica). 
+  - Alias por domínio (ex.: `DUMMYJSON`, `GIFTCARD`): services do domínio devem usar apenas seu alias.
+- Hooks (`resources/common/hooks.resource`):
+  - DummyJSON: `Setup Suite Padrao` / `Teardown Suite Padrao` (usa `BASE_URL_API_DUMMYJSON`).
+  - Giftcard: `Setup Suite Giftcard` / `Teardown Suite Giftcard` (usa `BASE_URL_API_GIFTCARD`).
+- Suítes de integração: podem chamar mais de um `Setup` específico ou iniciar a sessão adicional explicitamente antes do teste.
+
+Padrão de uso — Genérica vs Wrapper
+- Caminho genérico (rápido):
+  - Use quando precisar abrir sessão ad-hoc ou validar uma API nova sem toda a estrutura.
+  - Pré-requisito: `BASE_URL_API_<DOMINIO>` definido no ambiente.
+  - Suite: `Criar Sessao HTTP    <ALIAS>    ${BASE_URL_API_<DOMINIO>}` e chame `GET/POST On Session` com o alias.
+
+- Caminho wrapper (recomendado para domínios):
+  - Adicione `Iniciar Sessao API <Dominio>` (resolve `BASE_URL_API_<DOMINIO>` e chama `Criar Sessao HTTP`).
+  - Adicione hooks `Setup/Teardown Suite <Dominio>` e use-os nas suítes.
+  - Mantenha um alias fixo para o domínio e use-o em todos os services.
+
+### Múltiplas APIs (URLs por domínio/ambiente)
+- Para cada domínio de API defina sua própria URL por ambiente em `environments/<env>.py`.
+- Convenção de nomes:
+  - HTTP: `BASE_URL_API_<DOMINIO>` (UPPER_SNAKE_CASE). Ex.: `BASE_URL_API_DUMMYJSON`, `BASE_URL_API_PAGAMENTOS`.
+  - gRPC (opcional): `GRPC_HOST_<DOMINIO>`. Ex.: `GRPC_HOST_PAGAMENTOS`.
+- Evite variáveis genéricas como `BASE_URL_API`; prefira uma variável por domínio.
+- Hooks (por domínio) devem ler apenas sua variável correspondente (ex.: `Garantir Variaveis DummyJSON` lê `BASE_URL_API_DUMMYJSON`).
+
+## Data Provider (JSON)
+- Biblioteca: `libs/data/data_provider.py` fornece somente backend JSON.
+- Resource: `resources/common/data_provider.resource` expõe keywords para buscar massa.
 - Keywords principais:
-  - `Definir Backend De Dados | json|sqlserver` — alterna a fonte em runtime (podendo mudar várias vezes na mesma execução).
-  - `Definir Conexao SQLServer | <conn_string> | <ativar>` e `Definir Schema SQLServer | <schema>` — configuram o backend SQL Server.
-  - `Obter Massa De Teste | <dominio> | <cenario>` — retorna dicionário do cenário usando o backend ativo.
+  - `Obter Massa De Teste | <dominio> | <cenario>` — retorna dicionário do cenário a partir de `data/json/<dominio>.json`.
 - Variáveis de ambiente suportadas:
-  - `DATA_BACKEND` (default `json`), `DATA_BASE_DIR`, `DATA_JSON_DIR`.
-  - `DATA_SQLSERVER_CONN`, `DATA_SQLSERVER_SCHEMA`.
+  - `DATA_BASE_DIR`, `DATA_JSON_DIR`.
 - Convenções:
-  - JSON: arquivo por domínio (`data/json/<dominio>.json`) com objetos por cenário.
-  - SQL Server: tabela por domínio com coluna `cenario` (linha representa um cenário). Retorno remove a chave `cenario` para uniformidade.
+  - JSON: arquivo por domínio (`data/json/<dominio>.json`) com cenários nomeados.
 - Massa “full”: `data/full_api_data/*` guarda referência completa da fonte; não usar diretamente nas suites — derive subconjuntos para `data/json`.
 
 Diretrizes de uso
 - Proibido hardcode de dados nas suítes — sempre use `Obter Massa De Teste`.
-- Use SQL Server para registros reais/pré‑condições e validação final dos efeitos.
-- Use JSON para negativos/limites/payloads sintéticos quando não houver dado real disponível.
-- Combine quando fizer sentido: JSON como base + campos preenchidos com dados reais vindos do SQL (alternando backend durante o teste).
-- SQL: consultas read‑only e parametrizadas; criação de massa via SP apenas como exceção.
-
-### Plano de Implementação — Backend SQL Server no Data Provider
-Objetivo: habilitar obtenção de massa de teste diretamente do SQL Server, de forma plugável (Strategy), mantendo JSON como default e permitindo alternar entre as duas fontes ao longo da execução. Reaproveitar os padrões já validados em `docs/feedbackAI/feedback005/Scripts/dbConnection.py` (service principal Azure, timeouts estendidos, troubleshooting), mas adaptar o código para `libs/data/data_provider.py`/`resources/common/data_provider.resource` sem importar diretamente arquivos da pasta `docs/feedbackAI/feedback005`.
-
-Escopo (mínimo viável):
-- Python: `libs/data/data_provider.py` implementa backend `sqlserver` via `pyodbc` e Strategy interna.
-- Robot: `resources/common/data_provider.resource` expõe keywords para definir backend, conexão e schema, além de `Obter Massa De Teste` único (capaz de alternar entre JSON e SQL a qualquer momento).
-- Convenção de dados: tabela por domínio `[schema].[dominio]` com coluna `cenario` (chave). Linhas representam cenários; retorno remove `cenario` e normaliza tipos.
-
-Design proposto (inspirado em `dbConnection.py`):
-- Strategy interna (sem criar novos módulos agora):
-  - Classe `SqlServerBackend` com métodos: `configure(conn_string: str, schema: str)`, `get(dominio: str, cenario: str) -> dict`.
-  - Classe `JsonBackend` atual permanece.
-  - `DataProvider` escolhe backend por env `DATA_BACKEND` ou por keyword em runtime (estado interno), permitindo scripts alternarem entre JSON e SQL dentro da mesma execução.
-- Conexão e pooling:
-  - Manter um único handle `pyodbc.Connection` por processo (cache simples no backend). Reabrir se desconectar.
-  - Implementar builder de connection string com base nos envs de service principal (ex.: `AZR_SDBS_PF_TDNP_T_SP_CLIENT_ID`, `AZR_SDBS_PF_TDNP_T_SP_CLIENT_SECRET`, host, database), replicando o formato testado: `Driver={ODBC Driver 17 for SQL Server};Server=tcp:<host>,1433;Database=<db>;UID=<client_id>;PWD=<client_secret>;Authentication=ActiveDirectoryServicePrincipal;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=180;Login Timeout=180`.
-  - Validar que variáveis obrigatórias (client id/secret/host/db) estão preenchidas; lançar erro amigável quando ausentes (sem expor segredos).
-  - Read‑only por padrão; transações não são necessárias para consulta de massa.
-- Query parametrizada:
-  - `SELECT * FROM [{schema}].[{dominio}] WHERE cenario = ?` usando parâmetros `pyodbc`.
-- Normalização:
-  - Remover a coluna `cenario` do resultado.
-  - Tentar desserializar campos JSON válidos (ex.: payloads armazenados como texto) mantendo strings originais quando falhar.
-- Erros e mensagens (troubleshooting):
-  - Mensagens claras para: driver ausente (`pyodbc.InterfaceError`), DNS/host inacessível (usar tentativa de socket/dns opcional), credenciais inválidas, timeout de login (180s), tabela/esquema inexistente, cenário não encontrado.
-  - Reaproveitar logs amigáveis do script base (ex.: listar drivers encontrados quando em modo diagnóstico) sem imprimir segredo (`***`).
-  - Não logar segredos; exibir somente o prefixo do connection string (host/DB) e o client id mascarado.
-
-- Configuração de conexão (camadas):
-  - Envs obrigatórios sugeridos (adequar conforme infra):
-    - Credenciais (canônicas, já existentes no pipeline piloto): `AZR_SDBS_PF_TDNP_T_SP_CLIENT_ID`, `AZR_SDBS_PF_TDNP_T_SP_CLIENT_SECRET`.
-    - Alternativas suportadas (fallback): `AZR_SQL_SERVER_CLIENT_ID`, `AZR_SQL_SERVER_CLIENT_SECRET`.
-    - Endpoint: `AZR_SQL_SERVER_HOST`, `AZR_SQL_SERVER_DB`, `AZR_SQL_SERVER_PORT` (default `1433`).
-  - `DATA_SQLSERVER_CONN` pode aceitar uma connection string pronta (caso o time prefira); se ausente, construir dinamicamente a partir dos envs acima.
-  - `DATA_SQLSERVER_TIMEOUT` opcional (default 180s) para `Connection Timeout`/`Login Timeout`.
-- Keywords Python expostas no backend devem mascarar valores sensíveis em logs (`***`).
-
-Keywords (Robot) a adicionar/ajustar em `resources/common/data_provider.resource`:
-- `Definir Backend De Dados    json|sqlserver` — altera backend em runtime (default permanece `json`).
-- `Definir Conexao SQLServer   <conn_string>=None    <ativar=${True}>` —
-  - Permite informar connection string pronta ou gatilha para que o backend monte a string usando variáveis de ambiente (service principal).
-  - Opcionalmente já ativa o backend `sqlserver`.
-- `Definir Schema SQLServer    <schema>` — salva o schema padrão das tabelas.
-- `Obter Massa De Teste        <dominio>    <cenario>` — encaminha para o backend atual (sem mudar assinatura atual).
-
-Variáveis de ambiente (reforço):
-- `DATA_BACKEND=json|sqlserver` — seleciona backend default (json por padrão).
-- `DATA_SQLSERVER_CONN` — connection string ODBC (sem segredos no repositório); exemplos em `environments/_placeholders.py`.
-- `DATA_SQLSERVER_SCHEMA` — schema default para leitura (ex.: `qa`, `dbo`).
-
-Exemplos de connection string (não commitar valores reais):
-- Autenticação SQL: `DRIVER={ODBC Driver 18 for SQL Server};SERVER=<host>,<port>;DATABASE=<db>;UID=<user>;PWD=<pass>;Encrypt=yes;TrustServerCertificate=yes`
-- Autenticação integrada (Windows): `DRIVER={ODBC Driver 18 for SQL Server};SERVER=<host>;DATABASE=<db>;Trusted_Connection=yes;Encrypt=yes;TrustServerCertificate=yes`
-
-Passos (roadmap incremental):
-1) Python: extrair Strategy interna em `libs/data/data_provider.py` e implementar `SqlServerBackend` (conexão, query parametrizada, normalização, cache de conexão).
-2) Robot: estender `resources/common/data_provider.resource` com as keywords de configuração/uso do SQL Server.
-3) Environments: adicionar placeholders em `environments/_placeholders.py` e documentar uso no README (sem segredos), incluindo nomes das variáveis de service principal.
-4) Troubleshooting: enriquecer mensagens de erro (mapear `pyodbc.Error`/`InterfaceError`/`OperationalError`), expondo mensagens semelhantes às do script base.
-5) Testes manuais: simular indisponibilidades (driver ausente, host errado, credenciais vazias) e validar fallback para JSON e mensagens amigáveis.
-6) Automação de sanidade: adaptar o script `docs/feedbackAI/feedback005/Tests/testes_pipeline.robot` para `tests/common/validacao_sql_server.robot` (ou similar), permitindo checar drivers, variáveis e conectividade via Robot antes de rodar suites.
-7) Documentação: atualizar README (Data Provider) e `docs/libs/robotframework.md`/`docs/libs/robocop.md` quando aplicável, incluindo checklist de envs obrigatórios e referência ao teste de sanidade.
-
-Não metas (nesta fase):
-- Suporte a outras fontes além de JSON e SQL Server.
-- Escrita em banco (inserção/atualização). Apenas consultas read‑only.
-
-Definition of Done (SQL Backend):
-- Keywords de Data Provider expostas e documentadas; default `json` mantido.
-- Backend `sqlserver` funcional com query parametrizada e tratamento de erros; retorno sem a chave `cenario` e com normalização básica.
-- Placeholders/ENVs atualizados; nenhuma referência a `docs/feedbackAI/feedback005` no código.
-- README atualizado com exemplos de uso e troubleshooting.
+- Mantenha cenários pequenos, determinísticos e legíveis.
 
 ## Logger Estilizado (Arquivo:Linha)
 - Biblioteca: `libs/logging/styled_logger.py` (Listener v3) + resource `resources/common/logger.resource`.
@@ -287,188 +239,26 @@ Definition of Done (SQL Backend):
 - Massa não encontrada: confirme `DATA_*` envs, a existência de `data/json/<dominio>.json` (quando backend for JSON) ou a tabela `[schema].[dominio]` no SQL Server.
 - Tempo e flakiness: defina timeouts/retries no adapter HTTP; prefira asserts inclusivos quando fornecedor variar (ex.: 200/201 em criação).
 
-## Plano de Implementação – Integração Carts + Products (API)
+### Variáveis HTTP e ordem de import (env‑driven)
+- Sintoma típico em CI: erro "BASE_URL_API_<DOMINIO> não definida" ou diagnóstico com `DUMMYJSON='None' | GIFTCARD='None'` ao abrir sessão.
+- Causa: o arquivo `environments/${ENV}.py` não estava carregado no runtime do Robot no momento da leitura (ordem/ausência de import), apesar de existir no repo.
 
-Objetivo: Implementar testes automatizados em camadas (adapters → services → keywords → suites) cobrindo os casos de uso de integração definidos em `docs/use_cases/Carts_Products_Use_Cases.md`, reutilizando padrões e boas práticas já aplicados aos domínios `carts` e `products`.
+- Boas práticas para evitar:
+  - Em suítes, coloque `Variables   ../../environments/${ENV}.py` no topo de `*** Settings ***`, antes de `Resource`.
+  - Use hooks por domínio: `Setup Suite Padrao` (DummyJSON), `Setup Suite Giftcard` (Giftcard) — eles encadeiam a abertura das sessões corretas.
+  - Quando precisar depurar, eleve o log: `--loglevel DEBUG` ou `Set Log Level    DEBUG`.
 
-Escopo dos casos (IDs):
-- UC-CARTPROD-001: Selecionar produto por categoria e adicionar ao carrinho
-- UC-CARTPROD-002: Buscar por termo, adicionar ao carrinho e atualizar com merge
-- UC-CARTPROD-003: Carrinho com múltiplos produtos de categorias diferentes
-- UC-CARTPROD-004: Atualizar carrinho com merge=false para simular remoção
-- UC-CARTPROD-005: Deletar carrinho após operações
+- Ferramentas de diagnóstico (adapter HTTP):
+  - `Diagnosticar Variaveis De Ambiente HTTP` — registra os valores de `BASE_URL_API_DUMMYJSON`, `BASE_URL_API_GIFTCARD`, `HTTP_TIMEOUT`, `HTTP_MAX_RETRIES`, `HTTP_RETRY_BACKOFF` vistos no runtime.
+  - Logs adicionais no adapter (DEBUG/ERROR) em `Resolver Base Url <Domínio>` indicam a variável lida e apontam para o import correto.
 
-Pasta de resultados: `results/api/integration/carts_products`
+- Padrão de correção aplicado no pipeline:
+  - Antes de abrir a sessão Giftcard, o teste chama:
+    - `Diagnosticar Variaveis De Ambiente HTTP` → `Garantir Variaveis Giftcard` → `Diagnosticar Variaveis De Ambiente HTTP` → `Iniciar Sessao API Giftcard`.
+  - Mantém o modelo env‑driven (sem `-v BASE_URL_API_...` via CLI).
 
-### Fase 0 — Preparação e Alinhamento
-- Confirmar ambiente: executar a partir de `framework-robot-unificado` e parametrizar `-v ENV:<env>`.
-- Revisar os services existentes: `resources/api/services/{carts_service.resource, products_service.resource}` — sem acessar `RequestsLibrary` diretamente fora do adapter.
-- Validar hooks: `resources/common/hooks.resource` com `Suite Setup/Teardown` chamando o adapter HTTP.
-- Dry run base (sanidade): `.venv/bin/robot --dryrun -v ENV:dev -i api -d results/api/_dryrun tests`.
-
-#### Progresso Fase 0 (executado)
-- 2024-09-24: Ambiente confirmado (`pwd` → `framework-robot-unificado`) e dependências presentes (`.venv` ativa).
-- Services `carts_service.resource` e `products_service.resource` revisados: mantêm apenas lógica de chamada, com documentação atualizada e retorno bruto (`expected_status=any` onde necessário).
-- Hooks (`resources/common/hooks.resource`) prontos para reaproveitamento: `Setup/Teardown Suite Padrao` já delegam ao adapter HTTP.
-- Dry run geral executado: `.venv/bin/robot --dryrun -v ENV:dev -i api -d results/api/_dryrun tests` → 50 testes (carts + products) passaram, confirmando saúde do baseline antes de iniciar cenários integrados.
-
-### Fase 1 — Massa de Dados (Data Provider)
-- Arquivo novo: `data/json/integration_carts_products.json`.
-- Convenção de cenários (chave `cenario`): usar os IDs ou aliases estáveis por UC.
-- Campos por cenário (exemplos):
-  - `userId`, `categoryA`, `categoryB`, `search_term`, `quantity_add`, `quantity_update`, `merge` (bool), `product_index` (quando não fixar ID), `expect_delete_status`.
-- Acesso via keywords do resource `resources/common/data_provider.resource`:
-  - `Definir Backend De Dados` (default json)
-  - `Obter Massa De Teste | integration_carts_products | <cenario>`
-- Boas práticas: sem hardcode nas suítes; permitir override por env vars quando fizer sentido.
-
-#### Progresso Fase 1 (executado)
-- Criado `data/json/integration_carts_products.json` com cenários nomeados por UC (incluindo variantes A1/E1).
-- Cada entrada contém chave `cenario` e metadados relevantes: `user_id`, categorias, índices de produto (`product_index`) para seleção determinística da lista retornada pela API e quantidades iniciais/atualizadas.
-- Incluídos cenários alternativos para categoria inexistente, busca sem resultados e update com produto inválido, viabilizando cobertura dos fluxos alternativos descritos nos casos de uso.
-- Campos como `expected_min_total_products`, `expected_min_total_quantity` e `expected_delete_status` guiam asserts inclusivos sem depender de valores absolutos do DummyJSON (dados voláteis).
-- Valores de `user_id` distintos por cenário evitam colisão entre execuções concorrentes e facilitam rastreabilidade nos logs.
-
-### Fase 2 — Adapter/Services (reuso)
-- Adapter: `resources/api/adapters/http_client.resource` — já provê `Iniciar/Encerrar Sessao API DummyJSON` com timeout e retries.
-- Services (reuso):
-  - `products_service.resource` — listagem, busca, por categoria, add/put/delete simulados.
-  - `carts_service.resource` — add, update (merge opcional), delete e consultas.
-- Não criar serviços duplicados. Apenas documentar se necessário.
-
-#### Progresso Fase 2 (executado)
-- Adapter HTTP revisado: mantém criação de sessão centralizada com timeout/retry configuráveis e logs estilizados; nenhuma alteração necessária.
-- Services de `products` e `carts` confirmados como dependentes apenas do adapter (sem uso direto de `RequestsLibrary`). Keywords já retornam respostas brutas e utilizam `expected_status=any` onde variações de status são esperadas, permitindo asserts inclusivos nas próximas camadas.
-- Documentação em `[Documentation]` dos services permanece adequada, facilitando a orquestração futura nas keywords integradas.
-
-### Fase 3 — Keywords de Integração (Orquestração)
-- Arquivo novo: `resources/api/keywords/carts_products_keywords.resource`.
-- Imports padrão: `http_client.resource`, `products_service.resource`, `carts_service.resource`, `resources/common/{data_provider,logger,json_utils}.resource` e `Collections` quando necessário.
-- Logging: usar sempre `Log Estilizado` com mensagens curtas e claras; prefixo automático do listener.
-- Documentação: keywords de negócio com [Documentation] listando Argumentos/Retorno/Efeito lateral/Exceções/Exemplo (pipe table).
-- Keywords propostas (mínimo):
-  - `Quando Seleciono Um Produto Da Categoria E Adiciono Ao Carrinho (UC-CARTPROD-001)`
-    - Orquestra: `GET /products/categories` → `GET /products/category/{slug}` → `POST /carts/add`.
-    - Aceitar `200/201` na criação; validar agregados (`total`, `discountedTotal`, `totalProducts`, `totalQuantity`).
-  - `Quando Pesquiso Produto Adiciono Ao Carrinho E Atualizo Quantidade Com Merge (UC-CARTPROD-002)`
-    - Orquestra: `GET /products/search?q={q}` → `POST /carts/add` → `PUT /carts/{id}` com `merge=true`.
-    - Validar atualização de agregados.
-  - `Quando Crio Carrinho Com Produtos De Duas Categorias (UC-CARTPROD-003)`
-    - Orquestra: duas chamadas `GET /products/category/{slug}` → `POST /carts/add` com 2 produtos.
-    - Validar `totalProducts >= 2` e consistência básica.
-  - `Quando Atualizo Carrinho Mantendo Apenas Um Produto (merge=false) (UC-CARTPROD-004)`
-    - Orquestra: `PUT /carts/{id}` com `merge=false` e uma lista de `products`.
-    - Validar redução de agregados e presença do item remanescente.
-- `Entao Deleto O Carrinho E Valido Indicadores (UC-CARTPROD-005)`
-    - Orquestra: `DELETE /carts/{id}` e valida `isDeleted=true` e `deletedOn`.
-
-#### Progresso Fase 3 (executado)
-- Criado `resources/api/keywords/carts_products_keywords.resource` com keywords BDD para todos os cenários UC-CARTPROD-001..005 (incluindo variantes A1/E1) e helper interno para seleção determinística de produtos por categoria.
-- Cada keyword documentada com `[Documentation]` e logs via `Log Estilizado`, seguindo layout de carts/products; variáveis de massa acessadas somente via Data Provider (`integration_carts_products`).
-- Regras inclusivas aplicadas: criação aceita `200/201`, deleção valida lista de status esperados, buscas vazias retornam `total=0`, updates inválidos aceitam `400/404`.
-- Respostas dos services permanecem brutas (services já usam `expected_status=any`), permitindo que as validações de negócio sejam centralizadas na camada de keywords.
-- Regras inclusivas do fornecedor:
-  - Criação: aceitar `200|201`.
-  - `/carts/user/{id}`: considerar `200` (lista vazia) ou `404` — usar asserts inclusivos quando aplicável.
-
-### Fase 4 — Suites de Integração (BDD PT‑BR)
-- Arquivo novo: `tests/api/integration/carts_products_fluxos.robot`.
-- Settings padrão nas suítes:
-  - `Resource    ../../resources/common/hooks.resource`
-  - `Resource    ../../resources/common/data_provider.resource`
-  - `Resource    ../../resources/common/logger.resource`
-  - `Resource    ../../resources/api/keywords/carts_products_keywords.resource`
-  - `Variables  ../../environments/${ENV}.py`
-  - `Suite Setup     Setup Suite Padrao`
-  - `Suite Teardown  Teardown Suite Padrao`
-- BDD em PT‑BR: Dado/Quando/Então; sem lógica na suíte (somente chamadas às keywords de negócio e asserts simples).
-- IDs e Tags:
-  - IDs: `UC-CARTPROD-00x` no nome do teste.
-  - Tags por teste: `api integration carts products` + tipo (`smoke|positivo|negativo|limite`).
-- Estrutura dos testes (exemplos):
-  - `UC-CARTPROD-001 - Adicionar produto por categoria`
-    - [Documentation]: resumo, pré‑requisitos, dados e rastreabilidade.
-    - Dado que possuo categoria válida e userId da massa
-    - Quando seleciono um produto por categoria e adiciono ao carrinho
-    - Então devo ver agregados coerentes no carrinho retornado
-  - `UC-CARTPROD-002 - Buscar termo, adicionar e atualizar com merge`
-    - Dado que possuo termo de busca válido
-    - Quando pesquiso, adiciono e atualizo quantidade com merge
-    - Então os agregados devem refletir a atualização
-  - `UC-CARTPROD-003 - Carrinho com múltiplos itens de categorias distintas`
-  - `UC-CARTPROD-004 - Remover via merge=false`
-  - `UC-CARTPROD-005 - Deletar carrinho`
-
-#### Progresso Fase 4 (executado)
-- Criada `tests/api/integration/carts_products_fluxos.robot` seguindo layout BDD PT-BR (Dado/Quando/Então/E) com documentação padrão — inclui pré-requisitos, dados e rastreabilidade (JIRA/Confluence) para cada teste.
-- Suite importa hooks, data provider, logger e keywords de integração; utiliza `Suite Setup/Teardown` padrão e parametrização via `Variables ../../../../environments/${ENV}.py`.
-- Tags de suíte: `api integration carts products`; por teste foram definidas combinações `smoke/positivo/negativo` conforme cenário.
-- Casos cobrem UC-CARTPROD-001..005 (mais variantes A1/E1) chamando apenas keywords de negócio; nenhuma lógica implementada diretamente na suíte.
-- Ajuste adicional: hook comum passou a garantir a importação de `environments/${ENV}.py` quando necessário, permitindo executar a suíte apenas com `-v ENV:dev`. Execução real: `.venv/bin/robot -v ENV:dev -d results/api/integration/carts_products tests/api/integration/carts_products_fluxos.robot` → 9/9 testes aprovados (artefatos gerados em `results/api/integration/carts_products`).
-
-### Fase 5 — Validações, Lint e Execução
-- Lint Robot (Robocop) e format (Robotidy) nos arquivos de `resources/` e `tests/` alterados.
-- Dry run de integração: `.venv/bin/robot --dryrun -v ENV:dev -d results/api/_dryrun tests/api/integration/carts_products_fluxos.robot`.
-- Execução local: `.venv/bin/robot -v ENV:dev -d results/api/integration/carts_products tests/api/integration/carts_products_fluxos.robot`.
-- Logs: usar sempre `Log Estilizado` nas keywords, sem hardcode de prefixo.
-
-#### Progresso Fase 5 (executado)
-- Execução real concluída: `.venv/bin/robot -v ENV:dev -d results/api/integration/carts_products tests/api/integration/carts_products_fluxos.robot` → 9/9 testes aprovados (evidência em `results/api/integration/carts_products`).
-- Robocop (v6+) agora expõe subcomando `check`; execução: `.venv/bin/robocop check resources/api/keywords/carts_products_keywords.resource tests/api/integration/carts_products_fluxos.robot resources/common/hooks.resource`.
-- Achados de lint: requer documentação de resource (`DOC04`), ajuste de espaçamento (`SPC03/05`), preferir sintaxe `VAR`/`IF` nativa em vez de `Set Test Variable`, `Create List/Dictionary`, e divisão de keywords longas (`LEN03`). Boas práticas atualizadas estão documentadas na 6.x (ver exemplos em `docs/libs/` para padrão esperado).
-- Próximos ajustes: refatorar keywords para usar blocos `IF/ELSE` e `VAR`, modularizar keywords extensas (>10 passos) e adicionar cabeçalho `*** Documentation ***` aos resources comuns. Até lá, manter awareness de que o lint falha sem esses refinamentos.
-- Ações concluídas nesta rodada: integração refatorada com helpers dedicados (`carts_products_helpers` + `carts_products_core_helpers`), services/adapters migrados para IF/RETURN/`Evaluate`, robocop executado limpo nos arquivos alterados e documentação atualizada em `docs/libs/*` com os aprendizados (IntegrationContext, uso de VAR/Evaluate, fracionamento de keywords).
-
-##### Fase 5-2 — Linting com Robocop (planejamento detalhado)
-Principais referências de estilo para código Robot atualizado: `docs/libs/robotframework.md`, `docs/libs/robocop.md` e `docs/libs/requestslibrary.md`. Contudo, lembre-se de que essas referências são genéricas. As definições finais para este repositório (tags, documentação, nomenclatura BDD em PT-BR, etc.) estão em `AGENTS.md`, `README.md` e `docs/feedbackAI/feedback004.md` e prevalecem sobre qualquer sugestão genérica — ou seja, as regras locais não podem ser alteradas para acomodar exemplos das libs.
-
-Se alguma regra moderna do Robot Framework ainda não estiver clara ou aplicável via referências existentes:
-- Pesquisar a documentação oficial ou atualizada na Internet (Robot Framework ≥7, Robocop ≥6, RequestsLibrary ≥2025).
-- Reaplicar o aprendizado no código até que o linting passe sem violações.
-- Assim que um padrão atualizado for validado na prática, ajustar os arquivos de referência em `docs/libs/*.md` para refletir o conhecimento consolidado (mantendo o contexto de que `/docs/libs` são guias genéricos, enquanto os padrões do repositório continuam definidos em `AGENTS`, `README` e `feedback004`).
-
-Plano de ação focado em código (sem alterar TAGS/DOCUMENTATION):
-1. **Adequar seções e espaçamento:**
-   - Garantir apenas o espaçamento exigido pelas regras locais (ex.: linhas em branco corretas entre `*** Settings ***`/`*** Keywords ***`).
-   - Adicionar uma breve seção `*** Documentation ***` em resources que ainda não possuam (apenas se não conflitar com o padrão local; conteúdo sucinto explicando propósito e dependências).
-
-2. **Migrar variáveis para sintaxe VAR mantendo semântica existente:**
-   - Substituir `Set Test Variable`, `Create List`, `Create Dictionary` por `VAR` ou listas/dicionários inline, sem alterar os nomes/escopos esperados pelos testes.
-   - Respeitar o fluxo BDD atual (não renomear variáveis de massa ou estruturas que impactem keywords de negócio).
-
-3. **Fatiar keywords muito extensas sem mudar comportamento BDD:**
-   - Identificar keywords sinalizadas por `LEN03` e extrair partes complexas para helpers internos. Esses helpers devem manter o mesmo estilo de documentação (em português) e reaproveitar nomes coerentes com o domínio.
-   - Exemplos típicos: preparação de payload, seleção de produtos, tratamento de respostas.
-
-4. **Atualizar comandos de controle para sintaxe moderna:**
-   - Trocar `Run Keyword If` por blocos `IF/ELSE` mantendo condições atuais.
-   - Evitar alterações em mensagens/`Log Estilizado` ou na ordem de validações.
-
-5. **Tratar linhas longas apenas no corpo das keywords/suites:**
-   - Quebrar linhas >120 caracteres nos trechos de código ou comentários adicionais. Não alterar a estrutura de tags ou documentação padronizada imposta pelo repositório.
-
-6. **Formatter e lint:**
-   - Após refatorar, executar `.venv/bin/robocop format` (ou Robotidy equivalente) apenas nos arquivos alterados.
-   - Rodar `.venv/bin/robocop check ...` para validar que as pendências foram resolvidas.
-
-7. **Revalidação funcional:**
-   - Reexecutar a suíte `tests/api/integration/carts_products_fluxos.robot` com `-v ENV:dev` assegurando que não houve regressões.
-
-8. **Atualizar documentação deste plano:**
-   - Registrar quaisquer exceções necessárias (ex.: inline disable justificado) e relacionar aos achados originais do lint.
-
-### Fase 6 — Documentação e Evidências
-- Atualizar `docs/use_cases/Carts_Products_Use_Cases.md` se necessário (apenas para refinamentos de entendimento — sem alterar escopo funcional).
-- Opcional: adicionar referência no `README.md` para o novo arquivo de use cases e para a suíte de integração.
-- Incluir paths de `results/api/integration/carts_products` no PR.
-
-### Fase 7 — Checklist e DoD (Integração)
-- [ ] Suites verdes localmente (incluindo limites/negativos onde aplicável).
-- [ ] Test cases com documentação padrão (pré‑requisitos, dados e rastreabilidade).
-- [ ] Massa centralizada no Data Provider sem hardcode.
-- [ ] Layering respeitado: suites → keywords (negócio) → services → adapter.
-- [ ] Robocop/Robotidy aplicados.
-- [ ] Asserts inclusivos para variações conhecidas do DummyJSON (`200/201`, `200/404` em user carts).
+- Nota sobre `environments/_placeholders.py`:
+  - Existe apenas para lint/IDE. Em runtime, as variáveis importadas pelas suítes sobrepõem os placeholders. Ele não é causa de `None` quando o `environments/${ENV}.py` foi importado corretamente.
 
 ### Observações de Projeto
 - Não utilizar JSON Schema/contratos nas validações (padrão descontinuado no projeto).

@@ -19,13 +19,13 @@ Já está em `requirements.txt` com pin: `robotframework-robocop==6.6.1`.
 Execute sempre a partir da raiz `framework-robot-unificado`, usando a venv do projeto.
 
 - Lint de todo o projeto (recomendado):
-  - Alvos: `resources` e `tests` (código Robot). A pasta `libs` contém Python e não é alvo do Robocop.
-  - Exemplo (conceito): `.venv/bin/robocop check resources tests`
+  - `robocop.toml` já define `paths = ["resources", "tests"]`, reports, exclusões e parâmetros.
+  - Exemplo (real): `.venv/bin/robocop`
 - Lint por domínio (execução mais rápida):
   - `resources/api/keywords/products_keywords.resource`
   - `tests/api/domains/products/products_suite.robot`
 - Formatter (dry-run com diff):
-  - Conceito: `.venv/bin/robocop format --diff resources tests`
+  - Conceito: `.venv/bin/robocop format --diff resources tests` (ajuste os diretórios conforme necessário)
 - Formatter (aplicar mudanças no lugar):
   - Conceito: `.venv/bin/robocop format resources tests`
 
@@ -35,7 +35,7 @@ Dicas de flags úteis:
 - `--filetypes .robot,.resource,.tsv` → explicitamente os tipos usados aqui.
 - `--threshold I|W|E` → filtra severidade mínima.
 
-Observação: Robocop descobre arquivos recursivamente; ignore pastas como `.venv/`, `results/`, `grpc/generated/` pelo alvo explicitado (rodar apenas em `resources tests`).
+Observação: o `robocop.toml` já ignora `.venv/`, `results/`, `docs/`, `grpc/generated/` e `data/full_api_data`. Ajuste o arquivo caso surjam novos diretórios gerados dinamicamente.
 
 ## Fluxo recomendado (dev/CI)
 1) Lint: rode Robocop e corrija avisos relevantes.
@@ -53,7 +53,13 @@ Exemplo de rotina (conceitual):
 - Ordenação/seções: mantenha ordem padrão de seções Robot e espaçamentos consistentes (Robocop acusa desvios comuns).
 
 ## Configuração (opcional no projeto)
-O Robocop aceita configuração via `robocop.toml`, `pyproject.toml` (seção `[tool.robocop]`) ou `robot.toml`. Alguns exemplos úteis para este repo:
+O Robocop aceita configuração via `robocop.toml`, `pyproject.toml` (seção `[tool.robocop]`) ou `robot.toml`. Neste repositório utilizamos `robocop.toml` na raiz com:
+- `paths = ["resources", "tests"]`
+- `exclude = [".venv", "results", "docs", "grpc/generated", "data/full_api_data"]`
+- `language = ["pt"]`
+- Ajustes de regras: `line-too-long.line_length=120`, `too-many-calls-in-keyword.max_calls=12`, `too-many-calls-in-test-case.max_calls=15`
+
+Alguns exemplos adicionais (caso precise estender):
 
 - Seleção/ignorância de regras:
   - `select = ["rulename", "ruleid"]` — habilita apenas regras específicas.

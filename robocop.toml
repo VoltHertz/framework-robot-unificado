@@ -1,0 +1,34 @@
+[tool.robocop]
+# Diretórios padrão lintados pelo projeto
+paths = ["resources", "tests"]
+
+# Pastas/arquivos a ignorar (mesmo se estiverem dentro dos paths)
+exclude = [
+    ".venv",
+    "results",
+    "docs",
+    "grpc/generated",
+    "data/full_api_data"
+]
+
+# Tipos de arquivos relevantes
+filetypes = [".robot", ".resource"]
+
+# Relatórios úteis em CLI/CI
+reports = ["rules_by_error_type", "scan_timer"]
+
+# Threshold de severidade mínimo (I = info)
+threshold = "I"
+
+# Formato padronizado para mensagens
+format = "{source}:{line}:{col} [{severity}] {rule_id} {desc} ({name})"
+
+# Idioma PT-BR auxilia no lint de BDD (Dado/Quando/Então)
+language = ["pt"]
+
+# Parâmetros de regras alinhados às diretrizes do repositório
+configure = [
+    "line-too-long.line_length=120",
+    "too-many-calls-in-keyword.max_calls=12",
+    "too-many-calls-in-test-case.max_calls=15"
+]
