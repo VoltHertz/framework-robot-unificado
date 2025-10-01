@@ -26,12 +26,14 @@ Resolver Base Url Dummyjson
     [Documentation]    Resolve base URL da API DummyJSON com fallback ao arquivo de ambiente.
     [Arguments]    ${base_url}
     ${resolved_base}=    Get Variable Value    ${BASE_URL_API_DUMMYJSON}    ${None}
+    Log Estilizado    [Diagnóstico DummyJSON] VAR(BASE_URL_API_DUMMYJSON)='${resolved_base}' ARG(base_url)='${base_url}'    DEBUG
     IF    '${base_url}'!='${None}'
         VAR    ${base_final}    ${base_url}
     ELSE
         VAR    ${base_final}    ${resolved_base}
     END
     IF    '${base_final}'=='${None}'
+        Log Estilizado    [Diagnóstico DummyJSON] Variável ausente. Certifique-se de importar Variables ../../environments/${ENV}.py na suíte.    ERROR
         Fail    BASE_URL_API_DUMMYJSON não definida. Importe environments/${ENV}.py ou informe ${base_url}.
     END
     RETURN    ${base_final}
@@ -47,15 +49,26 @@ Resolver Base Url Giftcard
     [Documentation]    Resolve base URL da API Giftcard com fallback ao arquivo de ambiente (`API_BASE_URL`).
     [Arguments]    ${base_url}
     ${resolved_gift}=    Get Variable Value    ${BASE_URL_API_GIFTCARD}    ${None}
+    Log Estilizado    [Diagnóstico Giftcard] VAR(BASE_URL_API_GIFTCARD)='${resolved_gift}' ARG(base_url)='${base_url}'    DEBUG
     IF    '${base_url}'!='${None}'
         VAR    ${base_final}    ${base_url}
     ELSE
         VAR    ${base_final}    ${resolved_gift}
     END
     IF    '${base_final}'=='${None}'
+        Log Estilizado    [Diagnóstico Giftcard] Variável ausente. Certifique-se de importar Variables ../../environments/${ENV}.py na suíte.    ERROR
         Fail    BASE_URL_API_GIFTCARD não definida. Importe environments/${ENV}.py ou informe ${base_url}.
     END
     RETURN    ${base_final}
+
+Diagnosticar Variaveis De Ambiente HTTP
+    [Documentation]    Registra, em nível DEBUG, o estado das variáveis relevantes para o adapter HTTP.
+    ${dummy}=    Get Variable Value    ${BASE_URL_API_DUMMYJSON}    ${None}
+    ${gift}=     Get Variable Value    ${BASE_URL_API_GIFTCARD}     ${None}
+    ${t}=        Get Variable Value    ${HTTP_TIMEOUT}              ${None}
+    ${r}=        Get Variable Value    ${HTTP_MAX_RETRIES}          ${None}
+    ${b}=        Get Variable Value    ${HTTP_RETRY_BACKOFF}        ${None}
+    Log Estilizado    [Diagnóstico Adapter] DUMMYJSON='${dummy}' | GIFTCARD='${gift}' | TIMEOUT='${t}' | RETRIES='${r}' | BACKOFF='${b}'    DEBUG
 
 Criar Sessao HTTP
     [Documentation]    Cria sessão HTTP RequestsLibrary para um alias/base_url com timeouts/retries padronizados.
